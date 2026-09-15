@@ -1,14 +1,24 @@
 // 학생별 모의면접 결과를 저장하고(POST), 링크로 불러오는(GET) 서버 함수입니다.
-// Vercel KV(무료 저장소)를 사용합니다. Vercel 대시보드에서 KV를 연결하면 자동으로
-// 아래 kv 객체가 사용할 수 있는 상태가 됩니다. (README 참고)
+// Vercel Redis(무료 저장소)를 사용합니다. Vercel 대시보드에서 Redis를 만들고
+// "프로젝트에 연결"을 누르면 REDIS_URL이 자동으로 설정됩니다. (README 참고)
 
-import { kv } from '@vercel/kv';
+import Redis from 'ioredis';
+
+let redis;
+function getRedis() {
+  if (!redis) {
+    redis = new Redis(process.env.REDIS_URL);
+  }
+  return redis;
+}
 
 function generateId() {
   return 'res_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
 }
 
 export default async function handler(req, res) {
+  const client = getRedis();
+
   if (req.method === 'POST') {
     const record = req.body;
     if (!record || !record.items) {
@@ -16,7 +26,7 @@ export default async function handler(req, res) {
     }
     try {
       const id = generateId();
-      await kv.set(id, JSON.stringify(record));
+      await client.set(id, JSON.stringify(record));
       return res.status(200).json({ id });
     } catch (err) {
       console.error(err);
@@ -30,11 +40,11 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'id가 필요합니다.' });
     }
     try {
-      const value = await kv.get(id);
+      const value = await client.get(id);
       if (!value) {
         return res.status(404).json({ error: '결과를 찾을 수 없습니다.' });
       }
-      const record = typeof value === 'string' ? JSON.parse(value) : value;
+      const record = JSON.parse(value);
       return res.status(200).json({ record });
     } catch (err) {
       console.error(err);
