@@ -270,6 +270,24 @@
     border-radius:8px;padding:8px 12px;font-size:12px;font-family:inherit;cursor:pointer;
   }
 
+  /* Admin submission list */
+  #screen-admin-list{display:none;flex:1;flex-direction:column;padding:20px 20px 40px;overflow-y:auto;}
+  .admin-list-header{display:flex;flex-direction:column;gap:4px;margin-bottom:14px;}
+  .admin-list-header .back{align-self:flex-start;font-size:13px;color:var(--muted);background:none;border:none;font-family:inherit;cursor:pointer;padding:0;margin-bottom:6px;}
+  .admin-list-header h2{margin:0;font-size:16px;color:var(--navy);}
+  .submission-item{
+    background:var(--white);border:1px solid var(--line);border-left:4px solid var(--deep-green);
+    border-radius:6px;padding:12px 14px;margin-bottom:10px;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+  }
+  .submission-item .s-name{font-weight:700;font-size:14px;}
+  .submission-item .s-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+  .submission-item .s-actions{display:flex;gap:6px;flex-shrink:0;}
+  .submission-item .s-actions button{
+    border:1px solid var(--line);background:var(--white);border-radius:6px;
+    padding:6px 10px;font-size:12px;font-family:inherit;cursor:pointer;
+  }
+
   /* Link modal */
   .modal-overlay{
     position:fixed;inset:0;background:rgba(0,0,0,0.4);
@@ -378,11 +396,24 @@
     <div class="sub">AI가 답변을 평가할 때 따르는 지침이에요. 기준을 바꾸고 싶을 때 여기서 직접 수정하세요.</div>
     <textarea id="settings-prompt" rows="10"></textarea>
   </div>
+  <div class="settings-block">
+    <label>제출 현황</label>
+    <div class="sub">지금까지 학생들이 만든 결과 링크를 모아볼 수 있어요.</div>
+    <button class="btn btn-secondary" id="view-submissions-btn">📋 제출된 학생 결과 목록 보기</button>
+  </div>
   <div class="settings-actions">
     <button class="btn btn-primary" id="settings-save">저장</button>
     <button class="btn btn-secondary" id="settings-cancel">취소</button>
     <span class="save-status" id="save-status"></span>
   </div>
+</div>
+
+<div id="screen-admin-list">
+  <div class="admin-list-header">
+    <button class="back" id="admin-list-back">← 설정으로</button>
+    <h2>제출 현황</h2>
+  </div>
+  <div id="admin-list-body"></div>
 </div>
 
 <script>
@@ -514,6 +545,10 @@ let currentQuestionIdx = 0;
 const screenSelect = document.getElementById('screen-select');
 const screenChat = document.getElementById('screen-chat');
 const screenSettings = document.getElementById('screen-settings');
+const screenAdminList = document.getElementById('screen-admin-list');
+const adminListBody = document.getElementById('admin-list-body');
+const adminListBack = document.getElementById('admin-list-back');
+const viewSubmissionsBtn = document.getElementById('view-submissions-btn');
 const catList = document.getElementById('cat-list');
 const chatBody = document.getElementById('chat-body');
 const headerTitle = document.getElementById('header-title');
@@ -782,6 +817,59 @@ gearBtn.onclick = () => {
 };
 
 settingsCancel.onclick = closeSettings;
+
+/* ---- Admin submission list ---- */
+viewSubmissionsBtn.onclick = async () => {
+  screenSettings.style.display = 'none';
+  screenAdminList.style.display = 'flex';
+  headerTitle.textContent = '제출 현황';
+  adminListBody.innerHTML = '<p style="color:var(--muted);font-size:13px;">불러오는 중...</p>';
+
+  try{
+    const response = await fetch('/api/results?list=1');
+    const data = await response.json();
+    const items = data.items || [];
+    if(items.length === 0){
+      adminListBody.innerHTML = '<p style="color:var(--muted);font-size:13px;">아직 학생 결과 링크가 없어요.</p>';
+      return;
+    }
+    adminListBody.innerHTML = '';
+    items.forEach((item) => {
+      const div = document.createElement('div');
+      div.className = 'submission-item';
+      const d = new Date(item.createdAt);
+      const dateStr = d.toLocaleDateString('ko-KR') + ' ' + d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+      div.innerHTML = `
+        <div>
+          <div class="s-name">${escapeHtml(item.studentName)} · ${escapeHtml(item.category)}</div>
+          <div class="s-meta">${dateStr}</div>
+        </div>
+        <div class="s-actions">
+          <button class="view-btn">결과 보기</button>
+          <button class="copy-btn2">링크 복사</button>
+        </div>
+      `;
+      const link = location.origin + location.pathname + '#result=' + item.id;
+      div.querySelector('.view-btn').onclick = () => window.open(link, '_blank');
+      div.querySelector('.copy-btn2').onclick = (e) => {
+        navigator.clipboard.writeText(link).then(() => {
+          e.target.textContent = '복사됨 ✓';
+          setTimeout(() => { e.target.textContent = '링크 복사'; }, 1500);
+        });
+      };
+      adminListBody.appendChild(div);
+    });
+  }catch(err){
+    adminListBody.innerHTML = '<p style="color:var(--muted);font-size:13px;">목록을 불러오는 중 문제가 발생했어요.</p>';
+    console.error(err);
+  }
+};
+
+adminListBack.onclick = () => {
+  screenAdminList.style.display = 'none';
+  screenSettings.style.display = 'flex';
+  headerTitle.textContent = '설정';
+};
 
 settingsSave.onclick = async () => {
   const textareas = settingsQuestions.querySelectorAll('textarea[data-cat-idx]');
