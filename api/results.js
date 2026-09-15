@@ -26,31 +26,3 @@ export default async function handler(req, res) {
     }
     try {
       const id = generateId();
-      await client.set(id, JSON.stringify(record));
-      return res.status(200).json({ id });
-    } catch (err) {
-      console.error(err);
-      return res.status(500).json({ error: '결과 저장 중 오류가 발생했습니다.' });
-    }
-  }
-
-  if (req.method === 'GET') {
-    const { id } = req.query;
-    if (!id) {
-      return res.status(400).json({ error: 'id가 필요합니다.' });
-    }
-    try {
-      const value = await client.get(id);
-      if (!value) {
-        return res.status(404).json({ error: '결과를 찾을 수 없습니다.' });
-      }
-      const record = JSON.parse(value);
-      return res.status(200).json({ record });
-    } catch (err) {
-      console.error(err);
-      return res.status(500).json({ error: '결과 조회 중 오류가 발생했습니다.' });
-    }
-  }
-
-  return res.status(405).json({ error: '허용되지 않는 요청입니다.' });
-}
