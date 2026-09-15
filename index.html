@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -254,6 +255,22 @@
   .btn-secondary{background:var(--white);border:1px solid var(--line);color:var(--ink);}
   .save-status{font-size:12px;color:var(--sage);margin-left:8px;align-self:center;}
 
+  .preset-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+  .preset-chip{
+    display:flex;align-items:center;gap:6px;
+    background:var(--white);border:1px solid var(--line);border-radius:20px;
+    padding:6px 10px 6px 14px;font-size:12px;font-family:inherit;cursor:pointer;
+  }
+  .preset-chip:active{background:#F0F2EF;}
+  .preset-chip .preset-del{
+    color:var(--muted);font-size:14px;line-height:1;border:none;background:none;
+    cursor:pointer;padding:0 2px;
+  }
+  .btn-add-preset{
+    background:var(--paper);border:1px dashed var(--sage);color:var(--deep-green);
+    border-radius:8px;padding:8px 12px;font-size:12px;font-family:inherit;cursor:pointer;
+  }
+
   /* Link modal */
   .modal-overlay{
     position:fixed;inset:0;background:rgba(0,0,0,0.4);
@@ -352,6 +369,12 @@
   <p class="hint">한 줄에 질문 하나씩 적어주세요. 평가 기준(코칭 프롬프트)도 자유롭게 수정할 수 있어요. 저장하면 이 브라우저에서 계속 유지됩니다.</p>
   <div id="settings-questions"></div>
   <div class="settings-block">
+    <label>평가 기준 프리셋</label>
+    <div class="sub">전공·강의별로 저장해두고 버튼 클릭 한 번으로 불러올 수 있어요.</div>
+    <div class="preset-row" id="preset-row"></div>
+    <button class="btn-add-preset" id="add-preset-btn">+ 지금 내용을 새 프리셋으로 저장</button>
+  </div>
+  <div class="settings-block">
     <label>AI 평가 기준 (코칭 프롬프트)</label>
     <div class="sub">AI가 답변을 평가할 때 따르는 지침이에요. 기준을 바꾸고 싶을 때 여기서 직접 수정하세요.</div>
     <textarea id="settings-prompt" rows="10"></textarea>
@@ -429,10 +452,62 @@ const DEFAULT_SYSTEM_PROMPT = `당신은 15년 경력의 취업면접 코치입�
 }
 따뜻하지만 명확한 코치 톤으로 작성하세요. 지나친 칭찬이나 지나친 지적 없이 균형 있게 평가하세요.`;
 
+const DEFAULT_PRESETS = [
+  {
+    name: "기본",
+    prompt: DEFAULT_SYSTEM_PROMPT
+  },
+  {
+    name: "물리치료과",
+    prompt: `당신은 15년 경력의 취업면접 코치입니다. "MOA FORMULA — 면접의 공식" 기준으로 물리치료과 학생의 모의면접 답변을 평가합니다.
+
+평가 기준:
+1) 이미지메이킹 - 첫인상, 자신감 있는 태도, 진정성
+2) 논리 구조 - STAR 구조(상황/과제/행동/결과)가 필요한 질문인 경우 이를 반영했는지
+3) 내용의 구체성 - 추상적 표현이 아닌 실제 경험/수치
+4) 직무 적합성(물리치료사 특화) - 다음 요소가 답변에 드러나는지 확인하세요:
+   - 환자·보호자 응대 경험이나 공감 능력이 구체적으로 드러나는가
+   - 임상실습 경험이 실제 사례로 제시되는가 (단순히 "실습했습니다"에 그치지 않는가)
+   - 체력 관리, 교대근무·야간근무 대응 등 현장 근무 특성에 대한 인식이 있는가
+   - "환자를 위해 최선을 다하겠습니다" 같은 막연한 다짐 표현만 있다면 개선점으로 반드시 지적하세요
+
+반드시 아래 형식의 JSON으로만 응답하세요. 다른 텍스트, 마크다운 코드블록 없이 순수 JSON만 반환합니다.
+{
+  "good": "잘한 점 1~2가지, 구체적으로 (2문장 이내)",
+  "improve": "개선하면 좋을 점 1~2가지, 구체적으로 (2문장 이내)",
+  "sample_direction": "모범답안의 방향성 - 어떤 구조/내용으로 말하면 더 좋을지 (2~3문장)"
+}
+따뜻하지만 명확한 코치 톤으로 작성하세요. 지나친 칭찬이나 지나친 지적 없이 균형 있게 평가하세요.`
+  },
+  {
+    name: "사회복지학과",
+    prompt: `당신은 15년 경력의 취업면접 코치입니다. "MOA FORMULA — 면접의 공식" 기준으로 사회복지학과 학생의 모의면접 답변을 평가합니다.
+
+평가 기준:
+1) 이미지메이킹 - 첫인상, 자신감 있는 태도, 진정성
+2) 논리 구조 - STAR 구조(상황/과제/행동/결과)가 필요한 질문인 경우 이를 반영했는지
+3) 내용의 구체성 - 추상적 표현이 아닌 실제 경험/수치
+4) 직무 적합성(사회복지사 특화) - 다음 요소가 답변에 드러나는지 확인하세요:
+   - 사례관리, 상담, 지역사회 자원 연계 등 실무 경험이 구체적 사례로 제시되는가
+   - 클라이언트(대상자)의 입장에서 생각하는 관점이 드러나는가
+   - 윤리적 딜레마나 어려운 상황에서의 판단 기준이 명확한가
+   - "사람들을 돕고 싶습니다" 같은 막연한 소명의식 표현만 있다면 개선점으로 반드시 지적하고, 구체적 경험으로 뒷받침하도록 방향을 제시하세요
+
+반드시 아래 형식의 JSON으로만 응답하세요. 다른 텍스트, 마크다운 코드블록 없이 순수 JSON만 반환합니다.
+{
+  "good": "잘한 점 1~2가지, 구체적으로 (2문장 이내)",
+  "improve": "개선하면 좋을 점 1~2가지, 구체적으로 (2문장 이내)",
+  "sample_direction": "모범답안의 방향성 - 어떤 구조/내용으로 말하면 더 좋을지 (2~3문장)"
+}
+따뜻하지만 명확한 코치 톤으로 작성하세요. 지나친 칭찬이나 지나친 지적 없이 균형 있게 평가하세요.`
+  }
+];
+
 const STORAGE_KEY = "moa-interview-config";
 
 let CATEGORIES = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
 let SYSTEM_PROMPT = DEFAULT_SYSTEM_PROMPT;
+let PRESETS = JSON.parse(JSON.stringify(DEFAULT_PRESETS));
 
 let currentCategory = null;
 let currentQuestionIdx = 0;
@@ -462,6 +537,8 @@ const resultItems = document.getElementById('result-items');
 let sessionAnswers = []; // {question, answer, feedback}
 const settingsQuestions = document.getElementById('settings-questions');
 const settingsPrompt = document.getElementById('settings-prompt');
+const presetRow = document.getElementById('preset-row');
+const addPresetBtn = document.getElementById('add-preset-btn');
 const settingsSave = document.getElementById('settings-save');
 const settingsCancel = document.getElementById('settings-cancel');
 const saveStatus = document.getElementById('save-status');
@@ -473,6 +550,7 @@ function loadConfig(){
       const parsed = JSON.parse(raw);
       if(parsed.categories) CATEGORIES = parsed.categories;
       if(parsed.systemPrompt) SYSTEM_PROMPT = parsed.systemPrompt;
+      if(parsed.presets && parsed.presets.length) PRESETS = parsed.presets;
     }
   }catch(err){
     // no saved config yet, keep defaults
@@ -481,7 +559,7 @@ function loadConfig(){
 
 function saveConfig(){
   try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ categories: CATEGORIES, systemPrompt: SYSTEM_PROMPT }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ categories: CATEGORIES, systemPrompt: SYSTEM_PROMPT, presets: PRESETS }));
     return true;
   }catch(err){
     console.error('저장 실패', err);
@@ -658,7 +736,37 @@ function openSettings(){
     settingsQuestions.appendChild(block);
   });
   settingsPrompt.value = SYSTEM_PROMPT;
+  renderPresetRow();
 }
+
+function renderPresetRow(){
+  presetRow.innerHTML = '';
+  PRESETS.forEach((preset, idx) => {
+    const chip = document.createElement('div');
+    chip.className = 'preset-chip';
+    chip.innerHTML = `<span>${escapeHtml(preset.name)}</span><button class="preset-del" data-idx="${idx}" title="삭제">✕</button>`;
+    chip.querySelector('span').onclick = () => {
+      settingsPrompt.value = preset.prompt;
+    };
+    chip.querySelector('.preset-del').onclick = (e) => {
+      e.stopPropagation();
+      if(confirm(`"${preset.name}" 프리셋을 삭제할까요?`)){
+        PRESETS.splice(idx, 1);
+        saveConfig();
+        renderPresetRow();
+      }
+    };
+    presetRow.appendChild(chip);
+  });
+}
+
+addPresetBtn.onclick = () => {
+  const name = window.prompt('프리셋 이름을 입력해주세요 (예: 간호학과, 고급반)', '');
+  if(name === null || !name.trim()) return;
+  PRESETS.push({ name: name.trim(), prompt: settingsPrompt.value });
+  saveConfig();
+  renderPresetRow();
+};
 
 function closeSettings(){
   screenSettings.style.display = 'none';
