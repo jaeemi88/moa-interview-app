@@ -908,6 +908,11 @@ async function renderResultView(id){
     await renderResultView(id);
     return;
   }
+
+  const params = new URLSearchParams(location.search);
+  const isAdmin = params.get('admin') === '1';
+  gearBtn.style.display = isAdmin ? 'inline-block' : 'none';
+
   await loadConfig();
   renderCategories();
 })();
