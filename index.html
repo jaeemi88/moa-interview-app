@@ -297,6 +297,32 @@
     border-radius:8px;padding:8px 12px;font-size:12px;font-family:inherit;cursor:pointer;
   }
 
+  /* QR code block */
+  .qr-box{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px;
+    text-align:center;
+  }
+  .qr-box #qrcode-canvas{
+    display:inline-block;
+    margin-bottom:10px;
+  }
+  .qr-box #qrcode-canvas canvas,
+  .qr-box #qrcode-canvas img{
+    display:block;
+    margin:0 auto;
+    border-radius:6px;
+  }
+  .qr-box .qr-url{
+    font-size:11px;
+    color:var(--muted);
+    word-break:break-all;
+    margin-bottom:12px;
+  }
+  .qr-actions{display:flex;gap:8px;justify-content:center;}
+
   /* Admin submission list */
   #screen-admin-list{display:none;flex:1;flex-direction:column;padding:20px 20px 40px;overflow-y:auto;}
   .admin-list-header{display:flex;flex-direction:column;gap:4px;margin-bottom:14px;}
@@ -471,6 +497,17 @@
     </label>
   </div>
   <div class="settings-block">
+    <label>📱 학생용 QR코드</label>
+    <div class="sub">화면에 띄우거나 인쇄해서 보여주면 학생들이 스캔해서 바로 접속할 수 있어요. (admin 설정 없는 순수 학생용 주소)</div>
+    <div class="qr-box">
+      <div id="qrcode-canvas"></div>
+      <div class="qr-url" id="qr-url-text"></div>
+      <div class="qr-actions">
+        <button class="btn btn-secondary" id="qr-download-btn">이미지로 다운로드</button>
+      </div>
+    </div>
+  </div>
+  <div class="settings-block">
     <label>제출 현황</label>
     <div class="sub">지금까지 학생들이 만든 결과 링크를 모아볼 수 있어요.</div>
     <button class="btn btn-secondary" id="view-submissions-btn">📋 제출된 학생 결과 목록 보기</button>
@@ -514,6 +551,7 @@
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const DEFAULT_CATEGORIES = [
   {
@@ -703,6 +741,9 @@ const screenResult = document.getElementById('screen-result');
 const resultTitle = document.getElementById('result-title');
 const resultMeta = document.getElementById('result-meta');
 const resultItems = document.getElementById('result-items');
+const qrCodeCanvas = document.getElementById('qrcode-canvas');
+const qrUrlText = document.getElementById('qr-url-text');
+const qrDownloadBtn = document.getElementById('qr-download-btn');
 
 let sessionAnswers = []; // {question, answer, feedback}
 let answersByIdx = {}; // question index -> {question, answer, feedback}
@@ -975,6 +1016,40 @@ backBtn.onclick = () => {
   history.back();
 };
 
+/* ---- QR code (student access) ---- */
+function renderStudentQRCode(){
+  if(!qrCodeCanvas) return;
+  const studentUrl = location.origin + location.pathname;
+  qrUrlText.textContent = studentUrl;
+  qrCodeCanvas.innerHTML = '';
+  try{
+    new QRCode(qrCodeCanvas, {
+      text: studentUrl,
+      width: 180,
+      height: 180,
+      colorDark: '#1B4332',
+      colorLight: '#FFFFFF',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  }catch(err){
+    qrCodeCanvas.innerHTML = '<p style="font-size:12px;color:var(--muted);">QR코드를 생성하지 못했어요.</p>';
+    console.error(err);
+  }
+}
+
+if(qrDownloadBtn){
+  qrDownloadBtn.onclick = () => {
+    const img = qrCodeCanvas.querySelector('img');
+    const canvas = qrCodeCanvas.querySelector('canvas');
+    const dataUrl = canvas ? canvas.toDataURL('image/png') : (img ? img.src : null);
+    if(!dataUrl) return;
+    const link = document.createElement('a');
+    link.download = '모의면접_학생용_QR.png';
+    link.href = dataUrl;
+    link.click();
+  };
+}
+
 /* ---- Settings screen ---- */
 function openSettings(skipHistory){
   screenSelect.style.display = 'none';
@@ -1002,6 +1077,7 @@ function openSettings(skipHistory){
   settingsPrompt.value = SYSTEM_PROMPT;
   reviewModeToggle.checked = REVIEW_MODE;
   renderPresetRow();
+  renderStudentQRCode();
   if(!skipHistory){
     history.pushState({ screen: 'settings' }, '');
   }
