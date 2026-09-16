@@ -306,6 +306,35 @@
     padding:6px 10px;font-size:12px;font-family:inherit;cursor:pointer;
   }
 
+  .toggle-row{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;}
+  .toggle-row input{width:16px;height:16px;}
+
+  #screen-review-list{display:none;flex:1;flex-direction:column;padding:20px 20px 40px;overflow-y:auto;}
+  .review-item{
+    background:var(--white);border:1px solid var(--line);border-left:4px solid #B4531A;
+    border-radius:6px;padding:12px 14px;margin-bottom:10px;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;
+  }
+  .review-item .s-name{font-weight:700;font-size:14px;}
+  .review-item .s-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+  .review-item .s-arrow{color:var(--muted);font-size:16px;flex-shrink:0;}
+
+  #screen-review-detail{display:none;flex:1;flex-direction:column;padding:20px 20px 100px;overflow-y:auto;}
+  .review-q-block{
+    background:var(--white);border:1px solid var(--line);border-radius:8px;
+    padding:14px;margin-bottom:14px;
+  }
+  .review-q-block .rq-question{font-weight:700;font-size:13px;color:var(--navy);margin-bottom:8px;}
+  .review-q-block .rq-answer{font-size:13px;background:var(--paper);border-radius:6px;padding:8px 10px;margin-bottom:10px;white-space:pre-wrap;}
+  .review-q-block label{display:block;font-size:11px;font-weight:700;color:var(--deep-green);margin:8px 0 4px;}
+  .review-q-block textarea{
+    width:100%;border:1px solid var(--line);border-radius:6px;padding:8px 10px;
+    font-family:inherit;font-size:13px;line-height:1.5;resize:vertical;
+  }
+  .review-detail-actions{
+    position:sticky;bottom:0;background:var(--paper);padding-top:10px;
+  }
+
   /* Link modal */
   .modal-overlay{
     position:fixed;inset:0;background:rgba(0,0,0,0.4);
@@ -422,9 +451,22 @@
     <textarea id="settings-prompt" rows="10"></textarea>
   </div>
   <div class="settings-block">
+    <label>제출 방식</label>
+    <div class="sub">켜면 학생 제출 시 AI 피드백이 바로 보이지 않고, 강사가 검토·수정한 후 링크를 만들어 전달해요.</div>
+    <label class="toggle-row">
+      <input type="checkbox" id="review-mode-toggle">
+      <span>강사 검토 후 전달 (1:1 첨삭용)</span>
+    </label>
+  </div>
+  <div class="settings-block">
     <label>제출 현황</label>
     <div class="sub">지금까지 학생들이 만든 결과 링크를 모아볼 수 있어요.</div>
     <button class="btn btn-secondary" id="view-submissions-btn">📋 제출된 학생 결과 목록 보기</button>
+  </div>
+  <div class="settings-block">
+    <label>검토 대기함</label>
+    <div class="sub">"강사 검토 후 전달"이 켜져 있을 때, 학생이 보낸 제출건을 확인·수정하고 승인하는 곳이에요.</div>
+    <button class="btn btn-secondary" id="view-review-queue-btn">📝 검토 대기함 열기</button>
   </div>
   <div class="settings-actions">
     <button class="btn btn-primary" id="settings-save">저장</button>
@@ -439,6 +481,25 @@
     <h2>제출 현황</h2>
   </div>
   <div id="admin-list-body"></div>
+</div>
+
+<div id="screen-review-list">
+  <div class="admin-list-header">
+    <button class="back" id="review-list-back">← 설정으로</button>
+    <h2>검토 대기함</h2>
+  </div>
+  <div id="review-list-body"></div>
+</div>
+
+<div id="screen-review-detail">
+  <div class="admin-list-header">
+    <button class="back" id="review-detail-back">← 대기함으로</button>
+    <h2 id="review-detail-title">검토</h2>
+  </div>
+  <div id="review-detail-body"></div>
+  <div class="review-detail-actions">
+    <button class="btn btn-primary" id="review-approve-btn">✅ 승인 및 학생 링크 생성</button>
+  </div>
 </div>
 
 <script>
@@ -566,6 +627,7 @@ const STORAGE_KEY = "moa-interview-config";
 let CATEGORIES = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
 let SYSTEM_PROMPT = DEFAULT_SYSTEM_PROMPT;
 let PRESETS = JSON.parse(JSON.stringify(DEFAULT_PRESETS));
+let REVIEW_MODE = false;
 
 let currentCategory = null;
 let currentQuestionIdx = 0;
@@ -577,6 +639,16 @@ const screenAdminList = document.getElementById('screen-admin-list');
 const adminListBody = document.getElementById('admin-list-body');
 const adminListBack = document.getElementById('admin-list-back');
 const viewSubmissionsBtn = document.getElementById('view-submissions-btn');
+const reviewModeToggle = document.getElementById('review-mode-toggle');
+const viewReviewQueueBtn = document.getElementById('view-review-queue-btn');
+const screenReviewList = document.getElementById('screen-review-list');
+const reviewListBody = document.getElementById('review-list-body');
+const reviewListBack = document.getElementById('review-list-back');
+const screenReviewDetail = document.getElementById('screen-review-detail');
+const reviewDetailBody = document.getElementById('review-detail-body');
+const reviewDetailTitle = document.getElementById('review-detail-title');
+const reviewDetailBack = document.getElementById('review-detail-back');
+const reviewApproveBtn = document.getElementById('review-approve-btn');
 const catList = document.getElementById('cat-list');
 const chatBody = document.getElementById('chat-body');
 const headerTitle = document.getElementById('header-title');
@@ -609,24 +681,31 @@ const settingsSave = document.getElementById('settings-save');
 const settingsCancel = document.getElementById('settings-cancel');
 const saveStatus = document.getElementById('save-status');
 
-function loadConfig(){
+async function loadConfig(){
   try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw){
-      const parsed = JSON.parse(raw);
+    const response = await fetch('/api/config');
+    const data = await response.json();
+    const parsed = data && data.config;
+    if(parsed){
       if(parsed.categories) CATEGORIES = parsed.categories;
       if(parsed.systemPrompt) SYSTEM_PROMPT = parsed.systemPrompt;
       if(parsed.presets && parsed.presets.length) PRESETS = parsed.presets;
+      if(typeof parsed.reviewMode === 'boolean') REVIEW_MODE = parsed.reviewMode;
     }
   }catch(err){
-    // no saved config yet, keep defaults
+    // 저장된 설정이 아직 없거나 네트워크 오류 - 기본값 유지
   }
 }
 
-function saveConfig(){
+async function saveConfig(){
   try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ categories: CATEGORIES, systemPrompt: SYSTEM_PROMPT, presets: PRESETS }));
-    return true;
+    const response = await fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ categories: CATEGORIES, systemPrompt: SYSTEM_PROMPT, presets: PRESETS, reviewMode: REVIEW_MODE })
+    });
+    const data = await response.json();
+    return !!(data && data.ok);
   }catch(err){
     console.error('저장 실패', err);
     return false;
@@ -705,7 +784,11 @@ function renderQuestionCard(){
   const existing = answersByIdx[currentQuestionIdx];
   if(existing){
     addBubble('a', existing.answer);
-    addFeedbackBubble(existing.feedback);
+    if(REVIEW_MODE){
+      addBubble('f', '🕓 제출 완료 — 강사님이 확인한 후 결과를 보내드릴게요.');
+    } else {
+      addFeedbackBubble(existing.feedback);
+    }
     const redoBtn = document.createElement('button');
     redoBtn.className = 'redo-btn';
     redoBtn.textContent = '✏️ 다시 답변하기';
@@ -723,6 +806,8 @@ function renderQuestionCard(){
     answerInput.disabled = false;
     sendBtn.disabled = false;
   }
+
+  makeLinkBtn.textContent = REVIEW_MODE ? '📤 강사 검토 요청 보내기' : '📎 지금까지 결과로 학생 링크 만들기';
 }
 
 function addBubble(type, text){
@@ -841,6 +926,8 @@ function openSettings(skipHistory){
   screenSelect.style.display = 'none';
   screenChat.style.display = 'none';
   screenAdminList.style.display = 'none';
+  screenReviewList.style.display = 'none';
+  screenReviewDetail.style.display = 'none';
   screenSettings.style.display = 'flex';
   progressTrack.style.display = 'none';
   swipeHint.style.display = 'none';
@@ -859,6 +946,7 @@ function openSettings(skipHistory){
     settingsQuestions.appendChild(block);
   });
   settingsPrompt.value = SYSTEM_PROMPT;
+  reviewModeToggle.checked = REVIEW_MODE;
   renderPresetRow();
   if(!skipHistory){
     history.pushState({ screen: 'settings' }, '');
@@ -965,6 +1053,148 @@ adminListBack.onclick = () => {
   history.back();
 };
 
+/* ---- Review queue (instructor review mode) ---- */
+let currentReviewId = null;
+let currentReviewRecord = null;
+
+viewReviewQueueBtn.onclick = async () => {
+  screenSettings.style.display = 'none';
+  screenReviewList.style.display = 'flex';
+  headerTitle.textContent = '검토 대기함';
+  await renderReviewList();
+};
+
+async function renderReviewList(){
+  reviewListBody.innerHTML = '<p style="color:var(--muted);font-size:13px;">불러오는 중...</p>';
+  try{
+    const response = await fetch('/api/reviews?list=1');
+    const data = await response.json();
+    const items = data.items || [];
+    if(items.length === 0){
+      reviewListBody.innerHTML = '<p style="color:var(--muted);font-size:13px;">대기 중인 검토 항목이 없어요.</p>';
+      return;
+    }
+    reviewListBody.innerHTML = '';
+    items.forEach((item) => {
+      const div = document.createElement('div');
+      div.className = 'review-item';
+      const d = new Date(item.createdAt);
+      const dateStr = d.toLocaleDateString('ko-KR') + ' ' + d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+      div.innerHTML = `
+        <div>
+          <div class="s-name">${escapeHtml(item.studentName)} · ${escapeHtml(item.category)}</div>
+          <div class="s-meta">${dateStr}</div>
+        </div>
+        <div class="s-arrow">›</div>
+      `;
+      div.onclick = () => openReviewDetail(item.id);
+      reviewListBody.appendChild(div);
+    });
+  }catch(err){
+    reviewListBody.innerHTML = '<p style="color:var(--muted);font-size:13px;">목록을 불러오는 중 문제가 발생했어요.</p>';
+    console.error(err);
+  }
+}
+
+reviewListBack.onclick = () => {
+  screenReviewList.style.display = 'none';
+  screenSettings.style.display = 'flex';
+  headerTitle.textContent = '설정';
+};
+
+async function openReviewDetail(id){
+  currentReviewId = id;
+  screenReviewList.style.display = 'none';
+  screenReviewDetail.style.display = 'flex';
+  headerTitle.textContent = '검토';
+  reviewDetailBody.innerHTML = '<p style="color:var(--muted);font-size:13px;">불러오는 중...</p>';
+
+  try{
+    const response = await fetch('/api/reviews?id=' + encodeURIComponent(id));
+    const data = await response.json();
+    if(!response.ok || !data.record){
+      reviewDetailBody.innerHTML = '<p style="color:var(--muted);font-size:13px;">항목을 찾을 수 없어요.</p>';
+      return;
+    }
+    currentReviewRecord = data.record;
+    reviewDetailTitle.textContent = currentReviewRecord.studentName + ' · ' + currentReviewRecord.category;
+    reviewDetailBody.innerHTML = '';
+    currentReviewRecord.items.forEach((item, i) => {
+      const block = document.createElement('div');
+      block.className = 'review-q-block';
+      block.innerHTML = `
+        <div class="rq-question">Q${i+1}. ${escapeHtml(item.question)}</div>
+        <div class="rq-answer">${escapeHtml(item.answer)}</div>
+        <label>👍 좋았던 점</label>
+        <textarea data-item-idx="${i}" data-field="good" rows="2">${escapeHtml(item.feedback.good || '')}</textarea>
+        <label>🔧 개선점</label>
+        <textarea data-item-idx="${i}" data-field="improve" rows="2">${escapeHtml(item.feedback.improve || '')}</textarea>
+        <label>💡 모범답안 방향</label>
+        <textarea data-item-idx="${i}" data-field="sample_direction" rows="2">${escapeHtml(item.feedback.sample_direction || '')}</textarea>
+        <label>✏️ 다듬은 완성 문장</label>
+        <textarea data-item-idx="${i}" data-field="rewritten" rows="2">${escapeHtml(item.feedback.rewritten || '')}</textarea>
+      `;
+      reviewDetailBody.appendChild(block);
+    });
+  }catch(err){
+    reviewDetailBody.innerHTML = '<p style="color:var(--muted);font-size:13px;">불러오는 중 문제가 발생했어요.</p>';
+    console.error(err);
+  }
+}
+
+reviewDetailBack.onclick = () => {
+  screenReviewDetail.style.display = 'none';
+  screenReviewList.style.display = 'flex';
+  headerTitle.textContent = '검토 대기함';
+};
+
+reviewApproveBtn.onclick = async () => {
+  if(!currentReviewRecord || !currentReviewId) return;
+  const textareas = reviewDetailBody.querySelectorAll('textarea[data-item-idx]');
+  textareas.forEach(ta => {
+    const idx = parseInt(ta.getAttribute('data-item-idx'), 10);
+    const field = ta.getAttribute('data-field');
+    currentReviewRecord.items[idx].feedback[field] = ta.value;
+  });
+
+  reviewApproveBtn.disabled = true;
+  reviewApproveBtn.textContent = '승인 중...';
+
+  try{
+    const finalRecord = {
+      studentName: currentReviewRecord.studentName,
+      category: currentReviewRecord.category,
+      items: currentReviewRecord.items,
+      createdAt: new Date().toISOString()
+    };
+    const response = await fetch('/api/results', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(finalRecord)
+    });
+    const data = await response.json();
+    if(data.error) throw new Error(data.error);
+
+    await fetch('/api/reviews?id=' + encodeURIComponent(currentReviewId), { method: 'DELETE' });
+
+    const link = location.origin + location.pathname + '#result=' + data.id;
+    linkOutput.value = link;
+    linkModal.style.display = 'flex';
+
+    screenReviewDetail.style.display = 'none';
+    screenReviewList.style.display = 'flex';
+    headerTitle.textContent = '검토 대기함';
+    currentReviewId = null;
+    currentReviewRecord = null;
+    await renderReviewList();
+  }catch(err){
+    alert('승인 처리 중 문제가 발생했어요. 다시 시도해주세요.');
+    console.error(err);
+  }
+  reviewApproveBtn.disabled = false;
+  reviewApproveBtn.textContent = '✅ 승인 및 학생 링크 생성';
+};
+
 settingsSave.onclick = async () => {
   const textareas = settingsQuestions.querySelectorAll('textarea[data-cat-idx]');
   textareas.forEach(ta => {
@@ -976,6 +1206,7 @@ settingsSave.onclick = async () => {
   });
   const newPrompt = settingsPrompt.value.trim();
   if(newPrompt) SYSTEM_PROMPT = newPrompt;
+  REVIEW_MODE = reviewModeToggle.checked;
 
   saveStatus.textContent = '저장 중...';
   const ok = await saveConfig();
@@ -999,8 +1230,9 @@ makeLinkBtn.onclick = async () => {
   if(orderedItems.length === 0) return;
   const studentName = window.prompt('학생 이름을 입력해주세요 (링크 제목에 표시됩니다)', '');
   if(studentName === null) return;
+  const originalLabel = makeLinkBtn.textContent;
   makeLinkBtn.disabled = true;
-  makeLinkBtn.textContent = '링크 만드는 중...';
+  makeLinkBtn.textContent = REVIEW_MODE ? '제출 중...' : '링크 만드는 중...';
 
   const record = {
     studentName: studentName.trim() || '수강생',
@@ -1010,22 +1242,33 @@ makeLinkBtn.onclick = async () => {
   };
 
   try{
-    const response = await fetch('/api/results', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(record)
-    });
-    const data = await response.json();
-    if(data.error) throw new Error(data.error);
-    const link = location.origin + location.pathname + '#result=' + data.id;
-    linkOutput.value = link;
-    linkModal.style.display = 'flex';
+    if(REVIEW_MODE){
+      const response = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(record)
+      });
+      const data = await response.json();
+      if(data.error) throw new Error(data.error);
+      alert('제출 완료! 강사님이 확인한 후 결과 링크를 보내드릴 거예요.');
+    } else {
+      const response = await fetch('/api/results', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(record)
+      });
+      const data = await response.json();
+      if(data.error) throw new Error(data.error);
+      const link = location.origin + location.pathname + '#result=' + data.id;
+      linkOutput.value = link;
+      linkModal.style.display = 'flex';
+    }
   }catch(err){
-    alert('링크 생성 중 문제가 발생했어요. 다시 시도해주세요.');
+    alert('처리 중 문제가 발생했어요. 다시 시도해주세요.');
     console.error(err);
   }
   makeLinkBtn.disabled = false;
-  makeLinkBtn.textContent = '📎 지금까지 결과로 학생 링크 만들기';
+  makeLinkBtn.textContent = originalLabel;
 };
 
 copyLinkBtn.onclick = () => {
