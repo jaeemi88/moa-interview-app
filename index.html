@@ -212,7 +212,25 @@
     border-top:1px solid var(--line);
   }
   .footer-row .back{font-size:13px;color:var(--muted);background:none;border:none;font-family:inherit;cursor:pointer;}
-  .footer-row .next{font-size:13px;color:var(--deep-green);background:none;border:none;font-family:inherit;font-weight:700;cursor:pointer;}
+
+  .qnav{display:flex;align-items:center;gap:8px;}
+  .qnav-btn{
+    width:30px;height:30px;border-radius:50%;border:1px solid var(--line);
+    background:var(--white);color:var(--navy);font-size:16px;line-height:1;
+    cursor:pointer;font-family:inherit;
+  }
+  .qnav-btn:disabled{opacity:0.3;cursor:default;}
+  .qnav-label{font-size:12px;color:var(--muted);min-width:34px;text-align:center;}
+
+  .swipe-hint{font-size:11px;color:var(--muted);text-align:center;padding:4px 0 0;}
+
+  .redo-btn{
+    align-self:flex-start;background:var(--white);border:1px solid var(--line);
+    color:var(--navy);border-radius:8px;padding:8px 14px;font-size:13px;
+    font-family:inherit;cursor:pointer;margin-top:4px;
+  }
+
+  .progress-seg{cursor:pointer;}
 
   .dot-flash{display:inline-flex;gap:3px;}
   .dot-flash span{width:5px;height:5px;border-radius:50%;background:var(--muted);animation:flash 1.1s infinite ease-in-out;}
@@ -342,6 +360,7 @@
     <button class="gear-btn" id="gear-btn" title="질문·평가기준 설정">⚙</button>
   </div>
   <div class="progress-track" id="progress-track" style="display:none;"></div>
+  <div class="swipe-hint" id="swipe-hint" style="display:none;">좌우로 넘기거나 위 점을 눌러 다른 질문으로 이동하세요</div>
 </header>
 
 <div id="screen-select">
@@ -357,7 +376,11 @@
   </div>
   <div class="footer-row">
     <button class="back" id="back-btn">← 유형 다시 선택</button>
-    <button class="next" id="next-btn" style="display:none;">다음 질문 →</button>
+    <div class="qnav">
+      <button class="qnav-btn" id="prev-btn" title="이전 질문">‹</button>
+      <span class="qnav-label" id="qnav-label">1 / 6</span>
+      <button class="qnav-btn" id="next-btn" title="다음 질문">›</button>
+    </div>
   </div>
   <button class="link-cta" id="make-link-btn" style="display:none;">📎 지금까지 결과로 학생 링크 만들기</button>
 </div>
@@ -558,9 +581,12 @@ const catList = document.getElementById('cat-list');
 const chatBody = document.getElementById('chat-body');
 const headerTitle = document.getElementById('header-title');
 const progressTrack = document.getElementById('progress-track');
+const swipeHint = document.getElementById('swipe-hint');
 const answerInput = document.getElementById('answer-input');
 const sendBtn = document.getElementById('send-btn');
 const nextBtn = document.getElementById('next-btn');
+const prevBtn = document.getElementById('prev-btn');
+const qnavLabel = document.getElementById('qnav-label');
 const backBtn = document.getElementById('back-btn');
 const gearBtn = document.getElementById('gear-btn');
 const makeLinkBtn = document.getElementById('make-link-btn');
@@ -574,6 +600,7 @@ const resultMeta = document.getElementById('result-meta');
 const resultItems = document.getElementById('result-items');
 
 let sessionAnswers = []; // {question, answer, feedback}
+let answersByIdx = {}; // question index -> {question, answer, feedback}
 const settingsQuestions = document.getElementById('settings-questions');
 const settingsPrompt = document.getElementById('settings-prompt');
 const presetRow = document.getElementById('preset-row');
@@ -633,8 +660,9 @@ function renderProgress(){
   currentCategory.questions.forEach((_, i) => {
     const seg = document.createElement('div');
     seg.className = 'progress-seg';
-    if(i < currentQuestionIdx) seg.classList.add('done');
+    if(answersByIdx[i]) seg.classList.add('done');
     if(i === currentQuestionIdx) seg.classList.add('active');
+    seg.onclick = () => goToQuestion(i);
     progressTrack.appendChild(seg);
   });
 }
@@ -642,26 +670,59 @@ function renderProgress(){
 function startCategory(cat, skipHistory){
   currentCategory = cat;
   currentQuestionIdx = 0;
+  answersByIdx = {};
   screenSelect.style.display = 'none';
   screenChat.style.display = 'flex';
   headerTitle.textContent = cat.title + ' 연습';
-  chatBody.innerHTML = '';
-  nextBtn.style.display = 'none';
   sessionAnswers = [];
   makeLinkBtn.style.display = 'none';
-  askCurrentQuestion();
+  swipeHint.style.display = 'block';
+  renderQuestionCard();
   if(!skipHistory){
     history.pushState({ screen: 'chat', catId: cat.id }, '');
   }
 }
 
-function askCurrentQuestion(){
+function goToQuestion(idx){
+  if(idx < 0 || idx >= currentCategory.questions.length) return;
+  currentQuestionIdx = idx;
+  renderQuestionCard();
+}
+
+function goPrev(){ goToQuestion(currentQuestionIdx - 1); }
+function goNext(){ goToQuestion(currentQuestionIdx + 1); }
+
+function renderQuestionCard(){
   renderProgress();
-  addBubble('q', currentCategory.questions[currentQuestionIdx]);
-  answerInput.value = '';
-  answerInput.disabled = false;
-  sendBtn.disabled = false;
-  nextBtn.style.display = 'none';
+  qnavLabel.textContent = (currentQuestionIdx + 1) + ' / ' + currentCategory.questions.length;
+  prevBtn.disabled = currentQuestionIdx === 0;
+  nextBtn.disabled = currentQuestionIdx === currentCategory.questions.length - 1;
+
+  chatBody.innerHTML = '';
+  const question = currentCategory.questions[currentQuestionIdx];
+  addBubble('q', question);
+
+  const existing = answersByIdx[currentQuestionIdx];
+  if(existing){
+    addBubble('a', existing.answer);
+    addFeedbackBubble(existing.feedback);
+    const redoBtn = document.createElement('button');
+    redoBtn.className = 'redo-btn';
+    redoBtn.textContent = '✏️ 다시 답변하기';
+    redoBtn.onclick = () => {
+      delete answersByIdx[currentQuestionIdx];
+      renderQuestionCard();
+    };
+    chatBody.appendChild(redoBtn);
+    answerInput.style.display = 'none';
+    sendBtn.style.display = 'none';
+  } else {
+    answerInput.style.display = '';
+    sendBtn.style.display = '';
+    answerInput.value = '';
+    answerInput.disabled = false;
+    sendBtn.disabled = false;
+  }
 }
 
 function addBubble(type, text){
@@ -722,8 +783,8 @@ async function submitAnswer(){
     const fb = await response.json();
     if(fb.error) throw new Error(fb.error);
     loadingBubble.remove();
-    addFeedbackBubble(fb);
-    sessionAnswers.push({ question, answer: text, feedback: fb });
+    answersByIdx[currentQuestionIdx] = { question, answer: text, feedback: fb };
+    renderQuestionCard();
     makeLinkBtn.style.display = 'block';
   }catch(err){
     loadingBubble.remove();
@@ -731,13 +792,8 @@ async function submitAnswer(){
     console.error(err);
     answerInput.disabled = false;
     sendBtn.disabled = false;
+    answerInput.value = text;
     return;
-  }
-
-  if(currentQuestionIdx < currentCategory.questions.length - 1){
-    nextBtn.style.display = 'inline';
-  } else {
-    addBubble('f', `"${currentCategory.title}" 유형 연습을 모두 마쳤어요. 다른 유형도 연습해보세요.`);
   }
 }
 
@@ -749,10 +805,22 @@ answerInput.addEventListener('keydown', (e) => {
   }
 });
 
-nextBtn.onclick = () => {
-  currentQuestionIdx++;
-  askCurrentQuestion();
-};
+prevBtn.onclick = goPrev;
+nextBtn.onclick = goNext;
+
+/* ---- Swipe navigation ---- */
+let touchStartX = 0, touchStartY = 0;
+chatBody.addEventListener('touchstart', (e) => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+chatBody.addEventListener('touchend', (e) => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if(Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5){
+    if(dx < 0) goNext(); else goPrev();
+  }
+}, { passive: true });
 
 function showSelectScreen(){
   screenChat.style.display = 'none';
@@ -760,6 +828,7 @@ function showSelectScreen(){
   screenAdminList.style.display = 'none';
   screenSelect.style.display = 'block';
   progressTrack.style.display = 'none';
+  swipeHint.style.display = 'none';
   headerTitle.textContent = '모의면접 시뮬레이터';
 }
 
@@ -774,6 +843,7 @@ function openSettings(skipHistory){
   screenAdminList.style.display = 'none';
   screenSettings.style.display = 'flex';
   progressTrack.style.display = 'none';
+  swipeHint.style.display = 'none';
   headerTitle.textContent = '설정';
   saveStatus.textContent = '';
 
@@ -922,7 +992,11 @@ function genId(){
 }
 
 makeLinkBtn.onclick = async () => {
-  if(sessionAnswers.length === 0) return;
+  const orderedItems = Object.keys(answersByIdx)
+    .map(k => parseInt(k, 10))
+    .sort((a, b) => a - b)
+    .map(idx => answersByIdx[idx]);
+  if(orderedItems.length === 0) return;
   const studentName = window.prompt('학생 이름을 입력해주세요 (링크 제목에 표시됩니다)', '');
   if(studentName === null) return;
   makeLinkBtn.disabled = true;
@@ -931,7 +1005,7 @@ makeLinkBtn.onclick = async () => {
   const record = {
     studentName: studentName.trim() || '수강생',
     category: currentCategory.title,
-    items: sessionAnswers,
+    items: orderedItems,
     createdAt: new Date().toISOString()
   };
 
