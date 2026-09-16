@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>모의면접 시뮬레이터 — 진로모아커리어센터</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css">
 <style>
   :root{
     --white:#FFFFFF;
@@ -18,7 +19,7 @@
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    font-family:"Malgun Gothic","맑은 고딕",-apple-system,sans-serif;
+    font-family:"Pretendard","Malgun Gothic","맑은 고딕",-apple-system,sans-serif;
     background:var(--paper);
     color:var(--ink);
     min-height:100vh;
@@ -38,11 +39,36 @@
     color:#B9C2D6;
     margin-bottom:4px;
   }
-  header .title-row{display:flex;align-items:center;justify-content:space-between;}
+  header .title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
   header h1{
-    font-size:19px;
+    font-size:20px;
     margin:0;
-    font-weight:700;
+    font-weight:600;
+  }
+  header .role-badge{
+    font-size:12px;
+    font-weight:600;
+    padding:4px 10px;
+    border-radius:999px;
+    background:rgba(255,255,255,.16);
+    color:#fff;
+    flex-shrink:0;
+  }
+  /* 학생용: 같은 네이비 톤이지만 연하게 — 강사용: 원래의 진한 네이비 유지 */
+  body.role-student header{
+    background:#e7ecf5;
+    color:var(--navy);
+  }
+  body.role-student header .brand{
+    color:#5b6b85;
+  }
+  body.role-student header .role-badge{
+    background:rgba(30,42,74,0.1);
+    color:var(--navy);
+  }
+  body.role-student .gear-btn{
+    background:rgba(30,42,74,0.08);
+    color:var(--navy);
   }
   .gear-btn{
     background:rgba(255,255,255,0.12);
@@ -421,6 +447,7 @@
   <div class="brand">진로모아커리어센터 · MOA FORMULA</div>
   <div class="title-row">
     <h1 id="header-title">모의면접 시뮬레이터</h1>
+    <span class="role-badge" id="role-badge">학생용</span>
     <button class="gear-btn" id="gear-btn" title="질문·평가기준 설정">⚙</button>
   </div>
   <div class="progress-track" id="progress-track" style="display:none;"></div>
@@ -553,6 +580,20 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
+// ---------- 여러 강사 분리 시스템 (자소서 첨삭 앱과 동일한 방식) ----------
+// 강사별로 설정·검수함·결과가 서로 섞이지 않도록, 모든 /api/config·/api/reviews·/api/results
+// 호출에 강사 코드(t)를 자동으로 붙여서 보냅니다.
+const __params = new URLSearchParams(location.search);
+let TEACHER_ID = (__params.get('t') || '').trim().toLowerCase().replace(/[^a-z0-9가-힣_-]/g, '').slice(0, 40);
+
+function apiUrl(path){
+  if(/^\/api\/(config|reviews|results)/.test(path)){
+    const sep = path.includes('?') ? '&' : '?';
+    return path + sep + 't=' + encodeURIComponent(TEACHER_ID);
+  }
+  return path;
+}
+
 const DEFAULT_CATEGORIES = [
   {
     id: "self-intro",
@@ -616,12 +657,21 @@ const DEFAULT_SYSTEM_PROMPT = `당신은 15년 경력의 취업면접 코치입�
 
 절대 규칙 (모든 필드 공통): 학생 답변이 비어있거나, 매우 짧거나, "없음"/"모르겠어요" 같이 의미 없는 내용이더라도 good, improve, sample_direction, rewritten 네 필드 모두 반드시 실질적인 내용으로 채우세요. "답변 내용이 입력되지 않아 다듬기 어렵습니다", "작성해 주시면 피드백 드리겠습니다", "내용이 부족합니다" 같은 안내/거절 문구는 네 필드 어디에도 절대 쓰지 마세요. 이런 경우 good에는 "이 질문에 대해 아직 구체적인 답변을 준비하지 않으신 것 같아요" 대신 "질문 의도를 이해하고 답변을 시작하신 점은 좋습니다" 같이 실제 코칭 관점의 문장을 쓰고, improve에는 무엇을 채워야 하는지 구체적으로 안내하고, sample_direction과 rewritten에는 질문 주제에 맞는 일반적인 모범 답안을 새로 작성해서 채우세요.
 
+[면접관 시점 적용 — 반드시 반영] MOA FORMULA의 핵심 전제: "면접관은 지원자의 '지금 이 순간'을 보는 것이 아니라, 답변을 통해 '평소의 모습'을 역추적하고, 그것으로 '입사 후 행동'을 예측한다." 이 답변 하나로 면접관이 "이 지원자는 평소 이런 태도로 살아왔겠구나"라고 추론할 만한 내용을 interviewer_inference 필드에 한 문장으로 짚어주세요.
+
+[예상 꼬리질문 3종 세트] 면접관은 답변 하나가 끝나면 거의 항상 아래 3가지 유형 중에서 꼬리질문을 던집니다. 이 답변을 보고 실제로 나올 법한 꼬리질문을 유형별로 하나씩 만들어 follow_up 필드에 채우세요.
+- reason (이유형): "왜 그 선택을 했어요?" 계열
+- alternative (대안형): "다른 대안은 없었나요?" 계열
+- quantify (수치형): "숫자로 말하면요?" 계열
+
 반드시 아래 형식의 JSON으로만 응답하세요. 다른 텍스트, 마크다운 코드블록 없이 순수 JSON만 반환합니다.
 {
   "good": "잘한 점 1~2가지, 구체적으로 (2문장 이내)",
   "improve": "개선하면 좋을 점 1~2가지, 구체적으로 (2문장 이내)",
   "sample_direction": "모범답안의 방향성 - 어떤 구조/내용으로 말하면 더 좋을지 (2~3문장)",
-  "rewritten": "이 필드에는 반드시 완성된 하나의 답변 문장을 작성해야 합니다. '답변 내용이 입력되지 않아 다듬기 어렵습니다', '작성해 주시면 피드백 드리겠습니다', '내용이 부족합니다' 같은 안내 문구나 거절 문구는 이 필드에 절대 쓰지 마세요 - 그런 문구를 쓰는 것 자체가 지시 위반입니다. 학생 답변에 실제 내용이 있으면 그 내용을 살려서 다듬고, 학생 답변이 비어있거나 '없음/모르겠어요' 같이 의미 없는 내용이면, 질문 주제에 맞는 일반적이고 그럴듯한 모범 예시 답안을 대신 새로 작성하세요 (이 경우에도 완성된 문장으로, 절대 빈 값이나 안내 문구가 아니어야 합니다). 질문에 글자수 제한(예: '500자 이내')이 명시되어 있다면 그 범위 안에서 작성하세요."
+  "rewritten": "이 필드에는 반드시 완성된 하나의 답변 문장을 작성해야 합니다. '답변 내용이 입력되지 않아 다듬기 어렵습니다', '작성해 주시면 피드백 드리겠습니다', '내용이 부족합니다' 같은 안내 문구나 거절 문구는 이 필드에 절대 쓰지 마세요 - 그런 문구를 쓰는 것 자체가 지시 위반입니다. 학생 답변에 실제 내용이 있으면 그 내용을 살려서 다듬고, 학생 답변이 비어있거나 '없음/모르겠어요' 같이 의미 없는 내용이면, 질문 주제에 맞는 일반적이고 그럴듯한 모범 예시 답안을 대신 새로 작성하세요 (이 경우에도 완성된 문장으로, 절대 빈 값이나 안내 문구가 아니어야 합니다). 질문에 글자수 제한(예: '500자 이내')이 명시되어 있다면 그 범위 안에서 작성하세요.",
+  "interviewer_inference": "이 답변으로 면접관이 추론할 평소 모습·성향 한 문장",
+  "follow_up": {"reason": "이유형 꼬리질문", "alternative": "대안형 꼬리질문", "quantify": "수치형 꼬리질문"}
 }
 따뜻하지만 명확한 코치 톤으로 작성하세요. 지나친 칭찬이나 지나친 지적 없이 균형 있게 평가하세요.`;
 
@@ -650,12 +700,21 @@ const DEFAULT_PRESETS = [
 
 절대 규칙 (모든 필드 공통): 학생 답변이 비어있거나, 매우 짧거나, "없음"/"모르겠어요" 같이 의미 없는 내용이더라도 good, improve, sample_direction, rewritten 네 필드 모두 반드시 실질적인 내용으로 채우세요. "답변 내용이 입력되지 않아 다듬기 어렵습니다", "작성해 주시면 피드백 드리겠습니다", "내용이 부족합니다" 같은 안내/거절 문구는 네 필드 어디에도 절대 쓰지 마세요. 이런 경우 good에는 "이 질문에 대해 아직 구체적인 답변을 준비하지 않으신 것 같아요" 대신 "질문 의도를 이해하고 답변을 시작하신 점은 좋습니다" 같이 실제 코칭 관점의 문장을 쓰고, improve에는 무엇을 채워야 하는지 구체적으로 안내하고, sample_direction과 rewritten에는 질문 주제에 맞는 일반적인 모범 답안을 새로 작성해서 채우세요.
 
+[면접관 시점 적용 — 반드시 반영] MOA FORMULA의 핵심 전제: "면접관은 지원자의 '지금 이 순간'을 보는 것이 아니라, 답변을 통해 '평소의 모습'을 역추적하고, 그것으로 '입사 후 행동'을 예측한다." 이 답변 하나로 면접관이 "이 지원자는 평소 이런 태도로 살아왔겠구나"라고 추론할 만한 내용을 interviewer_inference 필드에 한 문장으로 짚어주세요.
+
+[예상 꼬리질문 3종 세트] 면접관은 답변 하나가 끝나면 거의 항상 아래 3가지 유형 중에서 꼬리질문을 던집니다. 이 답변을 보고 실제로 나올 법한 꼬리질문을 유형별로 하나씩 만들어 follow_up 필드에 채우세요.
+- reason (이유형): "왜 그 선택을 했어요?" 계열
+- alternative (대안형): "다른 대안은 없었나요?" 계열
+- quantify (수치형): "숫자로 말하면요?" 계열
+
 반드시 아래 형식의 JSON으로만 응답하세요. 다른 텍스트, 마크다운 코드블록 없이 순수 JSON만 반환합니다.
 {
   "good": "잘한 점 1~2가지, 구체적으로 (2문장 이내)",
   "improve": "개선하면 좋을 점 1~2가지, 구체적으로 (2문장 이내)",
   "sample_direction": "모범답안의 방향성 - 어떤 구조/내용으로 말하면 더 좋을지 (2~3문장)",
-  "rewritten": "이 필드에는 반드시 완성된 하나의 답변 문장을 작성해야 합니다. '답변 내용이 입력되지 않아 다듬기 어렵습니다', '작성해 주시면 피드백 드리겠습니다', '내용이 부족합니다' 같은 안내 문구나 거절 문구는 이 필드에 절대 쓰지 마세요 - 그런 문구를 쓰는 것 자체가 지시 위반입니다. 학생 답변에 실제 내용이 있으면 그 내용을 살려서 다듬고, 학생 답변이 비어있거나 '없음/모르겠어요' 같이 의미 없는 내용이면, 질문 주제에 맞는 일반적이고 그럴듯한 모범 예시 답안을 대신 새로 작성하세요 (이 경우에도 완성된 문장으로, 절대 빈 값이나 안내 문구가 아니어야 합니다). 질문에 글자수 제한(예: '500자 이내')이 명시되어 있다면 그 범위 안에서 작성하세요."
+  "rewritten": "이 필드에는 반드시 완성된 하나의 답변 문장을 작성해야 합니다. '답변 내용이 입력되지 않아 다듬기 어렵습니다', '작성해 주시면 피드백 드리겠습니다', '내용이 부족합니다' 같은 안내 문구나 거절 문구는 이 필드에 절대 쓰지 마세요 - 그런 문구를 쓰는 것 자체가 지시 위반입니다. 학생 답변에 실제 내용이 있으면 그 내용을 살려서 다듬고, 학생 답변이 비어있거나 '없음/모르겠어요' 같이 의미 없는 내용이면, 질문 주제에 맞는 일반적이고 그럴듯한 모범 예시 답안을 대신 새로 작성하세요 (이 경우에도 완성된 문장으로, 절대 빈 값이나 안내 문구가 아니어야 합니다). 질문에 글자수 제한(예: '500자 이내')이 명시되어 있다면 그 범위 안에서 작성하세요.",
+  "interviewer_inference": "이 답변으로 면접관이 추론할 평소 모습·성향 한 문장",
+  "follow_up": {"reason": "이유형 꼬리질문", "alternative": "대안형 꼬리질문", "quantify": "수치형 꼬리질문"}
 }
 따뜻하지만 명확한 코치 톤으로 작성하세요. 지나친 칭찬이나 지나친 지적 없이 균형 있게 평가하세요.`
   },
@@ -679,12 +738,21 @@ const DEFAULT_PRESETS = [
 
 절대 규칙 (모든 필드 공통): 학생 답변이 비어있거나, 매우 짧거나, "없음"/"모르겠어요" 같이 의미 없는 내용이더라도 good, improve, sample_direction, rewritten 네 필드 모두 반드시 실질적인 내용으로 채우세요. "답변 내용이 입력되지 않아 다듬기 어렵습니다", "작성해 주시면 피드백 드리겠습니다", "내용이 부족합니다" 같은 안내/거절 문구는 네 필드 어디에도 절대 쓰지 마세요. 이런 경우 good에는 "이 질문에 대해 아직 구체적인 답변을 준비하지 않으신 것 같아요" 대신 "질문 의도를 이해하고 답변을 시작하신 점은 좋습니다" 같이 실제 코칭 관점의 문장을 쓰고, improve에는 무엇을 채워야 하는지 구체적으로 안내하고, sample_direction과 rewritten에는 질문 주제에 맞는 일반적인 모범 답안을 새로 작성해서 채우세요.
 
+[면접관 시점 적용 — 반드시 반영] MOA FORMULA의 핵심 전제: "면접관은 지원자의 '지금 이 순간'을 보는 것이 아니라, 답변을 통해 '평소의 모습'을 역추적하고, 그것으로 '입사 후 행동'을 예측한다." 이 답변 하나로 면접관이 "이 지원자는 평소 이런 태도로 살아왔겠구나"라고 추론할 만한 내용을 interviewer_inference 필드에 한 문장으로 짚어주세요.
+
+[예상 꼬리질문 3종 세트] 면접관은 답변 하나가 끝나면 거의 항상 아래 3가지 유형 중에서 꼬리질문을 던집니다. 이 답변을 보고 실제로 나올 법한 꼬리질문을 유형별로 하나씩 만들어 follow_up 필드에 채우세요.
+- reason (이유형): "왜 그 선택을 했어요?" 계열
+- alternative (대안형): "다른 대안은 없었나요?" 계열
+- quantify (수치형): "숫자로 말하면요?" 계열
+
 반드시 아래 형식의 JSON으로만 응답하세요. 다른 텍스트, 마크다운 코드블록 없이 순수 JSON만 반환합니다.
 {
   "good": "잘한 점 1~2가지, 구체적으로 (2문장 이내)",
   "improve": "개선하면 좋을 점 1~2가지, 구체적으로 (2문장 이내)",
   "sample_direction": "모범답안의 방향성 - 어떤 구조/내용으로 말하면 더 좋을지 (2~3문장)",
-  "rewritten": "이 필드에는 반드시 완성된 하나의 답변 문장을 작성해야 합니다. '답변 내용이 입력되지 않아 다듬기 어렵습니다', '작성해 주시면 피드백 드리겠습니다', '내용이 부족합니다' 같은 안내 문구나 거절 문구는 이 필드에 절대 쓰지 마세요 - 그런 문구를 쓰는 것 자체가 지시 위반입니다. 학생 답변에 실제 내용이 있으면 그 내용을 살려서 다듬고, 학생 답변이 비어있거나 '없음/모르겠어요' 같이 의미 없는 내용이면, 질문 주제에 맞는 일반적이고 그럴듯한 모범 예시 답안을 대신 새로 작성하세요 (이 경우에도 완성된 문장으로, 절대 빈 값이나 안내 문구가 아니어야 합니다). 질문에 글자수 제한(예: '500자 이내')이 명시되어 있다면 그 범위 안에서 작성하세요."
+  "rewritten": "이 필드에는 반드시 완성된 하나의 답변 문장을 작성해야 합니다. '답변 내용이 입력되지 않아 다듬기 어렵습니다', '작성해 주시면 피드백 드리겠습니다', '내용이 부족합니다' 같은 안내 문구나 거절 문구는 이 필드에 절대 쓰지 마세요 - 그런 문구를 쓰는 것 자체가 지시 위반입니다. 학생 답변에 실제 내용이 있으면 그 내용을 살려서 다듬고, 학생 답변이 비어있거나 '없음/모르겠어요' 같이 의미 없는 내용이면, 질문 주제에 맞는 일반적이고 그럴듯한 모범 예시 답안을 대신 새로 작성하세요 (이 경우에도 완성된 문장으로, 절대 빈 값이나 안내 문구가 아니어야 합니다). 질문에 글자수 제한(예: '500자 이내')이 명시되어 있다면 그 범위 안에서 작성하세요.",
+  "interviewer_inference": "이 답변으로 면접관이 추론할 평소 모습·성향 한 문장",
+  "follow_up": {"reason": "이유형 꼬리질문", "alternative": "대안형 꼬리질문", "quantify": "수치형 꼬리질문"}
 }
 따뜻하지만 명확한 코치 톤으로 작성하세요. 지나친 칭찬이나 지나친 지적 없이 균형 있게 평가하세요.`
   }
@@ -757,7 +825,7 @@ const saveStatus = document.getElementById('save-status');
 
 async function loadConfig(){
   try{
-    const response = await fetch('/api/config');
+    const response = await fetch(apiUrl('/api/config'));
     const data = await response.json();
     const parsed = data && data.config;
     if(parsed){
@@ -773,7 +841,7 @@ async function loadConfig(){
 
 async function saveConfig(){
   try{
-    const response = await fetch('/api/config', {
+    const response = await fetch(apiUrl('/api/config'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ categories: CATEGORIES, systemPrompt: SYSTEM_PROMPT, presets: PRESETS, reviewMode: REVIEW_MODE })
@@ -902,6 +970,18 @@ function addFeedbackBubble(fb){
   const rewrittenBlock = fb.rewritten
     ? `<div class="f-title">✏️ 다듬은 완성 문장</div><div style="margin-bottom:10px;">${escapeHtml(fb.rewritten)}</div>`
     : '';
+  const inferenceBlock = fb.interviewer_inference
+    ? `<div class="f-title">🎯 면접관 시점 — 평소 모습 추론</div><div style="margin-bottom:10px;">${escapeHtml(fb.interviewer_inference)}</div>`
+    : '';
+  const fu = fb.follow_up || {};
+  const followUpBlock = (fu.reason || fu.alternative || fu.quantify)
+    ? `<div class="f-title">❓ 예상 꼬리질문</div>
+       <div style="margin-bottom:10px;">
+         ${fu.reason ? `<div>· (이유형) ${escapeHtml(fu.reason)}</div>` : ''}
+         ${fu.alternative ? `<div>· (대안형) ${escapeHtml(fu.alternative)}</div>` : ''}
+         ${fu.quantify ? `<div>· (수치형) ${escapeHtml(fu.quantify)}</div>` : ''}
+       </div>`
+    : '';
   b.innerHTML = `
     <div class="f-title">👍 좋았던 점</div>
     <div style="margin-bottom:10px;">${escapeHtml(fb.good)}</div>
@@ -910,6 +990,8 @@ function addFeedbackBubble(fb){
     <div class="f-title">💡 모범답안 방향</div>
     <div style="margin-bottom:10px;">${escapeHtml(fb.sample_direction)}</div>
     ${rewrittenBlock}
+    ${inferenceBlock}
+    ${followUpBlock}
   `;
   chatBody.appendChild(b);
   chatBody.scrollTop = chatBody.scrollHeight;
@@ -1019,7 +1101,7 @@ backBtn.onclick = () => {
 /* ---- QR code (student access) ---- */
 function renderStudentQRCode(){
   if(!qrCodeCanvas) return;
-  const studentUrl = location.origin + location.pathname;
+  const studentUrl = location.origin + location.pathname + '?t=' + encodeURIComponent(TEACHER_ID);
   qrUrlText.textContent = studentUrl;
   qrCodeCanvas.innerHTML = '';
   try{
@@ -1140,7 +1222,7 @@ viewSubmissionsBtn.onclick = async () => {
 async function renderAdminList(){
   adminListBody.innerHTML = '<p style="color:var(--muted);font-size:13px;">불러오는 중...</p>';
   try{
-    const response = await fetch('/api/results?list=1');
+    const response = await fetch(apiUrl('/api/results?list=1'));
     const data = await response.json();
     const items = data.items || [];
     if(items.length === 0){
@@ -1163,7 +1245,7 @@ async function renderAdminList(){
           <button class="copy-btn2">링크 복사</button>
         </div>
       `;
-      const link = location.origin + location.pathname + '#result=' + item.id;
+      const link = location.origin + location.pathname + '?t=' + encodeURIComponent(TEACHER_ID) + '#result=' + item.id;
       div.querySelector('.view-btn').onclick = () => window.open(link, '_blank');
       div.querySelector('.copy-btn2').onclick = (e) => {
         navigator.clipboard.writeText(link).then(() => {
@@ -1197,7 +1279,7 @@ viewReviewQueueBtn.onclick = async () => {
 async function renderReviewList(){
   reviewListBody.innerHTML = '<p style="color:var(--muted);font-size:13px;">불러오는 중...</p>';
   try{
-    const response = await fetch('/api/reviews?list=1');
+    const response = await fetch(apiUrl('/api/reviews?list=1'));
     const data = await response.json();
     const items = data.items || [];
     if(items.length === 0){
@@ -1240,7 +1322,7 @@ async function openReviewDetail(id){
   reviewDetailBody.innerHTML = '<p style="color:var(--muted);font-size:13px;">불러오는 중...</p>';
 
   try{
-    const response = await fetch('/api/reviews?id=' + encodeURIComponent(id));
+    const response = await fetch(apiUrl('/api/reviews?id=' + encodeURIComponent(id)));
     const data = await response.json();
     if(!response.ok || !data.record){
       reviewDetailBody.innerHTML = '<p style="color:var(--muted);font-size:13px;">항목을 찾을 수 없어요.</p>';
@@ -1263,6 +1345,14 @@ async function openReviewDetail(id){
         <textarea data-item-idx="${i}" data-field="sample_direction" rows="2">${escapeHtml(item.feedback.sample_direction || '')}</textarea>
         <label>✏️ 다듬은 완성 문장</label>
         <textarea data-item-idx="${i}" data-field="rewritten" rows="2">${escapeHtml(item.feedback.rewritten || '')}</textarea>
+        <label>🎯 면접관 시점 — 평소 모습 추론</label>
+        <textarea data-item-idx="${i}" data-field="interviewer_inference" rows="2">${escapeHtml(item.feedback.interviewer_inference || '')}</textarea>
+        <label>❓ 예상 꼬리질문 · 이유형</label>
+        <textarea data-item-idx="${i}" data-field="follow_up.reason" rows="1">${escapeHtml((item.feedback.follow_up || {}).reason || '')}</textarea>
+        <label>❓ 예상 꼬리질문 · 대안형</label>
+        <textarea data-item-idx="${i}" data-field="follow_up.alternative" rows="1">${escapeHtml((item.feedback.follow_up || {}).alternative || '')}</textarea>
+        <label>❓ 예상 꼬리질문 · 수치형</label>
+        <textarea data-item-idx="${i}" data-field="follow_up.quantify" rows="1">${escapeHtml((item.feedback.follow_up || {}).quantify || '')}</textarea>
       `;
       reviewDetailBody.appendChild(block);
     });
@@ -1284,7 +1374,13 @@ reviewApproveBtn.onclick = async () => {
   textareas.forEach(ta => {
     const idx = parseInt(ta.getAttribute('data-item-idx'), 10);
     const field = ta.getAttribute('data-field');
-    currentReviewRecord.items[idx].feedback[field] = ta.value;
+    if(field.includes('.')){
+      const [parent, child] = field.split('.');
+      if(!currentReviewRecord.items[idx].feedback[parent]) currentReviewRecord.items[idx].feedback[parent] = {};
+      currentReviewRecord.items[idx].feedback[parent][child] = ta.value;
+    } else {
+      currentReviewRecord.items[idx].feedback[field] = ta.value;
+    }
   });
 
   reviewApproveBtn.disabled = true;
@@ -1297,7 +1393,7 @@ reviewApproveBtn.onclick = async () => {
       items: currentReviewRecord.items,
       createdAt: new Date().toISOString()
     };
-    const response = await fetch('/api/results', {
+    const response = await fetch(apiUrl('/api/results'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(finalRecord)
@@ -1305,9 +1401,9 @@ reviewApproveBtn.onclick = async () => {
     const data = await response.json();
     if(data.error) throw new Error(data.error);
 
-    await fetch('/api/reviews?id=' + encodeURIComponent(currentReviewId), { method: 'DELETE' });
+    await fetch(apiUrl('/api/reviews?id=' + encodeURIComponent(currentReviewId)), { method: 'DELETE' });
 
-    const link = location.origin + location.pathname + '#result=' + data.id;
+    const link = location.origin + location.pathname + '?t=' + encodeURIComponent(TEACHER_ID) + '#result=' + data.id;
     linkOutput.value = link;
     linkModal.style.display = 'flex';
 
@@ -1373,7 +1469,7 @@ makeLinkBtn.onclick = async () => {
 
   try{
     if(REVIEW_MODE){
-      const response = await fetch('/api/reviews', {
+      const response = await fetch(apiUrl('/api/reviews'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(record)
@@ -1382,14 +1478,14 @@ makeLinkBtn.onclick = async () => {
       if(data.error) throw new Error(data.error);
       alert('제출 완료! 강사님이 확인한 후 결과 링크를 보내드릴 거예요.');
     } else {
-      const response = await fetch('/api/results', {
+      const response = await fetch(apiUrl('/api/results'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(record)
       });
       const data = await response.json();
       if(data.error) throw new Error(data.error);
-      const link = location.origin + location.pathname + '#result=' + data.id;
+      const link = location.origin + location.pathname + '?t=' + encodeURIComponent(TEACHER_ID) + '#result=' + data.id;
       linkOutput.value = link;
       linkModal.style.display = 'flex';
     }
@@ -1425,7 +1521,7 @@ async function renderResultView(id){
   screenResult.style.display = 'flex';
 
   try{
-    const response = await fetch('/api/results?id=' + encodeURIComponent(id));
+    const response = await fetch(apiUrl('/api/results?id=' + encodeURIComponent(id)));
     const data = await response.json();
     if(!response.ok || !data.record){
       resultItems.innerHTML = '<p style="color:var(--muted);font-size:13px;">결과를 찾을 수 없어요. 링크를 다시 확인해주세요.</p>';
@@ -1443,6 +1539,18 @@ async function renderResultView(id){
       const rewrittenBlock = item.feedback.rewritten
         ? `<div class="r-compare-label">✏️ 다듬은 완성 문장 (비교해보세요)</div><div class="r-a r-a-rewritten">${escapeHtml(item.feedback.rewritten)}</div>`
         : '';
+      const fu = item.feedback.follow_up || {};
+      const followUpBlock = (fu.reason || fu.alternative || fu.quantify)
+        ? `<div class="r-f-title">❓ 예상 꼬리질문</div>
+           <div class="r-f-body">
+             ${fu.reason ? `<div>· (이유형) ${escapeHtml(fu.reason)}</div>` : ''}
+             ${fu.alternative ? `<div>· (대안형) ${escapeHtml(fu.alternative)}</div>` : ''}
+             ${fu.quantify ? `<div>· (수치형) ${escapeHtml(fu.quantify)}</div>` : ''}
+           </div>`
+        : '';
+      const inferenceBlock = item.feedback.interviewer_inference
+        ? `<div class="r-f-title">🎯 면접관 시점 — 평소 모습 추론</div><div class="r-f-body">${escapeHtml(item.feedback.interviewer_inference)}</div>`
+        : '';
       div.innerHTML = `
         <div class="r-q">Q${i+1}. ${escapeHtml(item.question)}</div>
         <div class="r-compare-label">내가 쓴 답변</div>
@@ -1454,6 +1562,8 @@ async function renderResultView(id){
         <div class="r-f-body">${escapeHtml(item.feedback.improve)}</div>
         <div class="r-f-title">💡 모범답안 방향</div>
         <div class="r-f-body">${escapeHtml(item.feedback.sample_direction)}</div>
+        ${inferenceBlock}
+        ${followUpBlock}
       `;
       resultItems.appendChild(div);
     });
@@ -1481,18 +1591,52 @@ window.addEventListener('popstate', (e) => {
   }
 });
 
+/* ---- 여러 강사 분리: 강사 코드 설정 / 안내 화면 ---- */
+function renderTeacherSetupScreen(){
+  screenSelect.innerHTML = `
+    <div class="cat-card" style="cursor:default">
+      <h3>강사 코드 설정</h3>
+      <p class="cat-desc" style="margin-bottom:14px">여러 강사님이 같은 앱을 함께 쓰기 때문에, 자료가 서로 섞이지 않도록 <b>본인만의 고유 코드</b>가 필요합니다. 영문·숫자로 짧게 만들어 주세요 (예: kimteacher, park01). 한 번 정하시면 계속 같은 코드로 접속하시면 됩니다.</p>
+      <input type="text" id="teacher-code-input" placeholder="예: kimteacher" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:14px;margin-bottom:10px;box-sizing:border-box;">
+      <button class="btn btn-primary" id="teacher-code-submit" style="width:100%">시작하기</button>
+    </div>
+  `;
+  document.getElementById('teacher-code-submit').addEventListener('click', () => {
+    const code = document.getElementById('teacher-code-input').value.trim().toLowerCase().replace(/[^a-z0-9가-힣_-]/g, '');
+    if(!code){ alert('코드를 입력해 주세요.'); return; }
+    const p = new URLSearchParams(location.search);
+    p.set('admin', '1');
+    p.set('t', code);
+    location.href = location.pathname + '?' + p.toString();
+  });
+}
+function renderMissingTeacherScreen(){
+  screenSelect.innerHTML = `
+    <p class="lead">이 링크에는 담당 강사 정보가 없어요. 강사님이 안내한 QR코드나 링크로 다시 접속해 주세요.</p>
+  `;
+}
+
 /* ---- Init ---- */
 (async function init(){
+  const params = new URLSearchParams(location.search);
+  const isAdmin = params.get('admin') === '1';
+  gearBtn.style.display = isAdmin ? 'inline-block' : 'none';
+  document.body.classList.add(isAdmin ? 'role-teacher' : 'role-student');
+  document.getElementById('role-badge').textContent = (isAdmin ? '강사용' : '학생용') + (TEACHER_ID ? ' · ' + TEACHER_ID : '');
+
   const hash = location.hash;
   if(hash && hash.indexOf('#result=') === 0){
+    if(!TEACHER_ID){ renderMissingTeacherScreen(); return; }
     const id = hash.replace('#result=', '');
     await renderResultView(id);
     return;
   }
 
-  const params = new URLSearchParams(location.search);
-  const isAdmin = params.get('admin') === '1';
-  gearBtn.style.display = isAdmin ? 'inline-block' : 'none';
+  if(!TEACHER_ID){
+    if(isAdmin){ renderTeacherSetupScreen(); return; }
+    renderMissingTeacherScreen();
+    return;
+  }
 
   history.replaceState({ screen: 'select' }, '');
   await loadConfig();
