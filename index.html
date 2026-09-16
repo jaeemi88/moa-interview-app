@@ -327,6 +327,8 @@
   }
   .result-item .r-q{font-weight:700;font-size:13px;color:var(--navy);margin-bottom:8px;}
   .result-item .r-a{font-size:13px;background:var(--paper);border-radius:6px;padding:8px 10px;margin-bottom:10px;white-space:pre-wrap;}
+  .result-item .r-a-rewritten{background:#EEF3EE;border:1px solid #D6E3D9;border-left:3px solid var(--deep-green);}
+  .result-item .r-compare-label{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;}
   .result-item .r-f-title{font-size:12px;font-weight:700;color:var(--deep-green);margin-top:8px;}
   .result-item .r-f-body{font-size:13px;margin:4px 0 8px;line-height:1.6;}
 </style>
@@ -478,7 +480,8 @@ const DEFAULT_SYSTEM_PROMPT = `당신은 15년 경력의 취업면접 코치입�
 {
   "good": "잘한 점 1~2가지, 구체적으로 (2문장 이내)",
   "improve": "개선하면 좋을 점 1~2가지, 구체적으로 (2문장 이내)",
-  "sample_direction": "모범답안의 방향성 - 어떤 구조/내용으로 말하면 더 좋을지 (2~3문장)"
+  "sample_direction": "모범답안의 방향성 - 어떤 구조/내용으로 말하면 더 좋을지 (2~3문장)",
+  "rewritten": "학생이 실제로 한 답변의 내용과 경험은 그대로 살리되, 표현과 구조만 다듬어 자연스럽게 말할 수 있는 완성된 문장으로 다시 써주세요. 완전히 새로운 내용을 지어내지 말고, 학생이 말한 사실에 기반해서 다듬으세요."
 }
 따뜻하지만 명확한 코치 톤으로 작성하세요. 지나친 칭찬이나 지나친 지적 없이 균형 있게 평가하세요.`;
 
@@ -505,7 +508,8 @@ const DEFAULT_PRESETS = [
 {
   "good": "잘한 점 1~2가지, 구체적으로 (2문장 이내)",
   "improve": "개선하면 좋을 점 1~2가지, 구체적으로 (2문장 이내)",
-  "sample_direction": "모범답안의 방향성 - 어떤 구조/내용으로 말하면 더 좋을지 (2~3문장)"
+  "sample_direction": "모범답안의 방향성 - 어떤 구조/내용으로 말하면 더 좋을지 (2~3문장)",
+  "rewritten": "학생이 실제로 한 답변의 내용과 경험은 그대로 살리되, 표현과 구조만 다듬어 자연스럽게 말할 수 있는 완성된 문장으로 다시 써주세요. 완전히 새로운 내용을 지어내지 말고, 학생이 말한 사실에 기반해서 다듬으세요."
 }
 따뜻하지만 명확한 코치 톤으로 작성하세요. 지나친 칭찬이나 지나친 지적 없이 균형 있게 평가하세요.`
   },
@@ -527,7 +531,8 @@ const DEFAULT_PRESETS = [
 {
   "good": "잘한 점 1~2가지, 구체적으로 (2문장 이내)",
   "improve": "개선하면 좋을 점 1~2가지, 구체적으로 (2문장 이내)",
-  "sample_direction": "모범답안의 방향성 - 어떤 구조/내용으로 말하면 더 좋을지 (2~3문장)"
+  "sample_direction": "모범답안의 방향성 - 어떤 구조/내용으로 말하면 더 좋을지 (2~3문장)",
+  "rewritten": "학생이 실제로 한 답변의 내용과 경험은 그대로 살리되, 표현과 구조만 다듬어 자연스럽게 말할 수 있는 완성된 문장으로 다시 써주세요. 완전히 새로운 내용을 지어내지 말고, 학생이 말한 사실에 기반해서 다듬으세요."
 }
 따뜻하지만 명확한 코치 톤으로 작성하세요. 지나친 칭찬이나 지나친 지적 없이 균형 있게 평가하세요.`
   }
@@ -634,7 +639,7 @@ function renderProgress(){
   });
 }
 
-function startCategory(cat){
+function startCategory(cat, skipHistory){
   currentCategory = cat;
   currentQuestionIdx = 0;
   screenSelect.style.display = 'none';
@@ -645,6 +650,9 @@ function startCategory(cat){
   sessionAnswers = [];
   makeLinkBtn.style.display = 'none';
   askCurrentQuestion();
+  if(!skipHistory){
+    history.pushState({ screen: 'chat', catId: cat.id }, '');
+  }
 }
 
 function askCurrentQuestion(){
@@ -668,13 +676,17 @@ function addBubble(type, text){
 function addFeedbackBubble(fb){
   const b = document.createElement('div');
   b.className = 'bubble f';
+  const rewrittenBlock = fb.rewritten
+    ? `<div class="f-title">✏️ 다듬은 완성 문장</div><div style="margin-bottom:10px;">${escapeHtml(fb.rewritten)}</div>`
+    : '';
   b.innerHTML = `
     <div class="f-title">👍 좋았던 점</div>
     <div style="margin-bottom:10px;">${escapeHtml(fb.good)}</div>
     <div class="f-title">🔧 이렇게 다듬어보세요</div>
     <div style="margin-bottom:10px;">${escapeHtml(fb.improve)}</div>
     <div class="f-title">💡 모범답안 방향</div>
-    <div>${escapeHtml(fb.sample_direction)}</div>
+    <div style="margin-bottom:10px;">${escapeHtml(fb.sample_direction)}</div>
+    ${rewrittenBlock}
   `;
   chatBody.appendChild(b);
   chatBody.scrollTop = chatBody.scrollHeight;
@@ -742,17 +754,24 @@ nextBtn.onclick = () => {
   askCurrentQuestion();
 };
 
-backBtn.onclick = () => {
+function showSelectScreen(){
   screenChat.style.display = 'none';
+  screenSettings.style.display = 'none';
+  screenAdminList.style.display = 'none';
   screenSelect.style.display = 'block';
   progressTrack.style.display = 'none';
   headerTitle.textContent = '모의면접 시뮬레이터';
+}
+
+backBtn.onclick = () => {
+  history.back();
 };
 
 /* ---- Settings screen ---- */
-function openSettings(){
+function openSettings(skipHistory){
   screenSelect.style.display = 'none';
   screenChat.style.display = 'none';
+  screenAdminList.style.display = 'none';
   screenSettings.style.display = 'flex';
   progressTrack.style.display = 'none';
   headerTitle.textContent = '설정';
@@ -771,6 +790,9 @@ function openSettings(){
   });
   settingsPrompt.value = SYSTEM_PROMPT;
   renderPresetRow();
+  if(!skipHistory){
+    history.pushState({ screen: 'settings' }, '');
+  }
 }
 
 function renderPresetRow(){
@@ -810,21 +832,25 @@ function closeSettings(){
 
 gearBtn.onclick = () => {
   if(screenSettings.style.display === 'flex'){
-    closeSettings();
+    history.back();
   } else {
     openSettings();
   }
 };
 
-settingsCancel.onclick = closeSettings;
+settingsCancel.onclick = () => { history.back(); };
 
 /* ---- Admin submission list ---- */
 viewSubmissionsBtn.onclick = async () => {
   screenSettings.style.display = 'none';
   screenAdminList.style.display = 'flex';
   headerTitle.textContent = '제출 현황';
-  adminListBody.innerHTML = '<p style="color:var(--muted);font-size:13px;">불러오는 중...</p>';
+  history.pushState({ screen: 'adminList' }, '');
+  await renderAdminList();
+};
 
+async function renderAdminList(){
+  adminListBody.innerHTML = '<p style="color:var(--muted);font-size:13px;">불러오는 중...</p>';
   try{
     const response = await fetch('/api/results?list=1');
     const data = await response.json();
@@ -863,12 +889,10 @@ viewSubmissionsBtn.onclick = async () => {
     adminListBody.innerHTML = '<p style="color:var(--muted);font-size:13px;">목록을 불러오는 중 문제가 발생했어요.</p>';
     console.error(err);
   }
-};
+}
 
 adminListBack.onclick = () => {
-  screenAdminList.style.display = 'none';
-  screenSettings.style.display = 'flex';
-  headerTitle.textContent = '설정';
+  history.back();
 };
 
 settingsSave.onclick = async () => {
@@ -888,7 +912,7 @@ settingsSave.onclick = async () => {
   saveStatus.textContent = ok ? '저장됨 ✓' : '저장 실패, 다시 시도해주세요';
   if(ok){
     renderCategories();
-    setTimeout(closeSettings, 500);
+    setTimeout(() => { history.back(); }, 500);
   }
 };
 
@@ -969,9 +993,14 @@ async function renderResultView(id){
     record.items.forEach((item, i) => {
       const div = document.createElement('div');
       div.className = 'result-item';
+      const rewrittenBlock = item.feedback.rewritten
+        ? `<div class="r-compare-label">✏️ 다듬은 완성 문장 (비교해보세요)</div><div class="r-a r-a-rewritten">${escapeHtml(item.feedback.rewritten)}</div>`
+        : '';
       div.innerHTML = `
         <div class="r-q">Q${i+1}. ${escapeHtml(item.question)}</div>
+        <div class="r-compare-label">내가 쓴 답변</div>
         <div class="r-a">${escapeHtml(item.answer)}</div>
+        ${rewrittenBlock}
         <div class="r-f-title">👍 좋았던 점</div>
         <div class="r-f-body">${escapeHtml(item.feedback.good)}</div>
         <div class="r-f-title">🔧 이렇게 다듬어보세요</div>
@@ -987,6 +1016,24 @@ async function renderResultView(id){
   }
 }
 
+/* ---- Browser back/forward navigation ---- */
+window.addEventListener('popstate', (e) => {
+  const state = e.state || { screen: 'select' };
+  if(state.screen === 'chat' && state.catId){
+    const cat = CATEGORIES.find(c => c.id === state.catId) || CATEGORIES[0];
+    if(cat) startCategory(cat, true);
+  } else if(state.screen === 'settings'){
+    openSettings(true);
+  } else if(state.screen === 'adminList'){
+    screenSettings.style.display = 'none';
+    screenAdminList.style.display = 'flex';
+    headerTitle.textContent = '제출 현황';
+    renderAdminList();
+  } else {
+    showSelectScreen();
+  }
+});
+
 /* ---- Init ---- */
 (async function init(){
   const hash = location.hash;
@@ -1000,6 +1047,7 @@ async function renderResultView(id){
   const isAdmin = params.get('admin') === '1';
   gearBtn.style.display = isAdmin ? 'inline-block' : 'none';
 
+  history.replaceState({ screen: 'select' }, '');
   await loadConfig();
   renderCategories();
 })();
