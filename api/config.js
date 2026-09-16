@@ -1,7 +1,6 @@
 // 질문 목록, 평가 기준, 프리셋, 검토 모드 여부 등 앱 설정을 저장/조회하는 함수입니다.
-// 예전에는 브라우저(localStorage)에만 저장되어 강사 기기에서 바꾼 설정이 학생 기기에는
-// 전달되지 않는 문제가 있었습니다. 이제는 서버(Redis)에 저장해서 모든 기기가 같은 설정을
-// 보게 됩니다.
+// 여러 강사가 함께 쓰므로, 강사별로 설정이 섞이지 않도록 t(강사 코드)로 키를 구분합니다.
+// (자소서 첨삭 앱과 동일한 방식)
 
 import Redis from 'ioredis';
 
@@ -13,10 +12,15 @@ function getRedis() {
   return redis;
 }
 
-const CONFIG_KEY = 'app_config';
+function safeTeacherId(raw) {
+  return String(raw || '').trim().toLowerCase().replace(/[^a-z0-9가-힣_-]/g, '').slice(0, 40);
+}
 
 export default async function handler(req, res) {
   const client = getRedis();
+  const t = safeTeacherId(req.query.t);
+  if (!t) return res.status(400).json({ error: 't(강사 코드) 파라미터가 필요합니다.' });
+  const CONFIG_KEY = `interview_app_config:${t}`;
 
   if (req.method === 'GET') {
     try {
