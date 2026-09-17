@@ -327,6 +327,15 @@
     line-height:1.6;
     resize:vertical;
   }
+  .settings-block input[type="text"]{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px 12px;
+    font-family:inherit;
+    font-size:13px;
+    box-sizing:border-box;
+  }
   .settings-actions{
     display:flex;
     gap:8px;
@@ -553,6 +562,11 @@
       <input type="checkbox" id="review-mode-toggle">
       <span>강사 검토 후 전달 (1:1 첨삭용)</span>
     </label>
+  </div>
+  <div class="settings-block">
+    <label>새 검수 요청 이메일 알림</label>
+    <div class="sub">학생이 검수를 요청할 때마다 이 주소로 알림 메일이 발송돼요. 강사용 화면에 매번 들어가서 확인하지 않아도 됩니다.</div>
+    <input type="text" id="notify-email-input" placeholder="예) teacher@example.com">
   </div>
   <div class="settings-block">
     <label>📱 학생용 QR코드</label>
@@ -795,6 +809,7 @@ let CATEGORIES = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
 let SYSTEM_PROMPT = DEFAULT_SYSTEM_PROMPT;
 let PRESETS = JSON.parse(JSON.stringify(DEFAULT_PRESETS));
 let REVIEW_MODE = false;
+let NOTIFY_EMAIL = '';
 
 let currentCategory = null;
 let currentQuestionIdx = 0;
@@ -864,6 +879,7 @@ async function loadConfig(){
       if(parsed.systemPrompt) SYSTEM_PROMPT = parsed.systemPrompt;
       if(parsed.presets && parsed.presets.length) PRESETS = parsed.presets;
       if(typeof parsed.reviewMode === 'boolean') REVIEW_MODE = parsed.reviewMode;
+      if(typeof parsed.notifyEmail === 'string') NOTIFY_EMAIL = parsed.notifyEmail;
     }
   }catch(err){
     // 저장된 설정이 아직 없거나 네트워크 오류 - 기본값 유지
@@ -875,7 +891,7 @@ async function saveConfig(){
     const response = await fetch(apiUrl('/api/config'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ categories: CATEGORIES, systemPrompt: SYSTEM_PROMPT, presets: PRESETS, reviewMode: REVIEW_MODE })
+      body: JSON.stringify({ categories: CATEGORIES, systemPrompt: SYSTEM_PROMPT, presets: PRESETS, reviewMode: REVIEW_MODE, notifyEmail: NOTIFY_EMAIL })
     });
     const data = await response.json();
     return !!(data && data.ok);
@@ -1189,6 +1205,7 @@ function openSettings(skipHistory){
   });
   settingsPrompt.value = SYSTEM_PROMPT;
   reviewModeToggle.checked = REVIEW_MODE;
+  document.getElementById('notify-email-input').value = NOTIFY_EMAIL || '';
   renderPresetRow();
   renderStudentQRCode();
   if(!skipHistory){
@@ -1464,6 +1481,7 @@ settingsSave.onclick = async () => {
   const newPrompt = settingsPrompt.value.trim();
   if(newPrompt) SYSTEM_PROMPT = newPrompt;
   REVIEW_MODE = reviewModeToggle.checked;
+  NOTIFY_EMAIL = document.getElementById('notify-email-input').value.trim();
 
   saveStatus.textContent = '저장 중...';
   const ok = await saveConfig();
