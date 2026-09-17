@@ -1,4 +1,4 @@
-[README.md](https://github.com/user-attachments/files/32311647/README.md)
+[README.md](https://github.com/user-attachments/files/32315998/README.md)
 # MOA FORMULA 모의면접 시뮬레이터 — 배포 안내
 
 ## 폴더 구성
