@@ -569,6 +569,12 @@
     <input type="text" id="notify-email-input" placeholder="예) teacher@example.com">
   </div>
   <div class="settings-block">
+    <label>수강생 사후관리 트래커 연동</label>
+    <div class="sub">기관명을 입력해두면, 결과가 만들어질 때마다 아래 전공(대상)과 함께 "수강생 사후관리 트래커"의 진로모아관리 통계에 인원수가 자동으로 누적돼요. 답변 내용은 저장되지 않고 기관·전공·인원수만 집계됩니다. 특강이 끝나고 다른 기관으로 넘어가면 이 값을 바꿔주세요.</div>
+    <input type="text" id="institution-name-input" placeholder="예) 구미대학교 물리치료과" style="margin-bottom:8px">
+    <input type="text" id="target-field-input" placeholder="예) 물리치료과 (전공/대상, 선택)">
+  </div>
+  <div class="settings-block">
     <label>📱 학생용 QR코드</label>
     <div class="sub">화면에 띄우거나 인쇄해서 보여주면 학생들이 스캔해서 바로 접속할 수 있어요. (admin 설정 없는 순수 학생용 주소)</div>
     <div class="qr-box">
@@ -810,6 +816,8 @@ let SYSTEM_PROMPT = DEFAULT_SYSTEM_PROMPT;
 let PRESETS = JSON.parse(JSON.stringify(DEFAULT_PRESETS));
 let REVIEW_MODE = false;
 let NOTIFY_EMAIL = '';
+let INSTITUTION_NAME = '';
+let TARGET_FIELD = '';
 
 let currentCategory = null;
 let currentQuestionIdx = 0;
@@ -880,6 +888,8 @@ async function loadConfig(){
       if(parsed.presets && parsed.presets.length) PRESETS = parsed.presets;
       if(typeof parsed.reviewMode === 'boolean') REVIEW_MODE = parsed.reviewMode;
       if(typeof parsed.notifyEmail === 'string') NOTIFY_EMAIL = parsed.notifyEmail;
+      if(typeof parsed.institutionName === 'string') INSTITUTION_NAME = parsed.institutionName;
+      if(typeof parsed.targetField === 'string') TARGET_FIELD = parsed.targetField;
     }
   }catch(err){
     // 저장된 설정이 아직 없거나 네트워크 오류 - 기본값 유지
@@ -891,7 +901,7 @@ async function saveConfig(){
     const response = await fetch(apiUrl('/api/config'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ categories: CATEGORIES, systemPrompt: SYSTEM_PROMPT, presets: PRESETS, reviewMode: REVIEW_MODE, notifyEmail: NOTIFY_EMAIL })
+      body: JSON.stringify({ categories: CATEGORIES, systemPrompt: SYSTEM_PROMPT, presets: PRESETS, reviewMode: REVIEW_MODE, notifyEmail: NOTIFY_EMAIL, institutionName: INSTITUTION_NAME, targetField: TARGET_FIELD })
     });
     const data = await response.json();
     return !!(data && data.ok);
@@ -1206,6 +1216,8 @@ function openSettings(skipHistory){
   settingsPrompt.value = SYSTEM_PROMPT;
   reviewModeToggle.checked = REVIEW_MODE;
   document.getElementById('notify-email-input').value = NOTIFY_EMAIL || '';
+  document.getElementById('institution-name-input').value = INSTITUTION_NAME || '';
+  document.getElementById('target-field-input').value = TARGET_FIELD || '';
   renderPresetRow();
   renderStudentQRCode();
   if(!skipHistory){
@@ -1484,6 +1496,8 @@ settingsSave.onclick = async () => {
   if(newPrompt) SYSTEM_PROMPT = newPrompt;
   REVIEW_MODE = reviewModeToggle.checked;
   NOTIFY_EMAIL = document.getElementById('notify-email-input').value.trim();
+  INSTITUTION_NAME = document.getElementById('institution-name-input').value.trim();
+  TARGET_FIELD = document.getElementById('target-field-input').value.trim();
 
   saveStatus.textContent = '저장 중...';
   const ok = await saveConfig();
