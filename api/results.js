@@ -20,6 +20,34 @@ function safeTeacherId(raw) {
   return String(raw || '').trim().toLowerCase().replace(/[^a-z0-9가-힣_-]/g, '').slice(0, 40);
 }
 
+// 강사 검토 승인이 끝났을 때만(record.notify === true) 학생에게 결과 링크를 이메일로 보냄.
+// 즉시모드(학생이 직접 링크를 만드는 경우)는 화면에 바로 링크가 뜨므로 중복 발송하지 않음.
+// RESEND_API_KEY가 없거나 이메일을 안 남겼으면 조용히 건너뜀 (알림은 부가기능이라 실패해도 저장 자체는 막지 않음).
+async function notifyStudentByEmail(t, id, record, host) {
+  try {
+    if (!process.env.RESEND_API_KEY) return;
+    if (!record.notify) return;
+    const to = record.studentEmail;
+    if (!to) return;
+    const link = `https://${host}/?t=${encodeURIComponent(t)}#result=${id}`;
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'MOA FORMULA <onboarding@resend.dev>',
+        to: [to],
+        subject: `[모의면접] ${record.studentName || '학생'}님의 결과가 도착했어요`,
+        text: `${record.studentName || '학생'}님, 요청하신 모의면접 검토 결과가 준비됐어요.\n\n아래 링크에서 확인해 주세요.\n${link}`
+      })
+    });
+  } catch (err) {
+    console.error('학생 알림 메일 발송 실패:', err);
+  }
+}
+
 export default async function handler(req, res) {
   const client = getRedis();
   const t = safeTeacherId(req.query.t);
@@ -44,6 +72,7 @@ export default async function handler(req, res) {
       });
       await client.lpush(indexKey, meta);
       await client.ltrim(indexKey, 0, 499); // 최근 500건까지만 보관
+      notifyStudentByEmail(t, id, record, req.headers.host); // 응답을 기다리지 않고 백그라운드로 발송 시도
       return res.status(200).json({ id });
     } catch (err) {
       console.error(err);
