@@ -1437,6 +1437,8 @@ reviewApproveBtn.onclick = async () => {
   try{
     const finalRecord = {
       studentName: currentReviewRecord.studentName,
+      studentEmail: currentReviewRecord.studentEmail || '',
+      notify: true, // 강사 승인 시점에만 이메일 발송 (즉시모드는 화면에 바로 링크가 뜨므로 중복 발송 안 함)
       category: currentReviewRecord.category,
       items: currentReviewRecord.items,
       createdAt: new Date().toISOString()
@@ -1505,12 +1507,14 @@ makeLinkBtn.onclick = async () => {
   if(orderedItems.length === 0) return;
   const studentName = window.prompt('학생 이름을 입력해주세요 (링크 제목에 표시됩니다)', '');
   if(studentName === null) return;
+  const studentEmail = window.prompt('이메일 주소를 입력해주세요 (선택 — 강사님이 검토를 완료하면 결과 링크를 자동으로 보내드려요. 안 써도 제출됩니다)', '') || '';
   const originalLabel = makeLinkBtn.textContent;
   makeLinkBtn.disabled = true;
   makeLinkBtn.textContent = REVIEW_MODE ? '제출 중...' : '링크 만드는 중...';
 
   const record = {
     studentName: studentName.trim() || '수강생',
+    studentEmail: studentEmail.trim(),
     category: currentCategory.title,
     items: orderedItems,
     createdAt: new Date().toISOString()
