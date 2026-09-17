@@ -47,12 +47,16 @@
   }
   header .role-badge{
     font-size:12px;
-    font-weight:600;
+    font-weight:700;
     padding:4px 10px;
     border-radius:999px;
-    background:rgba(255,255,255,.16);
+    background:#2f8fd1;
     color:#fff;
     flex-shrink:0;
+  }
+  body.role-teacher header .role-badge{
+    background:#f5b34a;
+    color:#40260a;
   }
   /* 학생용: 같은 네이비 톤이지만 연하게 — 강사용: 원래의 진한 네이비 유지 */
   body.role-student header{
@@ -61,10 +65,6 @@
   }
   body.role-student header .brand{
     color:#5b6b85;
-  }
-  body.role-student header .role-badge{
-    background:rgba(30,42,74,0.1);
-    color:var(--navy);
   }
   body.role-student .gear-btn{
     background:rgba(30,42,74,0.08);
@@ -144,6 +144,37 @@
   .cat-card .cat-desc{font-size:12px;color:var(--muted);margin-top:2px;}
   .cat-card .cat-count{font-size:11px;color:var(--sage);margin-top:3px;}
   .cat-card .arrow{color:var(--muted);font-size:16px;}
+  .setup-card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-left:4px solid var(--deep-green);
+    border-radius:6px;
+    padding:20px 18px;
+    display:block;
+  }
+  .setup-card h3{
+    font-size:16px;
+    font-weight:700;
+    margin:0 0 10px;
+  }
+  .setup-card p{
+    font-size:13px;
+    color:var(--muted);
+    line-height:1.6;
+    margin:0 0 14px;
+  }
+  .setup-card input{
+    display:block;
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    font-family:inherit;
+    font-size:14px;
+    margin-bottom:10px;
+    box-sizing:border-box;
+  }
+  .setup-card button{ width:100%; }
 
   #screen-chat{display:none;flex:1;flex-direction:column;}
   .chat-body{
@@ -1594,11 +1625,11 @@ window.addEventListener('popstate', (e) => {
 /* ---- 여러 강사 분리: 강사 코드 설정 / 안내 화면 ---- */
 function renderTeacherSetupScreen(){
   screenSelect.innerHTML = `
-    <div class="cat-card" style="cursor:default">
+    <div class="setup-card">
       <h3>강사 코드 설정</h3>
-      <p class="cat-desc" style="margin-bottom:14px">여러 강사님이 같은 앱을 함께 쓰기 때문에, 자료가 서로 섞이지 않도록 <b>본인만의 고유 코드</b>가 필요합니다. 영문·숫자로 짧게 만들어 주세요 (예: kimteacher, park01). 한 번 정하시면 계속 같은 코드로 접속하시면 됩니다.</p>
-      <input type="text" id="teacher-code-input" placeholder="예: kimteacher" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:14px;margin-bottom:10px;box-sizing:border-box;">
-      <button class="btn btn-primary" id="teacher-code-submit" style="width:100%">시작하기</button>
+      <p>여러 강사님이 같은 앱을 함께 쓰기 때문에, 자료가 서로 섞이지 않도록 <b>본인만의 고유 코드</b>가 필요합니다. 영문·숫자로 짧게 만들어 주세요 (예: kimteacher, park01). 한 번 정하시면 계속 같은 코드로 접속하시면 됩니다.</p>
+      <input type="text" id="teacher-code-input" placeholder="예: kimteacher">
+      <button class="btn btn-primary" id="teacher-code-submit">시작하기</button>
     </div>
   `;
   document.getElementById('teacher-code-submit').addEventListener('click', () => {
