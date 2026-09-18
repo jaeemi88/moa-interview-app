@@ -1680,8 +1680,8 @@ function renderTeacherSetupScreen(){
       <input type="text" id="teacher-name-input" placeholder="예: 김강사" style="margin-bottom:10px">
       <label>강사 코드</label>
       <input type="text" id="teacher-code-input" placeholder="예: kimteacher" style="margin-bottom:10px">
-      <label>관리자 비밀번호 <span style="font-weight:400;color:var(--muted)">(처음 등록하는 코드일 때만 필요, 이미 등록된 코드면 비워두세요)</span></label>
-      <input type="text" id="teacher-password-input" placeholder="원장님께 받은 비밀번호" style="margin-bottom:10px">
+      <label>초대코드 <span style="font-weight:400;color:var(--muted)">(처음 등록하는 코드일 때만 필요, 이미 등록된 코드면 비워두세요)</span></label>
+      <input type="text" id="teacher-invite-input" placeholder="원장님께 받은 초대코드" style="margin-bottom:10px">
       <button class="btn btn-primary" id="teacher-code-submit">시작하기</button>
       <div id="teacher-setup-error" style="color:#b91c1c;font-size:13px;margin-top:8px;display:none"></div>
     </div>
@@ -1689,7 +1689,7 @@ function renderTeacherSetupScreen(){
   document.getElementById('teacher-code-submit').addEventListener('click', async () => {
     const code = document.getElementById('teacher-code-input').value.trim().toLowerCase().replace(/[^a-z0-9가-힣_-]/g, '');
     const name = document.getElementById('teacher-name-input').value.trim();
-    const password = document.getElementById('teacher-password-input').value;
+    const inviteCode = document.getElementById('teacher-invite-input').value.trim();
     const errEl = document.getElementById('teacher-setup-error');
     const btn = document.getElementById('teacher-code-submit');
     errEl.style.display = 'none';
@@ -1699,7 +1699,7 @@ function renderTeacherSetupScreen(){
       const res = await fetch('/api/teacher-registry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, name, password, app: '모의면접 시뮬레이터' })
+        body: JSON.stringify({ code, name, inviteCode, app: '모의면접 시뮬레이터' })
       });
       const data = await res.json();
       if(!res.ok) throw new Error(data.error || '등록에 실패했습니다.');
@@ -1723,15 +1723,49 @@ function renderMissingTeacherScreen(){
 function renderMasterTeacherList(){
   screenSelect.innerHTML = `
     <div class="setup-card">
-      <h3>승인된 강사 목록</h3>
-      <p>원장님만 보실 수 있는 화면입니다. 관리자 비밀번호를 입력하면 지금까지 등록된 모든 강사님이 나옵니다 (모의면접·자소서·트래커 세 앱 공통 목록입니다).</p>
+      <h3>새 초대코드 발급</h3>
+      <p>원장님만 보실 수 있는 화면입니다. 새 강사님 한 분당 코드를 하나씩 발급해서 전달해 주세요. 한 번 쓰면 그 코드는 다시 못 씁니다.</p>
       <label>관리자 비밀번호</label>
       <input type="text" id="master-password-input" placeholder="관리자 비밀번호" style="margin-bottom:10px">
-      <button class="btn btn-primary" id="master-list-btn">목록 보기</button>
+      <button class="btn btn-primary" id="gen-invite-btn">초대코드 발급하기</button>
+      <div id="gen-invite-error" style="color:#b91c1c;font-size:13px;margin-top:8px;display:none"></div>
+      <div id="gen-invite-result" style="margin-top:12px;font-size:15px;font-weight:700;display:none"></div>
+    </div>
+    <div class="setup-card">
+      <h3>승인된 강사 목록</h3>
+      <button class="btn btn-primary" id="master-list-btn">강사 목록 보기</button>
       <div id="master-list-error" style="color:#b91c1c;font-size:13px;margin-top:8px;display:none"></div>
       <div id="master-list-result" style="margin-top:16px"></div>
     </div>
+    <div class="setup-card">
+      <h3>발급된 초대코드 목록</h3>
+      <button class="btn btn-primary" id="invite-list-btn">초대코드 목록 보기</button>
+      <div id="invite-list-error" style="color:#b91c1c;font-size:13px;margin-top:8px;display:none"></div>
+      <div id="invite-list-result" style="margin-top:16px"></div>
+    </div>
   `;
+
+  document.getElementById('gen-invite-btn').addEventListener('click', async () => {
+    const pw = document.getElementById('master-password-input').value;
+    const errEl = document.getElementById('gen-invite-error');
+    const resultEl = document.getElementById('gen-invite-result');
+    errEl.style.display = 'none'; resultEl.style.display = 'none';
+    try{
+      const res = await fetch('/api/teacher-registry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'generateInvite', master: pw })
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || '발급에 실패했습니다.');
+      resultEl.textContent = '발급된 초대코드: ' + data.inviteCode;
+      resultEl.style.display = 'block';
+    }catch(err){
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+    }
+  });
+
   document.getElementById('master-list-btn').addEventListener('click', async () => {
     const pw = document.getElementById('master-password-input').value;
     const errEl = document.getElementById('master-list-error');
@@ -1750,6 +1784,33 @@ function renderMasterTeacherList(){
         <div style="border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:8px">
           <b>${t.name}</b> <span style="color:var(--muted);font-size:12px">(코드: ${t.code})</span><br>
           <span style="font-size:12px;color:var(--muted)">등록일: ${new Date(t.approvedAt).toLocaleDateString('ko-KR')} · 첫 등록 앱: ${t.firstApp || '-'}</span>
+        </div>
+      `).join('');
+    }catch(err){
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+      resultEl.innerHTML = '';
+    }
+  });
+
+  document.getElementById('invite-list-btn').addEventListener('click', async () => {
+    const pw = document.getElementById('master-password-input').value;
+    const errEl = document.getElementById('invite-list-error');
+    const resultEl = document.getElementById('invite-list-result');
+    errEl.style.display = 'none';
+    resultEl.innerHTML = '불러오는 중...';
+    try{
+      const res = await fetch('/api/teacher-registry?list=invites&master=' + encodeURIComponent(pw));
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || '조회에 실패했습니다.');
+      if(!data.invites.length){
+        resultEl.innerHTML = '<p class="lead">아직 발급된 초대코드가 없습니다.</p>';
+        return;
+      }
+      resultEl.innerHTML = data.invites.map(iv => `
+        <div style="border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:8px">
+          <b>${iv.code}</b> ${iv.used ? '<span style="color:#b91c1c;font-size:12px">(사용됨 · ' + (iv.usedBy || '') + ')</span>' : '<span style="color:var(--sage);font-size:12px">(미사용)</span>'}<br>
+          <span style="font-size:12px;color:var(--muted)">발급일: ${new Date(iv.createdAt).toLocaleDateString('ko-KR')}</span>
         </div>
       `).join('');
     }catch(err){
