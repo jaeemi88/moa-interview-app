@@ -1419,10 +1419,14 @@ document.getElementById('gen-job-questions-btn').onclick = async () => {
     const data = await res.json();
     if(!res.ok) throw new Error(data.error || '생성에 실패했습니다.');
     const jobCat = CATEGORIES.find(c => c.id === 'job-specific');
-    if(jobCat && Array.isArray(data.questions) && data.questions.length){
-      jobCat.questions = data.questions;
-      openSettings(true);
+    if(!jobCat){
+      throw new Error('직무 특화 질문 카테고리를 찾을 수 없습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
     }
+    if(!Array.isArray(data.questions) || data.questions.length === 0){
+      throw new Error('AI가 올바른 형식의 질문을 만들지 못했어요. 다시 시도해 주세요.');
+    }
+    jobCat.questions = data.questions;
+    openSettings(true);
     statusEl.style.display = 'block';
     statusEl.style.color = 'var(--sage)';
     statusEl.textContent = `"${field}" 기준으로 질문 6개를 새로 만들었어요. 아래 "직무 특화 질문" 항목에서 확인·수정하고 저장하세요.`;
