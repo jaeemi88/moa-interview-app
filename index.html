@@ -1831,7 +1831,12 @@ function renderMasterTeacherList(){
 /* ---- Init ---- */
 (async function init(){
   const params = new URLSearchParams(location.search);
-  if(params.get('master') === '1'){ renderMasterTeacherList(); return; }
+  if(params.get('master') === '1'){
+    document.body.classList.add('role-teacher');
+    document.getElementById('role-badge').textContent = '관리자';
+    renderMasterTeacherList();
+    return;
+  }
   const isAdmin = params.get('admin') === '1';
   gearBtn.style.display = isAdmin ? 'inline-block' : 'none';
   document.body.classList.add(isAdmin ? 'role-teacher' : 'role-student');
