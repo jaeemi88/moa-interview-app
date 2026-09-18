@@ -594,6 +594,14 @@
     <input type="text" id="target-field-input" placeholder="예) 물리치료과 (전공/대상, 선택)">
   </div>
   <div class="settings-block">
+    <label>🎯 직무 특화 질문 자동 생성</label>
+    <div class="sub">위 전공·직무를 기준으로, "직무 특화 질문" 유형의 6개 질문을 AI가 새로 만들어드려요. 만든 뒤에도 아래 질문 목록에서 자유롭게 수정할 수 있어요. 자주 쓰는 전공·직무는 세트로 저장해두면 나중에 다시 생성할 필요 없이 클릭 한 번으로 불러올 수 있어요.</div>
+    <div class="preset-row" id="job-set-row" style="margin-bottom:10px"></div>
+    <button class="btn btn-add-preset" id="save-job-set-btn" type="button" style="margin-bottom:10px">+ 지금 질문을 새 세트로 저장</button>
+    <button class="btn btn-primary" id="gen-job-questions-btn" type="button">전공·직무 입력값으로 질문 생성하기</button>
+    <div id="gen-job-questions-status" style="font-size:12px;color:var(--muted);margin-top:8px;display:none"></div>
+  </div>
+  <div class="settings-block">
     <label>📱 학생용 QR코드</label>
     <div class="sub">화면에 띄우거나 인쇄해서 보여주면 학생들이 스캔해서 바로 접속할 수 있어요. (admin 설정 없는 순수 학생용 주소)</div>
     <div class="qr-box">
@@ -716,6 +724,32 @@ const DEFAULT_CATEGORIES = [
       "이 질문에 대한 답을 미리 준비하셨나요, 아니면 지금 즉석에서 생각하시는 건가요?",
       "저희가 왜 당신을 뽑아야 하는지, 30초 안에 설득해보세요."
     ]
+  },
+  {
+    id: "aspiration",
+    title: "입사 후 포부",
+    desc: "장기적 목표·성장 계획",
+    questions: [
+      "입사 후 첫 1년 동안 이루고 싶은 목표는 무엇인가요?",
+      "이 회사에서 어떤 전문성을 쌓아가고 싶으신가요?",
+      "10년 후 본인의 커리어는 어떤 모습일 것 같나요?",
+      "회사가 어려운 상황에 처했을 때, 본인은 어떤 역할을 하고 싶으신가요?",
+      "이 회사에서 오래 근무하고 싶은 이유를 말씀해주세요.",
+      "방금 말씀하신 포부를 실제로 이루기 위해, 입사 후 구체적으로 어떤 노력을 하실 건가요? (꼬리질문)"
+    ]
+  },
+  {
+    id: "job-specific",
+    title: "직무 특화 질문",
+    desc: "전공·지원직무에 맞춘 질문",
+    questions: [
+      "본인의 전공(또는 전문 분야)에서 가장 자신 있는 역량은 무엇인가요?",
+      "이 직무를 수행하며 마주할 수 있는 어려움은 무엇이라고 생각하시나요?",
+      "관련 실습·경험 중 이 직무에 가장 도움이 될 만한 것은 무엇인가요?",
+      "이 직무에서 요구하는 자질 중 본인에게 가장 부족한 부분은 무엇이라고 생각하시나요?",
+      "동료 또는 협력 부서와의 관계에서 이 직무 특성상 중요한 점은 무엇인가요?",
+      "이 직무를 5년 이상 지속하기 위해 본인에게 필요한 것은 무엇이라고 생각하시나요?"
+    ]
   }
 ];
 
@@ -837,6 +871,7 @@ let REVIEW_MODE = false;
 let NOTIFY_EMAIL = '';
 let INSTITUTION_NAME = '';
 let TARGET_FIELD = '';
+let JOB_QUESTION_SETS = [];
 
 let currentCategory = null;
 let currentQuestionIdx = 0;
@@ -909,6 +944,7 @@ async function loadConfig(){
       if(typeof parsed.notifyEmail === 'string') NOTIFY_EMAIL = parsed.notifyEmail;
       if(typeof parsed.institutionName === 'string') INSTITUTION_NAME = parsed.institutionName;
       if(typeof parsed.targetField === 'string') TARGET_FIELD = parsed.targetField;
+      if(Array.isArray(parsed.jobQuestionSets)) JOB_QUESTION_SETS = parsed.jobQuestionSets;
     }
   }catch(err){
     // 저장된 설정이 아직 없거나 네트워크 오류 - 기본값 유지
@@ -920,7 +956,7 @@ async function saveConfig(){
     const response = await fetch(apiUrl('/api/config'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ categories: CATEGORIES, systemPrompt: SYSTEM_PROMPT, presets: PRESETS, reviewMode: REVIEW_MODE, notifyEmail: NOTIFY_EMAIL, institutionName: INSTITUTION_NAME, targetField: TARGET_FIELD })
+      body: JSON.stringify({ categories: CATEGORIES, systemPrompt: SYSTEM_PROMPT, presets: PRESETS, reviewMode: REVIEW_MODE, notifyEmail: NOTIFY_EMAIL, institutionName: INSTITUTION_NAME, targetField: TARGET_FIELD, jobQuestionSets: JOB_QUESTION_SETS })
     });
     const data = await response.json();
     return !!(data && data.ok);
@@ -1113,10 +1149,13 @@ async function submitAnswer(){
 
   try{
     const question = currentCategory.questions[currentQuestionIdx];
+    const jobContext = TARGET_FIELD
+      ? `\n\n[직무 맥락] 이 수강생은 '${TARGET_FIELD}' 전공·직무를 준비 중입니다. 가능하면 good/improve/sample_direction/rewritten/interviewer_inference 코멘트에 이 직무의 특성(관련 역량, 현장에서 자주 겪는 상황 등)을 자연스럽게 반영해서 답변해 주세요.`
+      : '';
     const response = await fetch("/api/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question, answer: text, systemPrompt: SYSTEM_PROMPT })
+      body: JSON.stringify({ question, answer: text, systemPrompt: SYSTEM_PROMPT + jobContext })
     });
     const fb = await response.json();
     if(fb.error) throw new Error(fb.error);
@@ -1238,6 +1277,7 @@ function openSettings(skipHistory){
   document.getElementById('institution-name-input').value = INSTITUTION_NAME || '';
   document.getElementById('target-field-input').value = TARGET_FIELD || '';
   renderPresetRow();
+  renderJobSetRow();
   renderStudentQRCode();
   if(!skipHistory){
     history.pushState({ screen: 'settings' }, '');
@@ -1271,6 +1311,83 @@ addPresetBtn.onclick = () => {
   PRESETS.push({ name: name.trim(), prompt: settingsPrompt.value });
   saveConfig();
   renderPresetRow();
+};
+
+function renderJobSetRow(){
+  const row = document.getElementById('job-set-row');
+  row.innerHTML = '';
+  JOB_QUESTION_SETS.forEach((set, idx) => {
+    const chip = document.createElement('div');
+    chip.className = 'preset-chip';
+    chip.innerHTML = `<span>${escapeHtml(set.name)}</span><button class="preset-del" data-idx="${idx}" title="삭제">✕</button>`;
+    chip.querySelector('span').onclick = () => {
+      const jobCat = CATEGORIES.find(c => c.id === 'job-specific');
+      if(jobCat) jobCat.questions = set.questions.slice();
+      document.getElementById('target-field-input').value = set.targetField || set.name;
+      TARGET_FIELD = set.targetField || set.name;
+      openSettings(true);
+    };
+    chip.querySelector('.preset-del').onclick = (e) => {
+      e.stopPropagation();
+      if(confirm(`"${set.name}" 세트를 삭제할까요?`)){
+        JOB_QUESTION_SETS.splice(idx, 1);
+        saveConfig();
+        renderJobSetRow();
+      }
+    };
+    row.appendChild(chip);
+  });
+}
+
+document.getElementById('save-job-set-btn').onclick = () => {
+  const jobCat = CATEGORIES.find(c => c.id === 'job-specific');
+  if(!jobCat) return;
+  const field = document.getElementById('target-field-input').value.trim();
+  const defaultName = field || '새 세트';
+  const name = window.prompt('세트 이름을 입력해주세요 (예: 물리치료과)', defaultName);
+  if(name === null || !name.trim()) return;
+  // 현재 화면(textarea)에 있는 최신 질문 내용을 읽어서 저장
+  const ta = settingsQuestions.querySelector(`textarea[data-cat-idx="${CATEGORIES.indexOf(jobCat)}"]`);
+  const currentQuestions = ta ? ta.value.split('\n').map(s => s.trim()).filter(Boolean) : jobCat.questions;
+  JOB_QUESTION_SETS.push({ name: name.trim(), targetField: field, questions: currentQuestions });
+  saveConfig();
+  renderJobSetRow();
+};
+
+document.getElementById('gen-job-questions-btn').onclick = async () => {
+  const field = document.getElementById('target-field-input').value.trim();
+  const statusEl = document.getElementById('gen-job-questions-status');
+  const btn = document.getElementById('gen-job-questions-btn');
+  if(!field){
+    statusEl.style.display = 'block';
+    statusEl.style.color = '#b91c1c';
+    statusEl.textContent = '먼저 위 칸에 전공·직무를 입력해 주세요.';
+    return;
+  }
+  btn.disabled = true; btn.textContent = '생성 중...';
+  statusEl.style.display = 'none';
+  try{
+    const res = await fetch(apiUrl('/api/generate-questions'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetField: field })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || '생성에 실패했습니다.');
+    const jobCat = CATEGORIES.find(c => c.id === 'job-specific');
+    if(jobCat && Array.isArray(data.questions) && data.questions.length){
+      jobCat.questions = data.questions;
+      openSettings(true);
+    }
+    statusEl.style.display = 'block';
+    statusEl.style.color = 'var(--sage)';
+    statusEl.textContent = `"${field}" 기준으로 질문 6개를 새로 만들었어요. 아래 "직무 특화 질문" 항목에서 확인·수정하고 저장하세요.`;
+  }catch(err){
+    statusEl.style.display = 'block';
+    statusEl.style.color = '#b91c1c';
+    statusEl.textContent = err.message;
+  }
+  btn.disabled = false; btn.textContent = '전공·직무 입력값으로 질문 생성하기';
 };
 
 function closeSettings(){
