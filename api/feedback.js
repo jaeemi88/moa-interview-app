@@ -65,7 +65,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
+        max_tokens: 1800,
         system: systemPrompt,
         messages: [
           { role: 'user', content: `[질문]\n${question}\n\n[수강생 답변]\n${answer}` }
