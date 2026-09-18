@@ -872,6 +872,7 @@ let NOTIFY_EMAIL = '';
 let INSTITUTION_NAME = '';
 let TARGET_FIELD = '';
 let JOB_QUESTION_SETS = [];
+let STUDENT_TARGET_FIELD_OVERRIDE = '';
 
 let currentCategory = null;
 let currentQuestionIdx = 0;
@@ -972,6 +973,40 @@ async function saveConfig(){
     console.error('저장 실패', err);
     return false;
   }
+}
+
+function renderJobSelectScreen(){
+  catList.innerHTML = `
+    <p class="lead" style="margin-bottom:16px">본인 전공·지원직무를 선택해주세요. 선택하시면 "직무 특화 질문"과 전체 피드백이 그에 맞게 조정돼요.</p>
+  `;
+  JOB_QUESTION_SETS.forEach(set => {
+    const card = document.createElement('button');
+    card.className = 'cat-card';
+    card.innerHTML = `
+      <span class="cat-text">
+        <span>
+          <div class="cat-title">${escapeHtml(set.name)}</div>
+        </span>
+      </span>
+      <span class="arrow">›</span>
+    `;
+    card.onclick = () => {
+      const jobCat = CATEGORIES.find(c => c.id === 'job-specific');
+      if(jobCat) jobCat.questions = set.questions.slice();
+      STUDENT_TARGET_FIELD_OVERRIDE = set.targetField || set.name;
+      renderCategories();
+    };
+    catList.appendChild(card);
+  });
+  const skipBtn = document.createElement('button');
+  skipBtn.className = 'cat-card';
+  skipBtn.style.opacity = '0.7';
+  skipBtn.innerHTML = `
+    <span class="cat-text"><span><div class="cat-title">해당사항 없음 / 건너뛰기</div></span></span>
+    <span class="arrow">›</span>
+  `;
+  skipBtn.onclick = () => renderCategories();
+  catList.appendChild(skipBtn);
 }
 
 function renderCategories(){
@@ -1157,8 +1192,9 @@ async function submitAnswer(){
 
   try{
     const question = currentCategory.questions[currentQuestionIdx];
-    const jobContext = TARGET_FIELD
-      ? `\n\n[직무 맥락] 이 수강생은 '${TARGET_FIELD}' 전공·직무를 준비 중입니다. 가능하면 good/improve/sample_direction/rewritten/interviewer_inference 코멘트에 이 직무의 특성(관련 역량, 현장에서 자주 겪는 상황 등)을 자연스럽게 반영해서 답변해 주세요.`
+    const effectiveField = STUDENT_TARGET_FIELD_OVERRIDE || TARGET_FIELD;
+    const jobContext = effectiveField
+      ? `\n\n[직무 맥락] 이 수강생은 '${effectiveField}' 전공·직무를 준비 중입니다. 가능하면 good/improve/sample_direction/rewritten/interviewer_inference 코멘트에 이 직무의 특성(관련 역량, 현장에서 자주 겪는 상황 등)을 자연스럽게 반영해서 답변해 주세요.`
       : '';
     const response = await fetch("/api/feedback", {
       method: "POST",
@@ -1983,7 +2019,11 @@ function renderMasterTeacherList(){
 
   history.replaceState({ screen: 'select' }, '');
   await loadConfig();
-  renderCategories();
+  if(!isAdmin && JOB_QUESTION_SETS.length > 0){
+    renderJobSelectScreen();
+  } else {
+    renderCategories();
+  }
 })();
 </script>
 
