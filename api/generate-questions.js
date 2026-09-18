@@ -2,6 +2,39 @@
 // AI로 생성해주는 서버 함수입니다. 생성된 질문은 그 자리에서 저장되지 않고 클라이언트로
 // 반환되며, 강사가 "설정 저장"을 눌러야 실제로 적용됩니다.
 
+function sanitizeJsonString(raw) {
+  let result = '';
+  let inString = false;
+  let escaped = false;
+  for (let i = 0; i < raw.length; i++) {
+    const ch = raw[i];
+    if (inString) {
+      if (escaped) {
+        result += ch;
+        escaped = false;
+      } else if (ch === '\\') {
+        result += ch;
+        escaped = true;
+      } else if (ch === '"') {
+        result += ch;
+        inString = false;
+      } else if (ch === '\n') {
+        result += '\\n';
+      } else if (ch === '\r') {
+        result += '\\r';
+      } else if (ch === '\t') {
+        result += '\\t';
+      } else {
+        result += ch;
+      }
+    } else {
+      if (ch === '"') inString = true;
+      result += ch;
+    }
+  }
+  return result;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'POST 요청만 허용됩니다.' });
@@ -53,7 +86,12 @@ export default async function handler(req, res) {
 
     const raw = (data.content || []).map((c) => c.text || '').join('').trim();
     const clean = raw.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
+    let parsed;
+    try {
+      parsed = JSON.parse(clean);
+    } catch (e) {
+      parsed = JSON.parse(sanitizeJsonString(clean));
+    }
 
     if (!Array.isArray(parsed.questions) || parsed.questions.length === 0) {
       return res.status(500).json({ error: 'AI가 올바른 형식의 질문을 만들지 못했습니다. 다시 시도해 주세요.' });
