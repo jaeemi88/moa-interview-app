@@ -937,7 +937,15 @@ async function loadConfig(){
     const data = await response.json();
     const parsed = data && data.config;
     if(parsed){
-      if(parsed.categories) CATEGORIES = parsed.categories;
+      if(parsed.categories){
+        CATEGORIES = parsed.categories;
+        // 코드가 업데이트되어 새 질문 유형이 추가된 경우, 예전에 저장된 설정에 없으면 자동으로 보충
+        DEFAULT_CATEGORIES.forEach(defCat => {
+          if(!CATEGORIES.some(c => c.id === defCat.id)){
+            CATEGORIES.push(JSON.parse(JSON.stringify(defCat)));
+          }
+        });
+      }
       if(parsed.systemPrompt) SYSTEM_PROMPT = parsed.systemPrompt;
       if(parsed.presets && parsed.presets.length) PRESETS = parsed.presets;
       if(typeof parsed.reviewMode === 'boolean') REVIEW_MODE = parsed.reviewMode;
