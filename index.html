@@ -502,6 +502,7 @@
   .result-item .r-f-title{font-size:12px;font-weight:700;color:var(--deep-green);margin-top:8px;}
   .result-item .r-f-body{font-size:13px;margin:4px 0 8px;line-height:1.6;}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html-docx-js/0.3.1/html-docx.js"></script>
 </head>
 <body>
 
@@ -547,6 +548,7 @@
     <div class="r-brand">진로모아커리어센터 · MOA FORMULA 모의면접 결과</div>
     <h2 id="result-title">면접 연습 결과</h2>
     <div class="r-meta" id="result-meta"></div>
+    <button class="btn btn-secondary" id="result-download-btn" type="button" style="margin-top:8px">📄 워드로 저장</button>
   </div>
   <div id="result-items"></div>
 </div>
@@ -941,6 +943,38 @@ const screenResult = document.getElementById('screen-result');
 const resultTitle = document.getElementById('result-title');
 const resultMeta = document.getElementById('result-meta');
 const resultItems = document.getElementById('result-items');
+const resultDownloadBtn = document.getElementById('result-download-btn');
+let currentResultRecord = null;
+
+function resolveCssVarsForExport(html) {
+  const rootStyle = getComputedStyle(document.documentElement);
+  return html.replace(/var\((--[a-zA-Z0-9-]+)(?:,\s*[^)]+)?\)/g, (match, varName) => {
+    const val = rootStyle.getPropertyValue(varName).trim();
+    return val || '#333333';
+  });
+}
+
+resultDownloadBtn.onclick = () => {
+  if(typeof htmlDocx === 'undefined'){
+    alert('워드 저장 기능을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
+    return;
+  }
+  const innerHtml = resolveCssVarsForExport(resultItems.innerHTML);
+  const titleText = currentResultRecord ? (currentResultRecord.studentName + '님의 "' + currentResultRecord.category + '" 연습 결과') : '모의면접 결과';
+  const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+    body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;font-size:11pt;line-height:1.6;color:#1a2130}
+    h2{font-size:16pt;color:#10288C}
+  </style></head><body><h2>${titleText}</h2>${innerHtml}</body></html>`;
+  const converted = htmlDocx.asBlob(fullHtml);
+  const url = URL.createObjectURL(converted);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${(currentResultRecord && currentResultRecord.studentName) || '모의면접'}_결과.docx`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+};
 const qrCodeCanvas = document.getElementById('qrcode-canvas');
 const qrUrlText = document.getElementById('qr-url-text');
 const qrDownloadBtn = document.getElementById('qr-download-btn');
@@ -1942,6 +1976,7 @@ async function renderResultView(id){
       return;
     }
     const record = data.record;
+    currentResultRecord = record;
     resultTitle.textContent = record.studentName + '님의 "' + record.category + '" 연습 결과';
     const d = new Date(record.createdAt);
     resultMeta.textContent = d.toLocaleDateString('ko-KR') + ' 연습';
