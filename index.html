@@ -945,6 +945,7 @@ const qrDownloadBtn = document.getElementById('qr-download-btn');
 
 let sessionAnswers = []; // {question, answer, feedback}
 let answersByIdx = {}; // question index -> {question, answer, feedback}
+let ALL_ANSWERS = {}; // categoryId -> { catTitle, items: { idx: {question, answer, feedback} } } — 카테고리 전환해도 유지됨
 const settingsQuestions = document.getElementById('settings-questions');
 const settingsPrompt = document.getElementById('settings-prompt');
 const presetRow = document.getElementById('preset-row');
@@ -1051,6 +1052,81 @@ function renderCategories(){
     card.onclick = () => startCategory(cat);
     catList.appendChild(card);
   });
+
+  const catIds = Object.keys(ALL_ANSWERS);
+  if(catIds.length > 0){
+    const totalQuestions = catIds.reduce((sum, id) => sum + Object.keys(ALL_ANSWERS[id].items).length, 0);
+    const bundleBtn = document.createElement('button');
+    bundleBtn.className = 'cat-card';
+    bundleBtn.style.marginTop = '14px';
+    bundleBtn.style.background = 'var(--sage)';
+    bundleBtn.style.color = '#fff';
+    bundleBtn.innerHTML = `
+      <span class="cat-text">
+        <span>
+          <div class="cat-title">🗂 지금까지 전체 모아서 보내기</div>
+          <div class="cat-desc" style="color:#fff;opacity:0.85">${catIds.length}개 유형 · 질문 ${totalQuestions}개</div>
+        </span>
+      </span>
+      <span class="arrow">›</span>
+    `;
+    bundleBtn.onclick = sendAllCategoriesBundle;
+    catList.appendChild(bundleBtn);
+  }
+}
+
+async function sendAllCategoriesBundle(){
+  const catIds = Object.keys(ALL_ANSWERS);
+  if(!catIds.length) return;
+  const orderedItems = [];
+  catIds.forEach(id => {
+    const catData = ALL_ANSWERS[id];
+    Object.keys(catData.items).map(k => parseInt(k, 10)).sort((a, b) => a - b).forEach(idx => {
+      orderedItems.push({ ...catData.items[idx], categoryTitle: catData.catTitle });
+    });
+  });
+
+  const studentName = window.prompt('학생 이름을 입력해주세요 (링크 제목에 표시됩니다)', '');
+  if(studentName === null) return;
+  const studentEmail = window.prompt('이메일 주소를 입력해주세요 (선택 — 강사님이 검토를 완료하면 결과 링크를 자동으로 보내드려요. 안 써도 제출됩니다)', '') || '';
+
+  const catTitles = catIds.map(id => ALL_ANSWERS[id].catTitle);
+  const record = {
+    studentName: studentName.trim() || '수강생',
+    studentEmail: studentEmail.trim(),
+    category: '통합 (' + catTitles.join(', ') + ')',
+    items: orderedItems,
+    studentInstitution: STUDENT_INSTITUTION_OVERRIDE || '',
+    studentTargetField: STUDENT_TARGET_FIELD_OVERRIDE || '',
+    createdAt: new Date().toISOString()
+  };
+
+  try{
+    if(REVIEW_MODE){
+      const response = await fetch(apiUrl('/api/reviews'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(record)
+      });
+      const data = await response.json();
+      if(data.error) throw new Error(data.error);
+      alert('제출 완료! 강사님이 확인한 후 결과 링크를 보내드릴 거예요.');
+    } else {
+      const response = await fetch(apiUrl('/api/results'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(record)
+      });
+      const data = await response.json();
+      if(data.error) throw new Error(data.error);
+      const link = location.origin + location.pathname + '?t=' + encodeURIComponent(TEACHER_ID) + '#result=' + data.id;
+      linkOutput.value = link;
+      linkModal.style.display = 'flex';
+    }
+  }catch(err){
+    alert('처리 중 문제가 발생했어요. 다시 시도해주세요.');
+    console.error(err);
+  }
 }
 
 function renderProgress(){
@@ -1247,6 +1323,8 @@ async function submitAnswer(){
     if(fb.error) throw new Error(fb.error);
     loadingBubble.remove();
     answersByIdx[currentQuestionIdx] = { question, answer: text, feedback: fb };
+    if(!ALL_ANSWERS[currentCategory.id]) ALL_ANSWERS[currentCategory.id] = { catTitle: currentCategory.title, items: {} };
+    ALL_ANSWERS[currentCategory.id].items[currentQuestionIdx] = { question, answer: text, feedback: fb };
     renderQuestionCard();
     makeLinkBtn.style.display = 'block';
   }catch(err){
@@ -1630,7 +1708,7 @@ async function openReviewDetail(id){
       const block = document.createElement('div');
       block.className = 'review-q-block';
       block.innerHTML = `
-        <div class="rq-question">Q${i+1}. ${escapeHtml(item.question)}</div>
+        <div class="rq-question">${item.categoryTitle ? `<span style="font-size:11px;color:var(--muted);font-weight:400">[${escapeHtml(item.categoryTitle)}]</span> ` : ''}Q${i+1}. ${escapeHtml(item.question)}</div>
         <div class="rq-answer">${escapeHtml(item.answer)}</div>
         <label>👍 좋았던 점</label>
         <textarea data-item-idx="${i}" data-field="good" rows="2">${escapeHtml(item.feedback.good || '')}</textarea>
@@ -1882,7 +1960,7 @@ async function renderResultView(id){
         ? `<div class="r-f-title">🎯 면접관 시점 — 평소 모습 추론</div><div class="r-f-body">${escapeHtml(item.feedback.interviewer_inference)}</div>`
         : '';
       div.innerHTML = `
-        <div class="r-q">Q${i+1}. ${escapeHtml(item.question)}</div>
+        <div class="r-q">${item.categoryTitle ? `<span style="font-size:11px;color:var(--muted);font-weight:400">[${escapeHtml(item.categoryTitle)}]</span> ` : ''}Q${i+1}. ${escapeHtml(item.question)}</div>
         <div class="r-compare-label">내가 쓴 답변</div>
         <div class="r-a">${escapeHtml(item.answer)}</div>
         ${rewrittenBlock}
