@@ -888,6 +888,7 @@ let INSTITUTION_NAME = '';
 let TARGET_FIELD = '';
 let JOB_QUESTION_SETS = [];
 let STUDENT_TARGET_FIELD_OVERRIDE = '';
+let STUDENT_INSTITUTION_OVERRIDE = '';
 
 let currentCategory = null;
 let currentQuestionIdx = 0;
@@ -1011,6 +1012,7 @@ function renderJobSelectScreen(){
       const jobCat = CATEGORIES.find(c => c.id === 'job-specific');
       if(jobCat) jobCat.questions = set.questions.slice();
       STUDENT_TARGET_FIELD_OVERRIDE = set.targetField || set.name;
+      STUDENT_INSTITUTION_OVERRIDE = set.institutionName || '';
       renderCategories();
     };
     catList.appendChild(card);
@@ -1400,7 +1402,7 @@ function renderJobSetRow(){
   JOB_QUESTION_SETS.forEach((set, idx) => {
     const chip = document.createElement('div');
     chip.className = 'preset-chip';
-    chip.innerHTML = `<span>${escapeHtml(set.name)}</span><button class="preset-del" data-idx="${idx}" title="삭제">✕</button>`;
+    chip.innerHTML = `<span>${escapeHtml(set.name)}${set.institutionName ? ` <small style="opacity:0.7">(${escapeHtml(set.institutionName)})</small>` : ''}</span><button class="preset-del" data-idx="${idx}" title="삭제">✕</button>`;
     chip.querySelector('span').onclick = () => {
       const jobCat = CATEGORIES.find(c => c.id === 'job-specific');
       if(jobCat) jobCat.questions = set.questions.slice();
@@ -1427,10 +1429,11 @@ document.getElementById('save-job-set-btn').onclick = () => {
   const defaultName = field || '새 세트';
   const name = window.prompt('세트 이름을 입력해주세요 (예: 물리치료과)', defaultName);
   if(name === null || !name.trim()) return;
+  const institution = window.prompt('이 세트가 쓰일 소속 기관명을 입력해주세요 (여러 기관을 동시에 다니실 때 구분용, 비워두면 아래 기본 기관명 설정을 따라요)', INSTITUTION_NAME || '');
   // 현재 화면(textarea)에 있는 최신 질문 내용을 읽어서 저장
   const ta = settingsQuestions.querySelector(`textarea[data-cat-idx="${CATEGORIES.indexOf(jobCat)}"]`);
   const currentQuestions = ta ? ta.value.split('\n').map(s => s.trim()).filter(Boolean) : jobCat.questions;
-  JOB_QUESTION_SETS.push({ name: name.trim(), targetField: field, questions: currentQuestions });
+  JOB_QUESTION_SETS.push({ name: name.trim(), targetField: field, institutionName: (institution || '').trim(), questions: currentQuestions });
   saveConfig();
   renderJobSetRow();
 };
@@ -1680,6 +1683,8 @@ reviewApproveBtn.onclick = async () => {
       notify: true, // 강사 승인 시점에만 이메일 발송 (즉시모드는 화면에 바로 링크가 뜨므로 중복 발송 안 함)
       category: currentReviewRecord.category,
       items: currentReviewRecord.items,
+      studentInstitution: currentReviewRecord.studentInstitution || '',
+      studentTargetField: currentReviewRecord.studentTargetField || '',
       createdAt: new Date().toISOString()
     };
     const response = await fetch(apiUrl('/api/results'), {
@@ -1759,6 +1764,8 @@ makeLinkBtn.onclick = async () => {
     studentEmail: studentEmail.trim(),
     category: currentCategory.title,
     items: orderedItems,
+    studentInstitution: STUDENT_INSTITUTION_OVERRIDE || '',
+    studentTargetField: STUDENT_TARGET_FIELD_OVERRIDE || '',
     createdAt: new Date().toISOString()
   };
 
