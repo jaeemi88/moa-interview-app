@@ -586,6 +586,15 @@
     </label>
   </div>
   <div class="settings-block">
+    <label>재도전 허용 범위</label>
+    <div class="sub">한 질문에 답변을 제출한 뒤, "다시 답변하기"를 얼마나 허용할지 정해요. 대상·현장 분위기에 맞춰 고르세요.</div>
+    <select id="retry-limit-select">
+      <option value="unlimited">자유롭게 (제한 없음 — 연습 목적)</option>
+      <option value="1">1회만 재도전 가능</option>
+      <option value="0">재도전 불가 (한 번만 답변)</option>
+    </select>
+  </div>
+  <div class="settings-block">
     <label>새 검수 요청 이메일 알림</label>
     <div class="sub">학생이 검수를 요청할 때마다 이 주소로 알림 메일이 발송돼요. 강사용 화면에 매번 들어가서 확인하지 않아도 됩니다.</div>
     <input type="text" id="notify-email-input" placeholder="예) teacher@example.com">
@@ -871,6 +880,8 @@ let CATEGORIES = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
 let SYSTEM_PROMPT = DEFAULT_SYSTEM_PROMPT;
 let PRESETS = JSON.parse(JSON.stringify(DEFAULT_PRESETS));
 let REVIEW_MODE = false;
+let RETRY_LIMIT = 'unlimited'; // 'unlimited' | '1' | '0'
+let retryCountByIdx = {};
 let NOTIFY_EMAIL = '';
 let INSTITUTION_NAME = '';
 let TARGET_FIELD = '';
@@ -888,6 +899,7 @@ const adminListBody = document.getElementById('admin-list-body');
 const adminListBack = document.getElementById('admin-list-back');
 const viewSubmissionsBtn = document.getElementById('view-submissions-btn');
 const reviewModeToggle = document.getElementById('review-mode-toggle');
+const retryLimitSelect = document.getElementById('retry-limit-select');
 const viewReviewQueueBtn = document.getElementById('view-review-queue-btn');
 const screenReviewList = document.getElementById('screen-review-list');
 const reviewListBody = document.getElementById('review-list-body');
@@ -953,6 +965,7 @@ async function loadConfig(){
       if(parsed.systemPrompt) SYSTEM_PROMPT = parsed.systemPrompt;
       if(parsed.presets && parsed.presets.length) PRESETS = parsed.presets;
       if(typeof parsed.reviewMode === 'boolean') REVIEW_MODE = parsed.reviewMode;
+      if(typeof parsed.retryLimit === 'string') RETRY_LIMIT = parsed.retryLimit;
       if(typeof parsed.notifyEmail === 'string') NOTIFY_EMAIL = parsed.notifyEmail;
       if(typeof parsed.institutionName === 'string') INSTITUTION_NAME = parsed.institutionName;
       if(typeof parsed.targetField === 'string') TARGET_FIELD = parsed.targetField;
@@ -968,7 +981,7 @@ async function saveConfig(){
     const response = await fetch(apiUrl('/api/config'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ categories: CATEGORIES, systemPrompt: SYSTEM_PROMPT, presets: PRESETS, reviewMode: REVIEW_MODE, notifyEmail: NOTIFY_EMAIL, institutionName: INSTITUTION_NAME, targetField: TARGET_FIELD, jobQuestionSets: JOB_QUESTION_SETS })
+      body: JSON.stringify({ categories: CATEGORIES, systemPrompt: SYSTEM_PROMPT, presets: PRESETS, reviewMode: REVIEW_MODE, retryLimit: RETRY_LIMIT, notifyEmail: NOTIFY_EMAIL, institutionName: INSTITUTION_NAME, targetField: TARGET_FIELD, jobQuestionSets: JOB_QUESTION_SETS })
     });
     const data = await response.json();
     return !!(data && data.ok);
@@ -1090,14 +1103,33 @@ function renderQuestionCard(){
     } else {
       addFeedbackBubble(existing.feedback);
     }
-    const redoBtn = document.createElement('button');
-    redoBtn.className = 'redo-btn';
-    redoBtn.textContent = '✏️ 다시 답변하기';
-    redoBtn.onclick = () => {
-      delete answersByIdx[currentQuestionIdx];
-      renderQuestionCard();
-    };
-    chatBody.appendChild(redoBtn);
+    const usedRetries = retryCountByIdx[currentQuestionIdx] || 0;
+    const limitNum = RETRY_LIMIT === 'unlimited' ? Infinity : parseInt(RETRY_LIMIT, 10);
+    if(usedRetries < limitNum){
+      const redoBtn = document.createElement('button');
+      redoBtn.className = 'redo-btn';
+      redoBtn.textContent = '✏️ 다시 답변하기';
+      redoBtn.onclick = () => {
+        retryCountByIdx[currentQuestionIdx] = usedRetries + 1;
+        delete answersByIdx[currentQuestionIdx];
+        renderQuestionCard();
+      };
+      chatBody.appendChild(redoBtn);
+    } else if(limitNum === 0){
+      const lockedNote = document.createElement('div');
+      lockedNote.className = 'sub';
+      lockedNote.style.textAlign = 'center';
+      lockedNote.style.marginTop = '8px';
+      lockedNote.textContent = '이 질문은 한 번만 답변할 수 있어요.';
+      chatBody.appendChild(lockedNote);
+    } else {
+      const lockedNote = document.createElement('div');
+      lockedNote.className = 'sub';
+      lockedNote.style.textAlign = 'center';
+      lockedNote.style.marginTop = '8px';
+      lockedNote.textContent = '재도전 횟수를 모두 사용했어요.';
+      chatBody.appendChild(lockedNote);
+    }
     answerInput.style.display = 'none';
     sendBtn.style.display = 'none';
     charCountRow.style.display = 'none';
@@ -1320,6 +1352,7 @@ function openSettings(skipHistory){
   });
   settingsPrompt.value = SYSTEM_PROMPT;
   reviewModeToggle.checked = REVIEW_MODE;
+  retryLimitSelect.value = RETRY_LIMIT;
   document.getElementById('notify-email-input').value = NOTIFY_EMAIL || '';
   document.getElementById('institution-name-input').value = INSTITUTION_NAME || '';
   document.getElementById('target-field-input').value = TARGET_FIELD || '';
@@ -1688,6 +1721,7 @@ settingsSave.onclick = async () => {
   const newPrompt = settingsPrompt.value.trim();
   if(newPrompt) SYSTEM_PROMPT = newPrompt;
   REVIEW_MODE = reviewModeToggle.checked;
+  RETRY_LIMIT = retryLimitSelect.value;
   NOTIFY_EMAIL = document.getElementById('notify-email-input').value.trim();
   INSTITUTION_NAME = document.getElementById('institution-name-input').value.trim();
   TARGET_FIELD = document.getElementById('target-field-input').value.trim();
