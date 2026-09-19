@@ -146,15 +146,18 @@ export default async function handler(req, res) {
       const id = generateId();
 
       // 트래커 연동 정보를 먼저 계산해서 record에 포함 — 학생 결과 화면에서 만족도 설문 링크를 바로 만들 수 있게 함
+      // 학생이 직접 소속 기관·전공을 선택했으면(여러 기관 동시 운영) 그 값을 우선 쓰고, 없으면 강사가 설정해둔 단일 값을 씀
       let institutionNameForSurvey = null;
       let targetFieldForSurvey = null;
       try {
         const configRaw = await client.get(`interview_app_config:${t}`);
         const config = configRaw ? JSON.parse(configRaw) : null;
-        if (config && config.institutionName) {
-          institutionNameForSurvey = config.institutionName;
-          targetFieldForSurvey = config.targetField;
-          record.trackerProgramId = `auto_interview_${slugPart(config.institutionName)}_${slugPart(config.targetField || '(전공 미지정)')}`;
+        const orgName = (record.studentInstitution && record.studentInstitution.trim()) || (config && config.institutionName) || null;
+        const field = (record.studentTargetField && record.studentTargetField.trim()) || (config && config.targetField) || null;
+        if (orgName) {
+          institutionNameForSurvey = orgName;
+          targetFieldForSurvey = field;
+          record.trackerProgramId = `auto_interview_${slugPart(orgName)}_${slugPart(field || '(전공 미지정)')}`;
         }
       } catch (err) {
         console.error('트래커 연동용 설정 조회 실패:', err);
