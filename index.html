@@ -596,8 +596,12 @@
   </div>
   <div class="settings-block">
     <label>새 검수 요청 이메일 알림</label>
-    <div class="sub">학생이 검수를 요청할 때마다 이 주소로 알림 메일이 발송돼요. 강사용 화면에 매번 들어가서 확인하지 않아도 됩니다.</div>
+    <div class="sub">학생이 검수를 요청할 때마다 이 주소로 알림 메일이 발송돼요. 입력 후 "이메일 저장"을 눌러주세요.</div>
     <input type="text" id="notify-email-input" placeholder="예) teacher@example.com">
+    <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+      <button class="btn btn-secondary" id="save-notify-email-btn" type="button">이메일 저장</button>
+      <span class="save-status" id="notify-email-status"></span>
+    </div>
   </div>
   <div class="settings-block">
     <label>수강생 사후관리 트래커 연동</label>
@@ -1357,6 +1361,7 @@ function openSettings(skipHistory){
   reviewModeToggle.checked = REVIEW_MODE;
   retryLimitSelect.value = RETRY_LIMIT;
   document.getElementById('notify-email-input').value = NOTIFY_EMAIL || '';
+  document.getElementById('notify-email-status').textContent = '';
   document.getElementById('institution-name-input').value = INSTITUTION_NAME || '';
   document.getElementById('target-field-input').value = TARGET_FIELD || '';
   renderPresetRow();
@@ -1714,6 +1719,29 @@ reviewApproveBtn.onclick = async () => {
   reviewApproveBtn.disabled = false;
   reviewApproveBtn.textContent = '✅ 승인 및 학생 링크 생성';
 };
+
+document.getElementById('save-notify-email-btn').onclick = async () => {
+  const input = document.getElementById('notify-email-input');
+  const status = document.getElementById('notify-email-status');
+  const email = input.value.trim();
+  if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    status.style.color = '#b91c1c';
+    status.textContent = '이메일 형식을 확인해 주세요.';
+    return;
+  }
+  NOTIFY_EMAIL = email;
+  status.style.color = '';
+  status.textContent = '저장 중...';
+  const ok = await saveConfig();
+  status.textContent = ok ? '저장됨 ✓' : '저장 실패, 다시 시도해 주세요';
+};
+
+reviewModeToggle.addEventListener('change', async () => {
+  REVIEW_MODE = reviewModeToggle.checked;
+  saveStatus.textContent = '저장 중...';
+  const ok = await saveConfig();
+  saveStatus.textContent = ok ? '검토 방식 저장됨 ✓' : '저장 실패, 다시 시도해 주세요';
+});
 
 settingsSave.onclick = async () => {
   const textareas = settingsQuestions.querySelectorAll('textarea[data-cat-idx]');
