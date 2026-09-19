@@ -1862,6 +1862,18 @@ async function renderResultView(id){
       `;
       resultItems.appendChild(div);
     });
+
+    if(record.trackerProgramId){
+      const surveyDiv = document.createElement('div');
+      surveyDiv.className = 'result-item';
+      surveyDiv.style.textAlign = 'center';
+      surveyDiv.style.background = 'var(--cream, #EAF6AD)';
+      surveyDiv.innerHTML = `
+        <p style="margin:0 0 10px;font-size:13px;color:#333">연습 결과, 어떠셨나요? 더 나은 서비스를 위해 짧은 의견 부탁드려요 🙏</p>
+        <a href="https://moa-tracker-tau.vercel.app/?survey=1&t=${encodeURIComponent(TEACHER_ID)}&p=${encodeURIComponent(record.trackerProgramId)}" target="_blank" style="display:inline-block;text-decoration:none;padding:10px 24px;background:var(--navy);color:#fff;border-radius:8px;font-weight:700">30초 만족도 남기기</a>
+      `;
+      resultItems.appendChild(surveyDiv);
+    }
   }catch(err){
     resultItems.innerHTML = '<p style="color:var(--muted);font-size:13px;">결과를 불러오는 중 문제가 발생했어요.</p>';
     console.error(err);
