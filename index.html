@@ -539,6 +539,7 @@
     </div>
   </div>
   <button class="link-cta" id="make-link-btn" style="display:none;">📎 지금까지 결과로 학생 링크 만들기</button>
+  <button class="link-cta" id="bundle-all-btn" style="display:none;background:var(--sage);margin-top:8px;">🗂 다른 유형 답변까지 모아서 보내기</button>
 </div>
 
 <div id="screen-result">
@@ -931,6 +932,7 @@ const qnavLabel = document.getElementById('qnav-label');
 const backBtn = document.getElementById('back-btn');
 const gearBtn = document.getElementById('gear-btn');
 const makeLinkBtn = document.getElementById('make-link-btn');
+const bundleAllBtn = document.getElementById('bundle-all-btn');
 const linkModal = document.getElementById('link-modal');
 const linkOutput = document.getElementById('link-output');
 const copyLinkBtn = document.getElementById('copy-link-btn');
@@ -1151,6 +1153,7 @@ function startCategory(cat, skipHistory){
   headerTitle.textContent = cat.title + ' 연습';
   sessionAnswers = [];
   makeLinkBtn.style.display = 'none';
+  bundleAllBtn.style.display = Object.keys(ALL_ANSWERS).length > 1 ? 'block' : 'none';
   swipeHint.style.display = 'block';
   renderQuestionCard();
   if(!skipHistory){
@@ -1327,6 +1330,7 @@ async function submitAnswer(){
     ALL_ANSWERS[currentCategory.id].items[currentQuestionIdx] = { question, answer: text, feedback: fb };
     renderQuestionCard();
     makeLinkBtn.style.display = 'block';
+    bundleAllBtn.style.display = Object.keys(ALL_ANSWERS).length > 1 ? 'block' : 'none';
   }catch(err){
     loadingBubble.remove();
     addBubble('f', '피드백을 불러오는 중 문제가 발생했어요. 다시 제출해보시겠어요?');
@@ -1904,6 +1908,8 @@ makeLinkBtn.onclick = async () => {
   makeLinkBtn.disabled = false;
   makeLinkBtn.textContent = originalLabel;
 };
+
+bundleAllBtn.onclick = sendAllCategoriesBundle;
 
 copyLinkBtn.onclick = () => {
   linkOutput.select();
