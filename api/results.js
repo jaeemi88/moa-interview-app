@@ -71,7 +71,7 @@ async function notifyStudentByEmail(t, id, record, host) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'MOA FORMULA <onboarding@resend.dev>',
+        from: 'MOA FORMULA <moaformula@jinromoa.co.kr>',
         to: [to],
         subject: `[모의면접] ${record.studentName || '학생'}님의 결과가 도착했어요`,
         text: `${record.studentName || '학생'}님, 요청하신 모의면접 검토 결과가 준비됐어요.\n\n아래 링크에서 확인해 주세요.\n${link}`
