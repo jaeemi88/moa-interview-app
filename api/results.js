@@ -95,7 +95,7 @@ async function notifyStudentByEmail(t, id, record, host) {
 async function upsertStudentConsultLog(client, t, studentEmail, kind) {
   try {
     const email = String(studentEmail || '').trim().toLowerCase();
-    if (!email) return;
+    if (!email) return false;
     const indexKey = `tracker_students_index:${t}`;
     const hash = await client.hgetall(indexKey);
     let matchId = null;
@@ -105,11 +105,11 @@ async function upsertStudentConsultLog(client, t, studentEmail, kind) {
         if ((summary.email || '').trim().toLowerCase() === email) { matchId = id; break; }
       } catch (e) { /* 손상된 항목은 건너뜀 */ }
     }
-    if (!matchId) return;
+    if (!matchId) return false;
 
     const itemKey = `tracker_student:${t}:${matchId}`;
     const raw = await client.get(itemKey);
-    if (!raw) return;
+    if (!raw) return false;
     const record = JSON.parse(raw);
     record.consultLog = record.consultLog || [];
     const today = new Date().toISOString().slice(0, 10);
@@ -124,8 +124,10 @@ async function upsertStudentConsultLog(client, t, studentEmail, kind) {
       .map(([k, n]) => `${labels[k] || k} ${n}건`)
       .join(' · ') + ' 완료 (자동 기록)';
     await client.set(itemKey, JSON.stringify(record));
+    return true;
   } catch (err) {
     console.error('학생 상담이력 자동기록 실패:', err);
+    return false;
   }
 }
 
@@ -149,6 +151,7 @@ export default async function handler(req, res) {
       // 학생이 직접 소속 기관·전공을 선택했으면(여러 기관 동시 운영) 그 값을 우선 쓰고, 없으면 강사가 설정해둔 단일 값을 씀
       let institutionNameForSurvey = null;
       let targetFieldForSurvey = null;
+      let groupCodeExpiryDays = 5;
       try {
         const configRaw = await client.get(`interview_app_config:${t}`);
         const config = configRaw ? JSON.parse(configRaw) : null;
@@ -159,8 +162,17 @@ export default async function handler(req, res) {
           targetFieldForSurvey = field;
           record.trackerProgramId = `auto_interview_${slugPart(orgName)}_${slugPart(field || '(전공 미지정)')}`;
         }
+        if (config && config.groupCodeExpiryDays) groupCodeExpiryDays = parseInt(config.groupCodeExpiryDays, 10) || 5;
       } catch (err) {
         console.error('트래커 연동용 설정 조회 실패:', err);
+      }
+
+      // 트래커의 개인관리 카드와 이메일이 일치하는 "1:1 코칭" 학생은 기간 제한 없음.
+      // 일치하지 않는(집체교육·일회성) 학생은 강사가 설정한 일수 후 결과 링크가 막힘 (당일 포함으로 계산).
+      const isIndividualCoaching = await upsertStudentConsultLog(client, t, record.studentEmail, 'interview');
+      if (!isIndividualCoaching) {
+        const now = new Date();
+        record.expiresAt = new Date(now.getFullYear(), now.getMonth(), now.getDate() + groupCodeExpiryDays).getTime();
       }
 
       await client.set(itemKey(id), JSON.stringify(record));
@@ -168,7 +180,8 @@ export default async function handler(req, res) {
         id,
         studentName: record.studentName,
         category: record.category,
-        createdAt: record.createdAt
+        createdAt: record.createdAt,
+        expiresAt: record.expiresAt || null
       });
       await client.lpush(indexKey, meta);
       await client.ltrim(indexKey, 0, 499); // 최근 500건까지만 보관
@@ -177,8 +190,6 @@ export default async function handler(req, res) {
       if (institutionNameForSurvey) {
         upsertTrackerStat(client, t, institutionNameForSurvey, targetFieldForSurvey);
       }
-
-      upsertStudentConsultLog(client, t, record.studentEmail, 'interview');
 
       return res.status(200).json({ id });
     } catch (err) {
@@ -210,6 +221,9 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: '결과를 찾을 수 없습니다.' });
       }
       const record = JSON.parse(value);
+      if (req.query.admin !== '1' && record.expiresAt && Date.now() > record.expiresAt) {
+        return res.status(410).json({ error: '조회 가능한 기간이 지났어요. 결과가 필요하시면 강사님께 문의해 주세요.', expired: true });
+      }
       return res.status(200).json({ record });
     } catch (err) {
       console.error(err);
