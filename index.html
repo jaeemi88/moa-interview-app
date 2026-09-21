@@ -1651,7 +1651,7 @@ async function renderAdminList(){
       div.className = 'submission-item';
       const d = new Date(item.createdAt);
       const dateStr = d.toLocaleDateString('ko-KR') + ' ' + d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-      const expiredBadge = item.expiresAt ? (Date.now() > item.expiresAt ? ' <span style="color:#b91c1c;font-size:12px">(학생 조회 만료)</span>' : ` <span style="color:var(--sage);font-size:12px">(~${new Date(item.expiresAt).toLocaleDateString('ko-KR')}까지)</span>`) : '';
+      const expiredBadge = item.expiresAt ? (Date.now() > item.expiresAt ? ' <span style="color:#b91c1c;font-size:12px">(학생 조회 만료)</span>' : ` <span style="color:var(--sage);font-size:12px">(${daysRemainingText(item.expiresAt)})</span>`) : '';
       div.innerHTML = `
         <div>
           <div class="s-name">${escapeHtml(item.studentName)} · ${escapeHtml(item.category)}${expiredBadge}</div>
@@ -2067,20 +2067,34 @@ window.addEventListener('popstate', (e) => {
 
 /* ---- 여러 강사 분리: 강사 코드 설정 / 안내 화면 ---- */
 function renderTeacherSetupScreen(){
+  const urlInvite = new URLSearchParams(location.search).get('invite') || '';
+  const draft = JSON.parse(localStorage.getItem('moa_teacher_setup_draft') || '{}');
   screenSelect.innerHTML = `
     <div class="setup-card">
       <h3>강사 코드 설정</h3>
       <p>여러 강사님이 같은 앱을 함께 쓰기 때문에, 자료가 서로 섞이지 않도록 <b>본인만의 고유 코드</b>가 필요합니다. 영문·숫자로 짧게 만들어 주세요 (예: kimteacher, park01). 한 번 정하시면 계속 같은 코드로 접속하시면 됩니다.</p>
       <label>강사 이름</label>
-      <input type="text" id="teacher-name-input" placeholder="예: 김강사" style="margin-bottom:10px">
+      <input type="text" id="teacher-name-input" placeholder="예: 김강사" style="margin-bottom:10px" value="${escapeHtml(draft.name || '')}">
       <label>강사 코드</label>
-      <input type="text" id="teacher-code-input" placeholder="예: kimteacher" style="margin-bottom:10px">
+      <input type="text" id="teacher-code-input" placeholder="예: kimteacher" style="margin-bottom:10px" value="${escapeHtml(draft.code || '')}">
       <label>초대코드 <span style="font-weight:400;color:var(--muted)">(처음 등록하는 코드일 때만 필요, 이미 등록된 코드면 비워두세요)</span></label>
-      <input type="text" id="teacher-invite-input" placeholder="원장님께 받은 초대코드" style="margin-bottom:10px">
+      <input type="text" id="teacher-invite-input" placeholder="원장님께 받은 초대코드" style="margin-bottom:10px" value="${escapeHtml(urlInvite || draft.invite || '')}">
       <button class="btn btn-primary" id="teacher-code-submit">시작하기</button>
       <div id="teacher-setup-error" style="color:#b91c1c;font-size:13px;margin-top:8px;display:none"></div>
     </div>
   `;
+
+  const saveDraft = () => {
+    localStorage.setItem('moa_teacher_setup_draft', JSON.stringify({
+      name: document.getElementById('teacher-name-input').value,
+      code: document.getElementById('teacher-code-input').value,
+      invite: document.getElementById('teacher-invite-input').value
+    }));
+  };
+  ['teacher-name-input', 'teacher-code-input', 'teacher-invite-input'].forEach(id => {
+    document.getElementById(id).addEventListener('input', saveDraft);
+  });
+
   document.getElementById('teacher-code-submit').addEventListener('click', async () => {
     const code = document.getElementById('teacher-code-input').value.trim().toLowerCase().replace(/[^a-z0-9가-힣_-]/g, '');
     const name = document.getElementById('teacher-name-input').value.trim();
@@ -2098,6 +2112,7 @@ function renderTeacherSetupScreen(){
       });
       const data = await res.json();
       if(!res.ok) throw new Error(data.error || '등록에 실패했습니다.');
+      localStorage.removeItem('moa_teacher_setup_draft');
       const p = new URLSearchParams(location.search);
       p.set('admin', '1');
       p.set('t', code);
@@ -2113,6 +2128,13 @@ function renderMissingTeacherScreen(){
   screenSelect.innerHTML = `
     <p class="lead">이 링크에는 담당 강사 정보가 없어요. 강사님이 안내한 QR코드나 링크로 다시 접속해 주세요.</p>
   `;
+}
+
+function daysRemainingText(expiresAt){
+  if(!expiresAt) return '무제한';
+  const diff = Math.ceil((expiresAt - Date.now()) / (24 * 60 * 60 * 1000));
+  if(diff <= 0) return '기간만료';
+  return `${diff}일 남음 (${new Date(expiresAt).toLocaleDateString('ko-KR')}까지)`;
 }
 
 function renderMasterTeacherList(){
@@ -2157,7 +2179,15 @@ function renderMasterTeacherList(){
       });
       const data = await res.json();
       if(!res.ok) throw new Error(data.error || '발급에 실패했습니다.');
-      resultEl.innerHTML = '발급된 초대코드: ' + data.inviteCode + (data.expiresAt ? `<br><span style="font-size:12px;font-weight:400;color:var(--muted)">유효기간: ${new Date(data.expiresAt).toLocaleDateString('ko-KR')}까지</span>` : `<br><span style="font-size:12px;font-weight:400;color:var(--muted)">유효기간: 무제한</span>`);
+      const inviteLink = location.origin + location.pathname + '?admin=1&invite=' + encodeURIComponent(data.inviteCode);
+      resultEl.innerHTML = `
+        <div>발급된 초대코드: ${data.inviteCode} <span style="font-weight:400;color:var(--muted);font-size:12px">(${daysRemainingText(data.expiresAt)})</span></div>
+        <div style="display:flex;gap:8px;align-items:center;background:var(--cream,#EAF6AD);border-radius:8px;padding:10px 12px;margin-top:8px">
+          <span style="word-break:break-all;font-weight:400;font-size:13px">${inviteLink}</span>
+          <button class="btn btn-secondary" style="margin-left:auto;flex-shrink:0" onclick="navigator.clipboard.writeText('${inviteLink}')">링크 복사</button>
+        </div>
+        <p style="font-size:12px;color:var(--muted);font-weight:400;margin:6px 0 0">이 링크 하나만 보내주세요 — 강사님이 열면 초대코드가 자동으로 입력되어 있어요.</p>
+      `;
       resultEl.style.display = 'block';
     }catch(err){
       errEl.textContent = err.message;
@@ -2209,7 +2239,7 @@ function renderMasterTeacherList(){
       resultEl.innerHTML = data.invites.map(iv => `
         <div style="border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:8px">
           <b>${iv.code}</b> ${iv.used ? '<span style="color:#b91c1c;font-size:12px">(사용됨 · ' + (iv.usedBy || '') + ')</span>' : iv.isExpired ? '<span style="color:#b91c1c;font-size:12px">(기간만료)</span>' : '<span style="color:var(--sage);font-size:12px">(미사용)</span>'}<br>
-          <span style="font-size:12px;color:var(--muted)">발급일: ${new Date(iv.createdAt).toLocaleDateString('ko-KR')}${iv.expiresAt ? ` · 유효기간: ${new Date(iv.expiresAt).toLocaleDateString('ko-KR')}까지` : ' · 유효기간: 무제한'}</span>
+          <span style="font-size:12px;color:var(--muted)">발급일: ${new Date(iv.createdAt).toLocaleDateString('ko-KR')} · 유효기간: ${daysRemainingText(iv.expiresAt)}</span>
         </div>
       `).join('');
     }catch(err){
