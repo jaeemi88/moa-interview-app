@@ -698,6 +698,7 @@
 // 호출에 강사 코드(t)를 자동으로 붙여서 보냅니다.
 const __params = new URLSearchParams(location.search);
 let TEACHER_ID = (__params.get('t') || '').trim().toLowerCase().replace(/[^a-z0-9가-힣_-]/g, '').slice(0, 40);
+try{ if(TEACHER_ID){ localStorage.setItem('moa_teacher_id', TEACHER_ID); } else if(!__params.get('master')){ const __saved=(localStorage.getItem('moa_teacher_id')||'').trim(); if(__saved){ TEACHER_ID=__saved; const __u=new URL(location.href); __u.searchParams.set('t',__saved); history.replaceState(null,'',__u.toString()); } } }catch(e){}
 let IS_BLOCKED = false;
 
 function apiUrl(path){
