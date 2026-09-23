@@ -1992,7 +1992,9 @@ async function renderResultView(id){
   screenResult.style.display = 'flex';
 
   try{
-    const response = await fetch(apiUrl('/api/results?id=' + encodeURIComponent(id) + (isAdmin ? '&admin=1' : '')));
+    // 강사용(admin=1)으로 열었는지 여기서 직접 확인 — isAdmin은 init() 안에만 있는 변수라 이 함수에서는 쓸 수 없음
+    const isAdminView = new URLSearchParams(location.search).get('admin') === '1';
+    const response = await fetch(apiUrl('/api/results?id=' + encodeURIComponent(id) + (isAdminView ? '&admin=1' : '')));
     const data = await response.json();
     if(!response.ok || !data.record){
       resultItems.innerHTML = data.expired
@@ -2007,7 +2009,8 @@ async function renderResultView(id){
     resultMeta.textContent = d.toLocaleDateString('ko-KR') + ' 연습';
 
     resultItems.innerHTML = '';
-    record.items.forEach((item, i) => {
+    (record.items || []).forEach((item, i) => {
+      item.feedback = item.feedback || {}; // 피드백이 비어 있는 항목이 있어도 화면 전체가 멈추지 않게
       const div = document.createElement('div');
       div.className = 'result-item';
       const rewrittenBlock = item.feedback.rewritten
@@ -2054,7 +2057,7 @@ async function renderResultView(id){
       resultItems.appendChild(surveyDiv);
     }
   }catch(err){
-    resultItems.innerHTML = '<p style="color:var(--muted);font-size:13px;">결과를 불러오는 중 문제가 발생했어요.</p>';
+    resultItems.innerHTML = '<p style="color:var(--muted);font-size:13px;">결과를 불러오는 중 문제가 발생했어요.</p><p style="color:var(--muted);font-size:12px;">(오류 내용: ' + escapeHtml(err && err.message ? err.message : String(err)) + ')</p>';
     console.error(err);
   }
 }
