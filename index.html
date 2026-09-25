@@ -631,9 +631,12 @@
         <p class="st-sub" id="pk-gen-status">전공 이름을 적고 버튼을 누르면 바로 이 칸에 채워져요. 직접 고쳐 써도 돼요.</p>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px">
-        <label class="st-lbl" for="pk-criteria"><span class="st-step">3</span>이 전공만의 평가 기준</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+          <label class="st-lbl" for="pk-criteria"><span class="st-step">3</span>이 전공만의 평가 기준</label>
+          <button class="btn-outline" id="pk-crit-gen-btn" type="button" style="font-size:13px">AI로 기준 만들기</button>
+        </div>
         <textarea class="st-inp" id="pk-criteria" rows="6" placeholder="예) 1) 간결성: 30~45초 분량으로 결론부터 말했는지&#10;2) 안전 의식: 서비스보다 안전이 우선인지"></textarea>
-        <p class="st-sub" id="pk-criteria-hint">전공 기준 몇 줄만 적으면 돼요. 공통 기준(코칭 철학·답변 형식)은 앱이 알아서 붙여요. 비워두면 공통 기준으로만 평가해요.</p>
+        <p class="st-sub" id="pk-criteria-hint">버튼을 누르면 이 전공만의 기준 5~7줄이 채워져요. 직접 적어도 되고, 비워두면 공통 기준으로만 평가해요.</p>
       </div>
       <button class="btn-outline" id="pk-save-btn" type="button" style="width:100%;min-height:48px;font-size:15px">이 패키지 저장</button>
       <button class="btn-small" id="pk-cancel-edit-btn" type="button" style="display:none">수정 그만두고 새로 만들기</button>
@@ -1659,7 +1662,8 @@ function renderPackageEditor(){
   document.getElementById('pk-questions').value = set ? (set.questions || []).join('\n') : '';
   let criteria = set ? (set.criteria || '') : '';
   const hint = document.getElementById('pk-criteria-hint');
-  hint.textContent = '전공 기준 몇 줄만 적으면 돼요. 공통 기준(코칭 철학·답변 형식)은 앱이 알아서 붙여요. 비워두면 공통 기준으로만 평가해요.';
+  hint.className = 'st-sub';
+  hint.textContent = '버튼을 누르면 이 전공만의 기준 5~7줄이 채워져요. 직접 적어도 되고, 비워두면 공통 기준으로만 평가해요.';
   if(set && !criteria){
     const legacy = extractLegacyCriteria(set);
     const linked = findLinkedPreset(set);
@@ -1775,6 +1779,41 @@ document.getElementById('pk-gen-btn').onclick = async () => {
     statusEl.textContent = err.message;
   }
   btn.disabled = false; btn.textContent = 'AI로 질문 만들기';
+};
+
+document.getElementById('pk-crit-gen-btn').onclick = async () => {
+  const name = document.getElementById('pk-name').value.trim();
+  const box = document.getElementById('pk-criteria');
+  const statusEl = document.getElementById('pk-criteria-hint');
+  const btn = document.getElementById('pk-crit-gen-btn');
+  if(!name){
+    statusEl.className = 'st-err';
+    statusEl.textContent = '먼저 1번 칸에 전공 이름을 적어주세요.';
+    return;
+  }
+  if(box.value.trim() && !confirm('지금 적혀 있는 기준을 AI가 만든 기준으로 바꿀까요?')) return;
+  btn.disabled = true; btn.textContent = '만드는 중...';
+  statusEl.className = 'st-sub';
+  statusEl.textContent = 'AI가 평가 기준을 만들고 있어요. 10~20초 정도 걸려요.';
+  try{
+    const res = await fetch(apiUrl('/api/generate-questions'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetField: name, mode: 'criteria' })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || '생성에 실패했어요.');
+    if(!data.criteria || !String(data.criteria).trim()){
+      throw new Error('기준을 받지 못했어요. 서버 파일(api/generate-questions.js)이 새 버전인지 확인해 주세요.');
+    }
+    box.value = data.criteria;
+    statusEl.className = 'st-ok';
+    statusEl.textContent = '기준을 만들었어요. 선생님 경험에 맞게 한두 줄 고치면 더 좋아요.';
+  }catch(err){
+    statusEl.className = 'st-err';
+    statusEl.textContent = err.message;
+  }
+  btn.disabled = false; btn.textContent = 'AI로 기준 만들기';
 };
 
 document.getElementById('pk-save-btn').onclick = async () => {
