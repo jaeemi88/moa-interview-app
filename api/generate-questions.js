@@ -1,5 +1,7 @@
 // 강사가 입력한 전공·지원직무를 바탕으로, "직무 특화 질문" 유형에 쓸 면접 질문 6개를
-// AI로 생성해주는 서버 함수입니다. 생성된 질문은 그 자리에서 저장되지 않고 클라이언트로
+// AI로 생성해주는 서버 함수입니다.
+// 2026-09-26 추가: mode가 'criteria'이면 질문 대신 "이 전공만의 평가 기준" 5~7줄을 만들어줍니다.
+// (mode가 없으면 예전처럼 질문을 만듭니다.) 생성된 질문은 그 자리에서 저장되지 않고 클라이언트로
 // 반환되며, 강사가 "설정 저장"을 눌러야 실제로 적용됩니다.
 // 보안 (2026-09-25): 강사용 암호가 있어야 사용 가능 (AI 비용 보호)
 
@@ -57,9 +59,13 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: '확인 중 오류가 발생했습니다.' });
   }
 
-  const { targetField } = req.body || {};
+  const { targetField, mode } = req.body || {};
   if (!targetField || !String(targetField).trim()) {
     return res.status(400).json({ error: '전공·직무 정보가 필요합니다.' });
+  }
+
+  if (mode === 'criteria') {
+    return generateCriteria(String(targetField).trim(), res);
   }
 
   const systemPrompt = `당신은 15년 경력의 취업면접 코치입니다. 아래 전공·지원직무에 특화된 모의면접 질문 6개를 만들어주세요.
@@ -118,5 +124,73 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: '질문 생성 중 오류가 발생했습니다.' });
+  }
+}
+
+// ---------- 전공 평가 기준 만들기 (mode: 'criteria') ----------
+async function generateCriteria(targetField, res) {
+  const systemPrompt = `당신은 15년 경력의 취업면접 코치입니다. 모의면접 AI가 학생 답변을 평가할 때 참고할 "이 전공·직무만의 평가 기준"을 만들어주세요.
+
+[전공·지원직무] ${targetField}
+
+[중요] 아래 공통 기준은 이미 따로 적용되고 있으니 절대 다시 쓰지 마세요:
+- 이미지메이킹·자신감·진정성, STAR 구조, 구체성(수치·경험), 경험의 크기보다 성찰과 성장, 완벽함보다 결격사유 없음, 면접관 시점 추론, 꼬리질문, 답변 형식(JSON)
+
+[작성 원칙]
+- 이 전공·직무 면접에서만 특히 중요하게 보는 점을 5~7개 쓸 것
+- 각 줄은 "~인지 본다", "~면 높게 평가한다", "~는 감점 요인으로 짚는다"처럼 평가자가 바로 적용할 수 있는 문장으로 쓸 것
+- 실제 업무 상황, 협업 대상, 안전·윤리·규정, 근무 환경 인식처럼 이 직무에서만 드러나는 요소를 담을 것
+- 최소 1개는 이 직무 지원자가 자주 쓰는 막연한 표현(예: "최선을 다하겠습니다")을 짚는 감점 기준일 것
+- 외모·키·체형·나이·성별에 관한 기준은 절대 넣지 말 것
+- 한 줄은 60자 안팎으로 간결하게
+
+반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트, 설명, 코드블록 없이 순수 JSON만 반환합니다.
+{"criteria": ["기준1", "기준2", "기준3", "기준4", "기준5"]}`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [
+          { role: 'user', content: `"${targetField}" 전공·직무의 평가 기준을 만들어주세요.` }
+        ]
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      console.error('Anthropic API 오류:', data);
+      return res.status(500).json({ error: '평가 기준 생성에 실패했습니다.' });
+    }
+
+    const raw = (data.content || []).map((c) => c.text || '').join('').trim();
+    const clean = raw.replace(/```json|```/g, '').trim();
+    let parsed;
+    try {
+      parsed = JSON.parse(clean);
+    } catch (e) {
+      parsed = JSON.parse(sanitizeJsonString(clean));
+    }
+
+    if (!Array.isArray(parsed.criteria) || parsed.criteria.length === 0) {
+      return res.status(500).json({ error: 'AI가 올바른 형식의 기준을 만들지 못했습니다. 다시 시도해 주세요.' });
+    }
+
+    const lines = parsed.criteria
+      .map((c) => String(c).trim().replace(/^[-•·\d.)\s]+/, ''))
+      .filter(Boolean)
+      .map((c) => '- ' + c);
+    return res.status(200).json({ criteria: lines.join('\n') });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: '평가 기준 생성 중 오류가 발생했습니다.' });
   }
 }
