@@ -1,6 +1,16 @@
 // 강사가 입력한 전공·지원직무를 바탕으로, "직무 특화 질문" 유형에 쓸 면접 질문 6개를
 // AI로 생성해주는 서버 함수입니다. 생성된 질문은 그 자리에서 저장되지 않고 클라이언트로
 // 반환되며, 강사가 "설정 저장"을 눌러야 실제로 적용됩니다.
+// 보안 (2026-09-25): 강사용 암호가 있어야 사용 가능 (AI 비용 보호)
+
+import Redis from 'ioredis';
+import { isStaff } from './_staff.js';
+
+let redis;
+function getRedis() {
+  if (!redis) redis = new Redis(process.env.REDIS_URL);
+  return redis;
+}
 
 function sanitizeJsonString(raw) {
   let result = '';
@@ -38,6 +48,13 @@ function sanitizeJsonString(raw) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'POST 요청만 허용됩니다.' });
+  }
+
+  try {
+    if (!(await isStaff(req, getRedis()))) return res.status(401).json({ error: '강사용 암호가 필요합니다.' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: '확인 중 오류가 발생했습니다.' });
   }
 
   const { targetField } = req.body || {};

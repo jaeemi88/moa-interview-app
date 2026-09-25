@@ -1,8 +1,9 @@
 // 질문 목록, 평가 기준, 프리셋, 검토 모드 여부 등 앱 설정을 저장/조회하는 함수입니다.
 // 여러 강사가 함께 쓰므로, 강사별로 설정이 섞이지 않도록 t(강사 코드)로 키를 구분합니다.
-// (자소서 첨삭 앱과 동일한 방식)
+// 보안 (2026-09-25): 조회는 학생 화면에도 필요해서 공개, 저장(POST)은 강사용 암호가 있어야 가능
 
 import Redis from 'ioredis';
+import { isStaff } from './_staff.js';
 
 let redis;
 function getRedis() {
@@ -33,6 +34,12 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
+    try {
+      if (!(await isStaff(req, client))) return res.status(401).json({ error: '강사용 암호가 필요합니다.' });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: '확인 중 오류가 발생했습니다.' });
+    }
     const config = req.body;
     if (!config) {
       return res.status(400).json({ error: '저장할 설정이 없습니다.' });

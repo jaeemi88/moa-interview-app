@@ -1,8 +1,13 @@
 // 학생별 모의면접 결과를 저장하고(POST), 링크로 불러오는(GET) 서버 함수입니다.
 // 여러 강사가 함께 쓰므로, 강사별로 결과 목록이 섞이지 않도록 t(강사 코드)로 키를 구분합니다.
-// (자소서 첨삭 앱과 동일한 방식)
+// 보안 (2026-09-25):
+//  - 결과 저장(POST)·결과 링크 1건 조회는 학생도 사용 → 공개
+//  - 제출 목록(list=1)은 강사용 암호 필요
+//  - 기간 만료 무시(admin=1)는 강사용 암호가 있을 때만 적용
+//  - 학생 이메일 발송(notify)은 강사 승인일 때만 (암호 없으면 발송 안 함)
 
 import Redis from 'ioredis';
+import { isStaff } from './_staff.js';
 
 let redis;
 function getRedis() {
@@ -55,8 +60,6 @@ async function upsertTrackerStat(client, t, orgName, field) {
 }
 
 // 강사 검토 승인이 끝났을 때만(record.notify === true) 학생에게 결과 링크를 이메일로 보냄.
-// 즉시모드(학생이 직접 링크를 만드는 경우)는 화면에 바로 링크가 뜨므로 중복 발송하지 않음.
-// RESEND_API_KEY가 없거나 이메일을 안 남겼으면 조용히 건너뜀 (알림은 부가기능이라 실패해도 저장 자체는 막지 않음).
 async function notifyStudentByEmail(t, id, record, host) {
   try {
     if (!process.env.RESEND_API_KEY) { console.error('학생 알림 건너뜀: RESEND_API_KEY 없음'); return; }
@@ -88,10 +91,7 @@ async function notifyStudentByEmail(t, id, record, host) {
   }
 }
 
-// 모의면접 결과가 만들어질 때, 그 학생의 이메일이 "수강생 사후관리 트래커"의 개인관리에
-// 이미 등록된 학생 카드와 일치할 때만, 오늘 날짜로 상담 이력에 한 줄 자동 기록함.
-// 등록된 카드가 없으면(집체교육 등 일회성 참여자) 아무 것도 하지 않음 — 새 카드를 자동으로 만들지 않음.
-// 같은 학생이 하루에 여러 번 이용해도 그날짜 한 줄에 건수만 합쳐서 표시됨.
+// 이메일이 트래커 개인관리 카드와 일치하는 학생만 상담 이력에 자동 기록 (카드를 새로 만들지 않음)
 async function upsertStudentConsultLog(client, t, studentEmail, kind) {
   try {
     const email = String(studentEmail || '').trim().toLowerCase();
@@ -139,16 +139,18 @@ export default async function handler(req, res) {
   const indexKey = `interview_results_index:${t}`;
   const itemKey = (id) => `interview_result:${t}:${id}`;
 
+  let staff = false;
+  try { staff = await isStaff(req, client); } catch (err) { console.error(err); }
+
   if (req.method === 'POST') {
     const record = req.body;
     if (!record || !record.items) {
       return res.status(400).json({ error: '저장할 결과 데이터가 없습니다.' });
     }
+    if (!staff) record.notify = false; // 학생이 보낸 요청으로는 이메일 발송 불가
     try {
       const id = generateId();
 
-      // 트래커 연동 정보를 먼저 계산해서 record에 포함 — 학생 결과 화면에서 만족도 설문 링크를 바로 만들 수 있게 함
-      // 학생이 직접 소속 기관·전공을 선택했으면(여러 기관 동시 운영) 그 값을 우선 쓰고, 없으면 강사가 설정해둔 단일 값을 씀
       let institutionNameForSurvey = null;
       let targetFieldForSurvey = null;
       let groupCodeExpiryDays = 5;
@@ -167,8 +169,6 @@ export default async function handler(req, res) {
         console.error('트래커 연동용 설정 조회 실패:', err);
       }
 
-      // 트래커의 개인관리 카드와 이메일이 일치하는 "1:1 코칭" 학생은 기간 제한 없음.
-      // 일치하지 않는(집체교육·일회성) 학생은 강사가 설정한 일수 후 결과 링크가 막힘 (당일 포함으로 계산).
       const isIndividualCoaching = await upsertStudentConsultLog(client, t, record.studentEmail, 'interview');
       if (!isIndividualCoaching) {
         const now = new Date();
@@ -202,6 +202,7 @@ export default async function handler(req, res) {
     const { id, list } = req.query;
 
     if (list === '1') {
+      if (!staff) return res.status(401).json({ error: '강사용 암호가 필요합니다.' });
       try {
         const raw = await client.lrange(indexKey, 0, 199);
         const items = raw.map((r) => JSON.parse(r));
@@ -221,7 +222,8 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: '결과를 찾을 수 없습니다.' });
       }
       const record = JSON.parse(value);
-      if (req.query.admin !== '1' && record.expiresAt && Date.now() > record.expiresAt) {
+      const adminView = req.query.admin === '1' && staff;
+      if (!adminView && record.expiresAt && Date.now() > record.expiresAt) {
         return res.status(410).json({ error: '조회 가능한 기간이 지났어요. 결과가 필요하시면 강사님께 문의해 주세요.', expired: true });
       }
       return res.status(200).json({ record });

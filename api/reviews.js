@@ -1,9 +1,10 @@
 // 강사 검토가 필요한 제출건을 저장(POST), 목록/단건 조회(GET), 승인 후 삭제(DELETE)하는 함수입니다.
 // 승인된 건은 기존 /api/results 로 별도 저장되고, 여기 대기열에서는 삭제됩니다.
 // 여러 강사가 함께 쓰므로, 강사별로 대기열이 섞이지 않도록 t(강사 코드)로 키를 구분합니다.
-// (자소서 첨삭 앱과 동일한 방식)
+// 보안 (2026-09-25): 학생 제출(POST)만 공개, 목록·단건 조회·삭제는 강사용 암호 필요
 
 import Redis from 'ioredis';
+import { isStaff } from './_staff.js';
 
 let redis;
 function getRedis() {
@@ -22,7 +23,6 @@ function safeTeacherId(raw) {
 }
 
 // 검수 요청이 새로 들어오면, 강사가 설정해둔 이메일로 알림을 보냄.
-// RESEND_API_KEY가 없거나 강사가 이메일을 설정하지 않았으면 조용히 건너뜀 (알림은 부가기능이라 실패해도 검수 요청 저장 자체는 막지 않음).
 async function notifyByEmail(client, t, record) {
   try {
     if (!process.env.RESEND_API_KEY) { console.error('알림 건너뜀: RESEND_API_KEY 없음'); return; }
@@ -83,6 +83,14 @@ export default async function handler(req, res) {
       console.error(err);
       return res.status(500).json({ error: '검토 요청 저장 중 오류가 발생했습니다.' });
     }
+  }
+
+  // 여기부터는 강사 전용
+  try {
+    if (!(await isStaff(req, client))) return res.status(401).json({ error: '강사용 암호가 필요합니다.' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: '확인 중 오류가 발생했습니다.' });
   }
 
   if (req.method === 'GET') {
