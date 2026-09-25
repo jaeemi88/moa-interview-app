@@ -505,6 +505,32 @@
   .result-item .r-compare-label{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;}
   .result-item .r-f-title{font-size:12px;font-weight:700;color:var(--deep-green);margin-top:8px;}
   .result-item .r-f-body{font-size:13px;margin:4px 0 8px;line-height:1.6;}
+
+  /* ===== 강사 설정 화면 (탭 구조, 2026-09 개편) ===== */
+  #screen-settings{padding:0 0 60px;}
+  .st-tools{display:flex;gap:8px;padding:12px 16px;background:var(--white);}
+  .st-tabs{display:flex;background:var(--white);border-bottom:1px solid var(--line);padding:0 8px;position:sticky;top:0;z-index:5;}
+  .st-tab{flex:1;min-height:48px;border:none;border-bottom:3px solid transparent;background:transparent;font-family:inherit;font-size:14px;font-weight:700;color:var(--muted);cursor:pointer;}
+  .st-tab.on{color:var(--deep-green);border-bottom-color:var(--navy);}
+  .st-body{padding:16px;display:flex;flex-direction:column;gap:14px;}
+  .st-card{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px;}
+  .st-card h3{margin:0;font-size:16px;color:var(--deep-green);}
+  .st-sub{font-size:12px;color:var(--muted);line-height:1.55;margin:0;}
+  .st-lbl{font-size:14px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px;}
+  .st-step{width:24px;height:24px;border-radius:50%;background:var(--navy);color:var(--white);font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .st-inp{width:100%;box-sizing:border-box;border:1px solid #CBD2DC;border-radius:8px;padding:11px 12px;font-family:inherit;font-size:14px;color:var(--ink);background:var(--white);}
+  textarea.st-inp{line-height:1.6;resize:vertical;}
+  .btn-outline{min-height:44px;border:1.5px solid var(--navy);background:var(--white);color:var(--deep-green);border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;padding:0 14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;}
+  .btn-outline:disabled{opacity:0.5;cursor:default;}
+  .btn-small{min-height:40px;border:1px solid #CBD2DC;background:var(--white);color:var(--ink);border-radius:8px;font-family:inherit;font-size:13px;padding:0 10px;cursor:pointer;}
+  .pk-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 0;border-top:1px solid #EEF1F5;flex-wrap:wrap;}
+  .pk-name{font-size:14px;font-weight:700;}
+  .st-banner{background:#EAF0FE;color:var(--deep-green);border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.5;display:flex;justify-content:space-between;gap:8px;align-items:center;}
+  .st-chk{display:flex;align-items:center;gap:10px;min-height:44px;font-size:14px;cursor:pointer;}
+  .st-chk input{width:20px;height:20px;accent-color:var(--navy);}
+  .st-card details summary{cursor:pointer;font-weight:700;font-size:14px;min-height:28px;}
+  .st-ok{font-size:12px;color:var(--deep-green);font-weight:700;}
+  .st-err{font-size:12px;color:#b91c1c;font-weight:700;}
 </style>
 </head>
 <body>
@@ -577,109 +603,148 @@
 </div>
 
 <div id="screen-settings">
-  <h2>질문 · 평가기준 설정</h2>
-  <p class="hint">한 줄에 질문 하나씩 적어주세요. 평가 기준(코칭 프롬프트)도 자유롭게 수정할 수 있어요. 저장하면 이 브라우저에서 계속 유지됩니다.</p>
-  <div id="settings-questions"></div>
-  <div class="settings-block">
-    <label>평가 기준 프리셋</label>
-    <div class="sub">전공·강의별로 저장해두고 버튼 클릭 한 번으로 불러올 수 있어요.</div>
-    <div class="preset-row" id="preset-row"></div>
-    <button class="btn-add-preset" id="add-preset-btn">+ 지금 내용을 새 프리셋으로 저장</button>
+  <div class="st-tools">
+    <button class="btn-outline" id="st-qr-btn" type="button" style="flex:1">QR 보기</button>
+    <button class="btn-outline" id="st-preview-btn" type="button" style="flex:1">학생 화면 미리보기</button>
   </div>
-  <div class="settings-block">
-    <label>AI 평가 기준 (코칭 프롬프트)</label>
-    <div class="sub">AI가 답변을 평가할 때 따르는 지침이에요. 기준을 바꾸고 싶을 때 여기서 직접 수정하세요.</div>
-    <textarea id="settings-prompt" rows="10"></textarea>
+  <div class="st-tabs">
+    <button class="st-tab" data-st-tab="pkg" type="button">전공 패키지</button>
+    <button class="st-tab" data-st-tab="today" type="button">오늘 수업</button>
+    <button class="st-tab" data-st-tab="results" type="button">결과·검토</button>
   </div>
-  <div class="settings-block">
-    <label>제출 방식</label>
-    <div class="sub">켜면 학생 제출 시 AI 피드백이 바로 보이지 않고, 강사가 검토·수정한 후 링크를 만들어 전달해요.</div>
-    <label class="toggle-row">
-      <input type="checkbox" id="review-mode-toggle">
-      <span>강사 검토 후 전달 (1:1 첨삭용)</span>
-    </label>
-  </div>
-  <div class="settings-block">
-    <label>재도전 허용 범위</label>
-    <div class="sub">한 질문에 답변을 제출한 뒤, "다시 답변하기"를 얼마나 허용할지 정해요. 대상·현장 분위기에 맞춰 고르세요.</div>
-    <select id="retry-limit-select">
-      <option value="unlimited">자유롭게 (제한 없음 — 연습 목적)</option>
-      <option value="1">1회만 재도전 가능</option>
-      <option value="0">재도전 불가 (한 번만 답변)</option>
-    </select>
-  </div>
-  <div class="settings-block">
-    <label>새 검수 요청 이메일 알림</label>
-    <div class="sub">학생이 검수를 요청할 때마다 이 주소로 알림 메일이 발송돼요. 입력 후 "이메일 저장"을 눌러주세요.</div>
-    <input type="text" id="notify-email-input" placeholder="예) teacher@example.com">
-    <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
-      <button class="btn btn-secondary" id="save-notify-email-btn" type="button">이메일 저장</button>
-      <span class="save-status" id="notify-email-status"></span>
+
+  <!-- ① 전공 패키지 탭 -->
+  <div class="st-body" id="st-pane-pkg">
+    <div class="st-card">
+      <h3 id="pk-editor-title">새 전공 패키지 만들기</h3>
+      <p class="st-sub" id="pk-editor-sub">전공 하나에 필요한 것을 이 카드 한 장에서 만들고, 맨 아래 버튼 한 번으로 저장해요.</p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <label class="st-lbl" for="pk-name"><span class="st-step">1</span>전공 이름</label>
+        <input class="st-inp" id="pk-name" type="text" placeholder="예) 항공객실승무원">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+          <label class="st-lbl" for="pk-questions"><span class="st-step">2</span>질문 6개</label>
+          <button class="btn-outline" id="pk-gen-btn" type="button" style="font-size:13px">AI로 질문 만들기</button>
+        </div>
+        <textarea class="st-inp" id="pk-questions" rows="7" placeholder="한 줄에 질문 하나씩 적거나, 위 버튼으로 만들어 보세요."></textarea>
+        <p class="st-sub" id="pk-gen-status">전공 이름을 적고 버튼을 누르면 바로 이 칸에 채워져요. 직접 고쳐 써도 돼요.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <label class="st-lbl" for="pk-criteria"><span class="st-step">3</span>이 전공만의 평가 기준</label>
+        <textarea class="st-inp" id="pk-criteria" rows="6" placeholder="예) 1) 간결성: 30~45초 분량으로 결론부터 말했는지&#10;2) 안전 의식: 서비스보다 안전이 우선인지"></textarea>
+        <p class="st-sub" id="pk-criteria-hint">전공 기준 몇 줄만 적으면 돼요. 공통 기준(코칭 철학·답변 형식)은 앱이 알아서 붙여요. 비워두면 공통 기준으로만 평가해요.</p>
+      </div>
+      <button class="btn-outline" id="pk-save-btn" type="button" style="width:100%;min-height:48px;font-size:15px">이 패키지 저장</button>
+      <button class="btn-small" id="pk-cancel-edit-btn" type="button" style="display:none">수정 그만두고 새로 만들기</button>
+      <span id="pk-save-status"></span>
+    </div>
+
+    <div class="st-card" style="gap:0">
+      <h3 id="pk-list-title" style="margin-bottom:6px">내 전공 패키지</h3>
+      <div id="pk-list"></div>
+    </div>
+
+    <div class="st-card">
+      <details id="common-q-details">
+        <summary>공통 질문 편집</summary>
+        <p class="st-sub" style="margin:8px 0 12px">자기소개·지원동기·경험담·압박·포부는 모든 전공이 함께 써요. 6번은 전공을 고르지 않은 학생에게 나오는 질문이에요. 한 줄에 질문 하나씩 적어주세요.</p>
+        <div id="settings-questions" style="display:flex;flex-direction:column;gap:14px"></div>
+        <button class="btn-outline" id="common-q-save-btn" type="button" style="width:100%;margin-top:12px">공통 질문 저장</button>
+        <span id="common-q-status"></span>
+      </details>
+    </div>
+
+    <div class="st-card">
+      <details>
+        <summary>공통 평가 기준 편집 (고급)</summary>
+        <p class="st-sub" style="margin:8px 0 12px">모든 전공 기준 앞에 자동으로 붙는 기본 코칭 지침이에요. 평소에는 건드리지 않으셔도 돼요.</p>
+        <textarea class="st-inp" id="settings-prompt" rows="12"></textarea>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <button class="btn-outline" id="common-prompt-save-btn" type="button" style="flex:1">공통 기준 저장</button>
+          <button class="btn-small" id="common-prompt-reset-btn" type="button">처음 상태로 되돌리기</button>
+        </div>
+        <span id="common-prompt-status"></span>
+      </details>
     </div>
   </div>
-  <div class="settings-block">
-    <label>수강생 사후관리 트래커 연동</label>
-    <div class="sub">기관명을 입력해두면, 결과가 만들어질 때마다 아래 전공(대상)과 함께 "수강생 사후관리 트래커"의 진로모아관리 통계에 인원수가 자동으로 누적돼요. 답변 내용은 저장되지 않고 기관·전공·인원수만 집계됩니다. 특강이 끝나고 다른 기관으로 넘어가면 이 값을 바꿔주세요.</div>
-    <input type="text" id="institution-name-input" placeholder="예) 구미대학교 물리치료과" style="margin-bottom:8px">
-    <input type="text" id="target-field-input" placeholder="예) 물리치료과 (전공/대상, 선택)">
-  </div>
-  <div class="settings-block">
-    <label>집체교육 학생 결과 조회 유효기간</label>
-    <div class="sub">"수강생 사후관리 트래커"의 개인관리에 <b>이미 등록된 학생(1:1 코칭 대상)</b>은 기간 제한 없이 계속 조회할 수 있어요. 등록되지 않은 학생(집체교육·일회성 특강 참가자)만 여기서 정한 기간이 지나면 링크로 결과를 못 열어봐요. 다운로드(워드 저장)는 그 전에 미리 받아두시면 기간이 지나도 계속 볼 수 있어요.</div>
-    <input type="text" id="group-expiry-input" placeholder="예) 5 (일, 승인일 포함)">
-  </div>
-  <div class="settings-block">
-    <label>🎯 직무 특화 질문 자동 생성</label>
-    <div class="sub">위 전공·직무를 기준으로, "직무 특화 질문" 유형의 6개 질문을 AI가 새로 만들어드려요. 만든 뒤에도 아래 질문 목록에서 자유롭게 수정할 수 있어요. 자주 쓰는 전공·직무는 세트로 저장해두면 나중에 다시 생성할 필요 없이 클릭 한 번으로 불러올 수 있어요.</div>
-    <div class="preset-row" id="job-set-row" style="margin-bottom:10px"></div>
-    <div class="sub" style="margin-top:4px">이 세트에 연결할 평가 기준 — 학생이 첫 화면에서 이 세트를 고르면, 여기서 고른 평가 기준으로 피드백을 받아요. (여러 전공이 섞인 캠프용)</div>
-    <select id="job-set-preset-select" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-family:inherit;font-size:13px;margin-bottom:10px;background:var(--white)"></select>
-    <button class="btn btn-add-preset" id="save-job-set-btn" type="button" style="margin-bottom:10px">+ 지금 질문을 새 세트로 저장</button>
-    <button class="btn btn-primary" id="gen-job-questions-btn" type="button">전공·직무 입력값으로 질문 생성하기</button>
-    <div id="gen-job-questions-status" style="font-size:12px;color:var(--muted);margin-top:8px;display:none"></div>
-  </div>
-  <div class="settings-block">
-    <label>📱 학생용 QR코드</label>
-    <div class="sub">화면에 띄우거나 인쇄해서 보여주면 학생들이 스캔해서 바로 접속할 수 있어요. (admin 설정 없는 순수 학생용 주소)</div>
-    <div class="qr-box">
-      <div id="qrcode-canvas"></div>
-      <div class="qr-url" id="qr-url-text"></div>
-      <div class="qr-actions">
-        <button class="btn btn-secondary" id="qr-download-btn">이미지로 다운로드</button>
+
+  <!-- ② 오늘 수업 탭 -->
+  <div class="st-body" id="st-pane-today" style="display:none">
+    <div class="st-banner"><span>이 탭은 바꾸는 즉시 자동 저장돼요. 저장 버튼이 없어요.</span><span id="today-status" class="st-ok"></span></div>
+    <div class="st-card">
+      <h3>수업 정보</h3>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label class="st-lbl" for="institution-name-input">기관명</label>
+        <input class="st-inp" type="text" id="institution-name-input" placeholder="예) ○○대학교 취업캠프">
+        <p class="st-sub">트래커 통계에 이 기관명으로 쌓여요. 수업 기관이 바뀌면 여기만 바꿔주세요.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label class="st-lbl" for="target-field-input">대상 전공 (선택)</label>
+        <input class="st-inp" type="text" id="target-field-input" placeholder="예) 물리치료과 — 모두 같은 전공일 때만">
+        <p class="st-sub">학생이 전공 패키지를 고르지 않았을 때 쓰는 전공이에요. 여러 전공이 섞인 수업이면 비워두세요.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label class="st-lbl" for="group-expiry-input">학생 결과 조회 기간</label>
+        <div style="display:flex;align-items:center;gap:8px"><input class="st-inp" type="text" id="group-expiry-input" style="width:90px" inputmode="numeric"><span>일</span></div>
+        <p class="st-sub">1:1 코칭 학생(트래커에 등록된 학생)은 기간 제한 없이 볼 수 있어요.</p>
+      </div>
+    </div>
+    <div class="st-card" style="gap:4px">
+      <h3 style="margin-bottom:4px">학생 화면에 보일 전공</h3>
+      <p class="st-sub" style="margin-bottom:6px">체크한 전공만 학생 첫 화면에 나와요. 하나도 체크하지 않으면 전공 선택 없이 바로 질문 유형이 나와요.</p>
+      <div id="today-visible-list"></div>
+    </div>
+    <div class="st-card">
+      <h3>운영 방식</h3>
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <span class="st-lbl" style="margin-bottom:4px">제출 방식</span>
+        <label class="st-chk"><input type="radio" name="review-mode" id="review-mode-off" value="off">바로 AI 피드백 보여주기</label>
+        <label class="st-chk"><input type="radio" name="review-mode" id="review-mode-on" value="on">강사 검토 후 전달 (1:1 첨삭)</label>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label class="st-lbl" for="retry-limit-select">다시 답변하기</label>
+        <select class="st-inp" id="retry-limit-select">
+          <option value="unlimited">자유롭게 (제한 없음 — 연습 목적)</option>
+          <option value="1">1회만 재도전 가능</option>
+          <option value="0">재도전 불가 (한 번만 답변)</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label class="st-lbl" for="notify-email-input">검토 요청 알림 이메일</label>
+        <input class="st-inp" type="text" id="notify-email-input" placeholder="예) teacher@example.com">
+        <p class="st-sub">학생이 검토를 요청하면 이 주소로 알림 메일이 가요.</p>
       </div>
     </div>
   </div>
-  <div class="settings-block">
-    <label>제출 현황</label>
-    <div class="sub">지금까지 학생들이 만든 결과 링크를 모아볼 수 있어요.</div>
-    <button class="btn btn-secondary" id="view-submissions-btn">📋 제출된 학생 결과 목록 보기</button>
-  </div>
-  <div class="settings-block">
-    <label>검토 대기함</label>
-    <div class="sub">"강사 검토 후 전달"이 켜져 있을 때, 학생이 보낸 제출건을 확인·수정하고 승인하는 곳이에요.</div>
-    <button class="btn btn-secondary" id="view-review-queue-btn">📝 검토 대기함 열기</button>
-  </div>
-  <div class="settings-actions">
-    <button class="btn btn-primary" id="settings-save">저장</button>
-    <button class="btn btn-secondary" id="settings-cancel">취소</button>
-    <span class="save-status" id="save-status"></span>
+
+  <!-- ③ 결과·검토 탭 -->
+  <div class="st-body" id="st-pane-results" style="display:none">
+    <div class="st-card" style="gap:6px">
+      <h3>검토 대기함</h3>
+      <p class="st-sub">"강사 검토 후 전달"일 때 학생 제출이 여기로 와요. 누르면 검토 화면이 열려요.</p>
+      <div id="review-list-body"></div>
+    </div>
+    <div class="st-card" style="gap:6px">
+      <h3>제출된 결과</h3>
+      <div id="admin-list-body"></div>
+    </div>
   </div>
 </div>
 
-<div id="screen-admin-list">
-  <div class="admin-list-header">
-    <button class="back" id="admin-list-back">← 설정으로</button>
-    <h2>제출 현황</h2>
+<div class="modal-overlay" id="qr-modal">
+  <div class="modal-box" style="text-align:center">
+    <h3>학생용 QR코드</h3>
+    <p>화면에 띄우거나 인쇄해서 보여주면 학생들이 스캔해서 바로 접속할 수 있어요.</p>
+    <div class="qr-box" style="margin-bottom:14px">
+      <div id="qrcode-canvas"></div>
+      <div class="qr-url" id="qr-url-text"></div>
+      <div class="qr-actions">
+        <button class="btn btn-secondary" id="qr-download-btn" type="button">이미지로 다운로드</button>
+      </div>
+    </div>
+    <button class="modal-close" id="qr-close-btn" type="button">닫기</button>
   </div>
-  <div id="admin-list-body"></div>
-</div>
-
-<div id="screen-review-list">
-  <div class="admin-list-header">
-    <button class="back" id="review-list-back">← 설정으로</button>
-    <h2>검토 대기함</h2>
-  </div>
-  <div id="review-list-body"></div>
 </div>
 
 <div id="screen-review-detail">
@@ -937,16 +1002,11 @@ let currentQuestionIdx = 0;
 const screenSelect = document.getElementById('screen-select');
 const screenChat = document.getElementById('screen-chat');
 const screenSettings = document.getElementById('screen-settings');
-const screenAdminList = document.getElementById('screen-admin-list');
 const adminListBody = document.getElementById('admin-list-body');
-const adminListBack = document.getElementById('admin-list-back');
-const viewSubmissionsBtn = document.getElementById('view-submissions-btn');
-const reviewModeToggle = document.getElementById('review-mode-toggle');
 const retryLimitSelect = document.getElementById('retry-limit-select');
-const viewReviewQueueBtn = document.getElementById('view-review-queue-btn');
-const screenReviewList = document.getElementById('screen-review-list');
 const reviewListBody = document.getElementById('review-list-body');
-const reviewListBack = document.getElementById('review-list-back');
+let SETTINGS_TAB = 'pkg'; // 강사 설정 화면에서 지금 보고 있는 탭: pkg | today | results
+let PK_EDIT_IDX = -1;     // 전공 패키지 카드에서 수정 중인 패키지 번호 (-1 = 새로 만들기)
 const screenReviewDetail = document.getElementById('screen-review-detail');
 const reviewDetailBody = document.getElementById('review-detail-body');
 const reviewDetailTitle = document.getElementById('review-detail-title');
@@ -1016,11 +1076,6 @@ let answersByIdx = {}; // question index -> {question, answer, feedback}
 let ALL_ANSWERS = {}; // categoryId -> { catTitle, items: { idx: {question, answer, feedback} } } — 카테고리 전환해도 유지됨
 const settingsQuestions = document.getElementById('settings-questions');
 const settingsPrompt = document.getElementById('settings-prompt');
-const presetRow = document.getElementById('preset-row');
-const addPresetBtn = document.getElementById('add-preset-btn');
-const settingsSave = document.getElementById('settings-save');
-const settingsCancel = document.getElementById('settings-cancel');
-const saveStatus = document.getElementById('save-status');
 
 async function loadConfig(){
   try{
@@ -1081,11 +1136,29 @@ function findLinkedPreset(set){
   return PRESETS.find(p => p.name === set.presetName) || null;
 }
 
+// 전공 패키지 하나의 평가 기준을 완성해줌
+// ① 패키지에 "전공 기준(criteria)"이 적혀 있으면 → 공통 기준 + 전공 기준
+// ② 예전 방식으로 평가 기준 프리셋이 연결돼 있으면 → 그 프리셋 그대로
+// ③ 둘 다 없으면 → 빈 값 (강사 공통 기준 사용)
+function buildPackagePrompt(set){
+  if(!set) return '';
+  if(set.criteria && set.criteria.trim()){
+    return SYSTEM_PROMPT + `\n\n[${set.name} 전공 특화 기준 — 반드시 반영]\n` + set.criteria.trim();
+  }
+  const linked = findLinkedPreset(set);
+  return linked ? linked.prompt : '';
+}
+
+// 학생 첫 화면에 보여줄 패키지 (오늘 수업 탭에서 체크한 것만)
+function visibleJobSets(){
+  return JOB_QUESTION_SETS.filter(s => s.visible !== false);
+}
+
 function renderJobSelectScreen(){
   catList.innerHTML = `
-    <p class="lead" style="margin-bottom:16px">본인 전공·지원직무를 선택해주세요. 선택하시면 "직무 특화 질문"과 전체 피드백이 그에 맞게 조정돼요.</p>
+    <p class="lead" style="margin-bottom:16px">본인 전공·지원직무를 선택해주세요. 질문과 피드백 기준이 그 전공에 맞게 바뀌어요.</p>
   `;
-  JOB_QUESTION_SETS.forEach(set => {
+  visibleJobSets().forEach(set => {
     const card = document.createElement('button');
     card.className = 'cat-card';
     card.innerHTML = `
@@ -1101,8 +1174,7 @@ function renderJobSelectScreen(){
       if(jobCat) jobCat.questions = set.questions.slice();
       STUDENT_TARGET_FIELD_OVERRIDE = set.targetField || set.name;
       STUDENT_INSTITUTION_OVERRIDE = set.institutionName || '';
-      const linked = findLinkedPreset(set);
-      STUDENT_PROMPT_OVERRIDE = linked ? linked.prompt : '';
+      STUDENT_PROMPT_OVERRIDE = buildPackagePrompt(set);
       renderCategories();
     };
     catList.appendChild(card);
@@ -1458,7 +1530,7 @@ chatBody.addEventListener('touchend', (e) => {
 function showSelectScreen(){
   screenChat.style.display = 'none';
   screenSettings.style.display = 'none';
-  screenAdminList.style.display = 'none';
+  screenReviewDetail.style.display = 'none';
   screenSelect.style.display = 'block';
   progressTrack.style.display = 'none';
   swipeHint.style.display = 'none';
@@ -1503,186 +1575,351 @@ if(qrDownloadBtn){
   };
 }
 
-/* ---- Settings screen ---- */
+/* ---- Settings screen (탭 구조) ---- */
 function openSettings(skipHistory){
   screenSelect.style.display = 'none';
   screenChat.style.display = 'none';
-  screenAdminList.style.display = 'none';
-  screenReviewList.style.display = 'none';
   screenReviewDetail.style.display = 'none';
   screenSettings.style.display = 'flex';
   progressTrack.style.display = 'none';
   swipeHint.style.display = 'none';
-  headerTitle.textContent = '설정';
-  saveStatus.textContent = '';
-
-  settingsQuestions.innerHTML = '';
-  CATEGORIES.forEach((cat, idx) => {
-    const block = document.createElement('div');
-    block.className = 'settings-block';
-    block.innerHTML = `
-      <label>${idx+1}. ${escapeHtml(cat.title)}</label>
-      <div class="sub">${escapeHtml(cat.desc)} · 한 줄에 질문 하나씩</div>
-      <textarea data-cat-idx="${idx}" rows="${Math.max(4, cat.questions.length)}">${escapeHtml(cat.questions.join('\n'))}</textarea>
-    `;
-    settingsQuestions.appendChild(block);
-  });
-  settingsPrompt.value = SYSTEM_PROMPT;
-  reviewModeToggle.checked = REVIEW_MODE;
-  retryLimitSelect.value = RETRY_LIMIT;
-  document.getElementById('notify-email-input').value = NOTIFY_EMAIL || '';
-  document.getElementById('notify-email-status').textContent = '';
-  document.getElementById('institution-name-input').value = INSTITUTION_NAME || '';
-  document.getElementById('group-expiry-input').value = GROUP_CODE_EXPIRY_DAYS || 5;
-  document.getElementById('target-field-input').value = TARGET_FIELD || '';
-  renderPresetRow();
-  renderJobSetRow();
-  renderStudentQRCode();
+  headerTitle.textContent = '강사 설정';
+  showSettingsTab(SETTINGS_TAB);
   if(!skipHistory){
     history.pushState({ screen: 'settings' }, '');
   }
 }
 
-function renderPresetRow(){
-  presetRow.innerHTML = '';
-  PRESETS.forEach((preset, idx) => {
-    const chip = document.createElement('div');
-    chip.className = 'preset-chip';
-    chip.innerHTML = `<span>${escapeHtml(preset.name)}</span><button class="preset-del" data-idx="${idx}" title="삭제">✕</button>`;
-    chip.querySelector('span').onclick = () => {
-      settingsPrompt.value = preset.prompt;
-    };
-    chip.querySelector('.preset-del').onclick = (e) => {
-      e.stopPropagation();
-      if(confirm(`"${preset.name}" 프리셋을 삭제할까요?`)){
-        PRESETS.splice(idx, 1);
-        saveConfig();
-        renderPresetRow();
-        renderJobSetRow();
-      }
-    };
-    presetRow.appendChild(chip);
+function showSettingsTab(tab){
+  SETTINGS_TAB = tab;
+  document.querySelectorAll('.st-tab').forEach(btn => {
+    btn.classList.toggle('on', btn.getAttribute('data-st-tab') === tab);
   });
-  renderJobSetPresetSelect();
+  ['pkg', 'today', 'results'].forEach(t => {
+    document.getElementById('st-pane-' + t).style.display = (t === tab) ? 'flex' : 'none';
+  });
+  if(tab === 'pkg'){ renderPackageTab(); }
+  if(tab === 'today'){ renderTodayTab(); }
+  if(tab === 'results'){ renderReviewList(); renderAdminList(); }
 }
 
-// 세트에 연결할 평가 기준 선택 칸 — 프리셋 목록이 바뀔 때마다 다시 그림
-function renderJobSetPresetSelect(){
-  const sel = document.getElementById('job-set-preset-select');
-  if(!sel) return;
-  const prev = sel.value;
-  sel.innerHTML = '<option value="">연결 안 함 (강사 기본 설정 따르기)</option>' +
-    PRESETS.map(p => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`).join('');
-  if(prev && PRESETS.some(p => p.name === prev)) sel.value = prev;
+document.querySelectorAll('.st-tab').forEach(btn => {
+  btn.onclick = () => showSettingsTab(btn.getAttribute('data-st-tab'));
+});
+
+function setStatus(el, text, isError){
+  if(!el) return;
+  el.className = isError ? 'st-err' : 'st-ok';
+  el.textContent = text;
 }
 
-addPresetBtn.onclick = () => {
-  const name = window.prompt('프리셋 이름을 입력해주세요 (예: 간호학과, 고급반)', '');
-  if(name === null || !name.trim()) return;
-  PRESETS.push({ name: name.trim(), prompt: settingsPrompt.value });
-  saveConfig();
-  renderPresetRow();
+/* ---- 상단 도구: QR · 학생 화면 미리보기 ---- */
+function studentUrl(){
+  return location.origin + location.pathname + '?t=' + encodeURIComponent(TEACHER_ID);
+}
+document.getElementById('st-qr-btn').onclick = () => {
+  renderStudentQRCode();
+  document.getElementById('qr-modal').style.display = 'flex';
+};
+document.getElementById('qr-close-btn').onclick = () => {
+  document.getElementById('qr-modal').style.display = 'none';
+};
+document.getElementById('st-preview-btn').onclick = () => {
+  window.open(studentUrl(), '_blank');
 };
 
-function renderJobSetRow(){
-  const row = document.getElementById('job-set-row');
-  row.innerHTML = '';
-  JOB_QUESTION_SETS.forEach((set, idx) => {
-    const chip = document.createElement('div');
-    chip.className = 'preset-chip';
-    const linked = findLinkedPreset(set);
-    const linkLabel = linked
-      ? ` <small style="color:var(--deep-green)">· 기준: ${escapeHtml(linked.name)}</small>`
-      : (set.presetName ? ` <small style="color:#b91c1c">· 기준 삭제됨(기본 사용)</small>` : '');
-    chip.innerHTML = `<span>${escapeHtml(set.name)}${set.institutionName ? ` <small style="opacity:0.7">(${escapeHtml(set.institutionName)})</small>` : ''}${linkLabel}</span><button class="preset-del" data-idx="${idx}" title="삭제">✕</button>`;
-    chip.querySelector('span').onclick = () => {
-      const jobCat = CATEGORIES.find(c => c.id === 'job-specific');
-      if(jobCat) jobCat.questions = set.questions.slice();
-      document.getElementById('target-field-input').value = set.targetField || set.name;
-      TARGET_FIELD = set.targetField || set.name;
-      openSettings(true);
-      const sel = document.getElementById('job-set-preset-select');
-      if(sel) sel.value = linked ? linked.name : '';
-    };
-    chip.querySelector('.preset-del').onclick = (e) => {
-      e.stopPropagation();
-      if(confirm(`"${set.name}" 세트를 삭제할까요?`)){
-        JOB_QUESTION_SETS.splice(idx, 1);
-        saveConfig();
-        renderJobSetRow();
-      }
-    };
-    row.appendChild(chip);
-  });
+/* ---- ① 전공 패키지 탭 ---- */
+function renderPackageTab(){
+  renderPackageEditor();
+  renderPackageList();
+  renderCommonQuestions();
+  settingsPrompt.value = SYSTEM_PROMPT;
 }
 
-document.getElementById('save-job-set-btn').onclick = () => {
-  const jobCat = CATEGORIES.find(c => c.id === 'job-specific');
-  if(!jobCat) return;
-  const field = document.getElementById('target-field-input').value.trim();
-  const defaultName = field || '새 세트';
-  const name = window.prompt('세트 이름을 입력해주세요 (예: 물리치료과)', defaultName);
-  if(name === null || !name.trim()) return;
-  const trimmedName = name.trim();
-  // 같은 이름의 세트가 이미 있으면 덮어쓸지 먼저 확인 (똑같은 칩이 2개 생기지 않게)
-  const existingIdx = JOB_QUESTION_SETS.findIndex(s => s.name === trimmedName);
-  if(existingIdx >= 0 && !confirm(`"${trimmedName}" 세트가 이미 있어요. 지금 내용으로 덮어쓸까요?`)) return;
-  const prevInstitution = existingIdx >= 0 ? (JOB_QUESTION_SETS[existingIdx].institutionName || '') : (INSTITUTION_NAME || '');
-  const institution = window.prompt('이 세트가 쓰일 소속 기관명을 입력해주세요 (여러 기관을 동시에 다니실 때 구분용, 비워두면 아래 기본 기관명 설정을 따라요)', prevInstitution);
-  // 현재 화면(textarea)에 있는 최신 질문 내용을 읽어서 저장
-  const ta = settingsQuestions.querySelector(`textarea[data-cat-idx="${CATEGORIES.indexOf(jobCat)}"]`);
-  const currentQuestions = ta ? ta.value.split('\n').map(s => s.trim()).filter(Boolean) : jobCat.questions;
-  const presetSel = document.getElementById('job-set-preset-select');
-  const presetName = presetSel ? presetSel.value : '';
-  const newSet = { name: trimmedName, targetField: field, institutionName: (institution || '').trim(), questions: currentQuestions, presetName };
-  if(existingIdx >= 0){
-    JOB_QUESTION_SETS[existingIdx] = newSet;
-  } else {
-    JOB_QUESTION_SETS.push(newSet);
+// 예전 방식(기본 기준 + 전공 기준을 통째로 저장한 프리셋)이면 전공 기준 부분만 떼어서 보여줌
+function extractLegacyCriteria(set){
+  const linked = findLinkedPreset(set);
+  if(!linked || !linked.prompt) return '';
+  if(linked.prompt.indexOf(DEFAULT_SYSTEM_PROMPT) !== 0) return '';
+  let rest = linked.prompt.slice(DEFAULT_SYSTEM_PROMPT.length).trim();
+  if(rest.charAt(0) === '['){
+    const nl = rest.indexOf('\n');
+    rest = nl >= 0 ? rest.slice(nl + 1).trim() : '';
   }
-  saveConfig();
-  renderJobSetRow();
-};
+  return rest;
+}
 
-document.getElementById('gen-job-questions-btn').onclick = async () => {
-  const field = document.getElementById('target-field-input').value.trim();
-  const statusEl = document.getElementById('gen-job-questions-status');
-  const btn = document.getElementById('gen-job-questions-btn');
-  if(!field){
-    statusEl.style.display = 'block';
-    statusEl.style.color = '#b91c1c';
-    statusEl.textContent = '먼저 위 칸에 전공·직무를 입력해 주세요.';
+function renderPackageEditor(){
+  const isEdit = PK_EDIT_IDX >= 0 && JOB_QUESTION_SETS[PK_EDIT_IDX];
+  const set = isEdit ? JOB_QUESTION_SETS[PK_EDIT_IDX] : null;
+  document.getElementById('pk-editor-title').textContent = isEdit ? `"${set.name}" 패키지 수정 중` : '새 전공 패키지 만들기';
+  document.getElementById('pk-cancel-edit-btn').style.display = isEdit ? 'block' : 'none';
+  document.getElementById('pk-save-btn').textContent = isEdit ? '수정 내용 저장' : '이 패키지 저장';
+  document.getElementById('pk-name').value = set ? set.name : '';
+  document.getElementById('pk-questions').value = set ? (set.questions || []).join('\n') : '';
+  let criteria = set ? (set.criteria || '') : '';
+  const hint = document.getElementById('pk-criteria-hint');
+  hint.textContent = '전공 기준 몇 줄만 적으면 돼요. 공통 기준(코칭 철학·답변 형식)은 앱이 알아서 붙여요. 비워두면 공통 기준으로만 평가해요.';
+  if(set && !criteria){
+    const legacy = extractLegacyCriteria(set);
+    const linked = findLinkedPreset(set);
+    if(legacy){
+      criteria = legacy;
+    } else if(linked){
+      hint.textContent = `지금은 예전에 연결한 "${linked.name}" 평가 기준으로 평가돼요. 이 칸을 비워두면 그대로 유지되고, 기준을 적어 저장하면 새 방식으로 바뀌어요.`;
+    }
+  }
+  document.getElementById('pk-criteria').value = criteria;
+  setStatus(document.getElementById('pk-save-status'), '');
+  const gs = document.getElementById('pk-gen-status');
+  gs.className = 'st-sub';
+  gs.textContent = '전공 이름을 적고 버튼을 누르면 바로 이 칸에 채워져요. 직접 고쳐 써도 돼요.';
+}
+
+function packageMeta(set){
+  const qn = (set.questions || []).length;
+  let crit = '공통 기준만';
+  if(set.criteria && set.criteria.trim()) crit = '전공 기준 있음';
+  else if(findLinkedPreset(set)) crit = '예전 기준 연결됨';
+  return `질문 ${qn}개 · ${crit}` + (set.visible === false ? ' · 학생 화면에 숨김' : '');
+}
+
+function renderPackageList(){
+  const list = document.getElementById('pk-list');
+  document.getElementById('pk-list-title').textContent = `내 전공 패키지 ${JOB_QUESTION_SETS.length}개`;
+  list.innerHTML = '';
+  if(!JOB_QUESTION_SETS.length){
+    list.innerHTML = '<p class="st-sub" style="padding:8px 0">아직 만든 패키지가 없어요. 위 카드에서 첫 전공을 만들어 보세요.</p>';
     return;
   }
-  btn.disabled = true; btn.textContent = '생성 중...';
-  statusEl.style.display = 'none';
+  JOB_QUESTION_SETS.forEach((set, idx) => {
+    const row = document.createElement('div');
+    row.className = 'pk-row';
+    row.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+        <span class="pk-name">${escapeHtml(set.name)}</span>
+        <span class="st-sub">${escapeHtml(packageMeta(set))}</span>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn-small" type="button" data-act="edit">수정</button>
+        <button class="btn-small" type="button" data-act="copy">복제</button>
+        <button class="btn-small" type="button" data-act="del">삭제</button>
+      </div>
+    `;
+    row.querySelector('[data-act="edit"]').onclick = () => {
+      PK_EDIT_IDX = idx;
+      renderPackageEditor();
+      document.getElementById('pk-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+    row.querySelector('[data-act="copy"]').onclick = async () => {
+      const newName = window.prompt('복제한 패키지의 이름을 적어주세요', set.name + ' 복사본');
+      if(newName === null || !newName.trim()) return;
+      if(JOB_QUESTION_SETS.some(s => s.name === newName.trim())){ alert('같은 이름의 패키지가 이미 있어요. 다른 이름으로 적어주세요.'); return; }
+      const copy = JSON.parse(JSON.stringify(set));
+      copy.name = newName.trim();
+      copy.targetField = newName.trim();
+      if(!copy.criteria){ copy.criteria = extractLegacyCriteria(set); }
+      JOB_QUESTION_SETS.push(copy);
+      await saveConfig();
+      PK_EDIT_IDX = JOB_QUESTION_SETS.length - 1;
+      renderPackageTab();
+      document.getElementById('pk-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+    row.querySelector('[data-act="del"]').onclick = async () => {
+      if(!confirm(`"${set.name}" 패키지를 삭제할까요?`)) return;
+      JOB_QUESTION_SETS.splice(idx, 1);
+      if(PK_EDIT_IDX === idx) PK_EDIT_IDX = -1;
+      else if(PK_EDIT_IDX > idx) PK_EDIT_IDX -= 1;
+      await saveConfig();
+      renderPackageTab();
+    };
+    list.appendChild(row);
+  });
+}
+
+document.getElementById('pk-cancel-edit-btn').onclick = () => {
+  PK_EDIT_IDX = -1;
+  renderPackageEditor();
+};
+
+document.getElementById('pk-gen-btn').onclick = async () => {
+  const name = document.getElementById('pk-name').value.trim();
+  const qBox = document.getElementById('pk-questions');
+  const statusEl = document.getElementById('pk-gen-status');
+  const btn = document.getElementById('pk-gen-btn');
+  if(!name){
+    statusEl.className = 'st-err';
+    statusEl.textContent = '먼저 1번 칸에 전공 이름을 적어주세요.';
+    return;
+  }
+  if(qBox.value.trim() && !confirm('지금 적혀 있는 질문을 AI가 만든 질문으로 바꿀까요?')) return;
+  btn.disabled = true; btn.textContent = '만드는 중...';
+  statusEl.className = 'st-sub';
+  statusEl.textContent = 'AI가 질문을 만들고 있어요. 10~20초 정도 걸려요.';
   try{
     const res = await fetch(apiUrl('/api/generate-questions'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetField: field })
+      body: JSON.stringify({ targetField: name })
     });
     const data = await res.json();
-    if(!res.ok) throw new Error(data.error || '생성에 실패했습니다.');
-    const jobCat = CATEGORIES.find(c => c.id === 'job-specific');
-    if(!jobCat){
-      throw new Error('직무 특화 질문 카테고리를 찾을 수 없습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
-    }
+    if(!res.ok) throw new Error(data.error || '생성에 실패했어요.');
     if(!Array.isArray(data.questions) || data.questions.length === 0){
-      throw new Error('AI가 올바른 형식의 질문을 만들지 못했어요. 다시 시도해 주세요.');
+      throw new Error('AI가 올바른 형식의 질문을 만들지 못했어요. 다시 눌러주세요.');
     }
-    jobCat.questions = data.questions;
-    openSettings(true);
-    statusEl.style.display = 'block';
-    statusEl.style.color = 'var(--sage)';
-    statusEl.textContent = `"${field}" 기준으로 질문 6개를 새로 만들었어요. 아래 "직무 특화 질문" 항목에서 확인·수정하고 저장하세요.`;
+    qBox.value = data.questions.join('\n');
+    statusEl.className = 'st-ok';
+    statusEl.textContent = '질문 6개를 만들었어요. 확인하고 필요하면 고쳐주세요.';
   }catch(err){
-    statusEl.style.display = 'block';
-    statusEl.style.color = '#b91c1c';
+    statusEl.className = 'st-err';
     statusEl.textContent = err.message;
   }
-  btn.disabled = false; btn.textContent = '전공·직무 입력값으로 질문 생성하기';
+  btn.disabled = false; btn.textContent = 'AI로 질문 만들기';
 };
+
+document.getElementById('pk-save-btn').onclick = async () => {
+  const statusEl = document.getElementById('pk-save-status');
+  const name = document.getElementById('pk-name').value.trim();
+  const questions = document.getElementById('pk-questions').value.split('\n').map(x => x.trim()).filter(Boolean);
+  const criteria = document.getElementById('pk-criteria').value.trim();
+  if(!name){ setStatus(statusEl, '1번 칸에 전공 이름을 적어주세요.', true); return; }
+  if(!questions.length){ setStatus(statusEl, '2번 칸에 질문을 한 개 이상 적어주세요.', true); return; }
+
+  const isEdit = PK_EDIT_IDX >= 0 && JOB_QUESTION_SETS[PK_EDIT_IDX];
+  const sameNameIdx = JOB_QUESTION_SETS.findIndex(x => x.name === name);
+  let targetIdx = isEdit ? PK_EDIT_IDX : -1;
+  if(sameNameIdx >= 0 && sameNameIdx !== targetIdx){
+    if(!confirm(`"${name}" 패키지가 이미 있어요. 지금 내용으로 덮어쓸까요?`)) return;
+    if(isEdit){ JOB_QUESTION_SETS.splice(PK_EDIT_IDX, 1); targetIdx = JOB_QUESTION_SETS.findIndex(x => x.name === name); }
+    else { targetIdx = sameNameIdx; }
+  }
+  const prev = targetIdx >= 0 ? JOB_QUESTION_SETS[targetIdx] : {};
+  const pkg = {
+    name,
+    targetField: name,
+    institutionName: prev.institutionName || '',
+    questions,
+    criteria,
+    presetName: prev.presetName || '',
+    visible: prev.visible === false ? false : true
+  };
+  if(targetIdx >= 0) JOB_QUESTION_SETS[targetIdx] = pkg;
+  else JOB_QUESTION_SETS.push(pkg);
+
+  setStatus(statusEl, '저장 중...');
+  const ok = await saveConfig();
+  if(!ok){ setStatus(statusEl, '저장하지 못했어요. 잠시 후 다시 눌러주세요.', true); return; }
+  PK_EDIT_IDX = -1;
+  renderPackageTab();
+  setStatus(document.getElementById('pk-save-status'), `"${name}" 패키지를 저장했어요 ✓ 학생 첫 화면에 바로 나와요.`);
+};
+
+function renderCommonQuestions(){
+  settingsQuestions.innerHTML = '';
+  CATEGORIES.forEach((cat, idx) => {
+    const block = document.createElement('div');
+    const label = cat.id === 'job-specific' ? `${idx+1}. ${cat.title} (전공을 고르지 않은 학생용)` : `${idx+1}. ${cat.title}`;
+    block.innerHTML = `
+      <label class="st-lbl" style="margin-bottom:6px">${escapeHtml(label)}</label>
+      <textarea class="st-inp" data-cat-idx="${idx}" rows="${Math.max(4, cat.questions.length)}">${escapeHtml(cat.questions.join('\n'))}</textarea>
+    `;
+    settingsQuestions.appendChild(block);
+  });
+}
+
+document.getElementById('common-q-save-btn').onclick = async () => {
+  const statusEl = document.getElementById('common-q-status');
+  settingsQuestions.querySelectorAll('textarea[data-cat-idx]').forEach(ta => {
+    const idx = parseInt(ta.getAttribute('data-cat-idx'), 10);
+    const lines = ta.value.split('\n').map(x => x.trim()).filter(Boolean);
+    if(lines.length > 0) CATEGORIES[idx].questions = lines;
+  });
+  setStatus(statusEl, '저장 중...');
+  const ok = await saveConfig();
+  setStatus(statusEl, ok ? '공통 질문을 저장했어요 ✓' : '저장하지 못했어요. 다시 눌러주세요.', !ok);
+  if(ok) renderCategories();
+};
+
+document.getElementById('common-prompt-save-btn').onclick = async () => {
+  const statusEl = document.getElementById('common-prompt-status');
+  const v = settingsPrompt.value.trim();
+  if(!v){ setStatus(statusEl, '내용이 비어 있어요.', true); return; }
+  SYSTEM_PROMPT = v;
+  setStatus(statusEl, '저장 중...');
+  const ok = await saveConfig();
+  setStatus(statusEl, ok ? '공통 기준을 저장했어요 ✓' : '저장하지 못했어요. 다시 눌러주세요.', !ok);
+};
+
+document.getElementById('common-prompt-reset-btn').onclick = () => {
+  if(!confirm('공통 평가 기준을 처음 상태로 되돌릴까요? (저장 버튼을 눌러야 반영돼요)')) return;
+  settingsPrompt.value = DEFAULT_SYSTEM_PROMPT;
+};
+
+/* ---- ② 오늘 수업 탭 (바꾸면 자동 저장) ---- */
+function renderTodayTab(){
+  document.getElementById('institution-name-input').value = INSTITUTION_NAME || '';
+  document.getElementById('target-field-input').value = TARGET_FIELD || '';
+  document.getElementById('group-expiry-input').value = GROUP_CODE_EXPIRY_DAYS || 5;
+  document.getElementById('review-mode-on').checked = !!REVIEW_MODE;
+  document.getElementById('review-mode-off').checked = !REVIEW_MODE;
+  retryLimitSelect.value = RETRY_LIMIT;
+  document.getElementById('notify-email-input').value = NOTIFY_EMAIL || '';
+  document.getElementById('today-status').textContent = '';
+
+  const box = document.getElementById('today-visible-list');
+  box.innerHTML = '';
+  if(!JOB_QUESTION_SETS.length){
+    box.innerHTML = '<p class="st-sub">아직 전공 패키지가 없어요. "전공 패키지" 탭에서 먼저 만들어 주세요.</p>';
+    return;
+  }
+  JOB_QUESTION_SETS.forEach((set, idx) => {
+    const lab = document.createElement('label');
+    lab.className = 'st-chk';
+    lab.innerHTML = `<input type="checkbox" ${set.visible === false ? '' : 'checked'}>${escapeHtml(set.name)}`;
+    lab.querySelector('input').onchange = (e) => {
+      JOB_QUESTION_SETS[idx].visible = e.target.checked;
+      autoSaveToday();
+    };
+    box.appendChild(lab);
+  });
+}
+
+let todaySaveTimer = null;
+async function autoSaveToday(){
+  const statusEl = document.getElementById('today-status');
+  setStatus(statusEl, '저장 중...');
+  clearTimeout(todaySaveTimer);
+  const ok = await saveConfig();
+  setStatus(statusEl, ok ? '저장됨 ✓' : '저장 실패 — 다시 바꿔주세요', !ok);
+  if(ok) todaySaveTimer = setTimeout(() => { statusEl.textContent = ''; }, 2500);
+}
+
+document.getElementById('institution-name-input').addEventListener('change', (e) => {
+  INSTITUTION_NAME = e.target.value.trim(); autoSaveToday();
+});
+document.getElementById('target-field-input').addEventListener('change', (e) => {
+  TARGET_FIELD = e.target.value.trim(); autoSaveToday();
+});
+document.getElementById('group-expiry-input').addEventListener('change', (e) => {
+  const days = parseInt(e.target.value, 10);
+  if(!days || days < 1){
+    setStatus(document.getElementById('today-status'), '1 이상의 숫자로 적어주세요', true);
+    e.target.value = GROUP_CODE_EXPIRY_DAYS;
+    return;
+  }
+  GROUP_CODE_EXPIRY_DAYS = days; autoSaveToday();
+});
+document.getElementById('review-mode-on').addEventListener('change', () => { REVIEW_MODE = true; autoSaveToday(); });
+document.getElementById('review-mode-off').addEventListener('change', () => { REVIEW_MODE = false; autoSaveToday(); });
+retryLimitSelect.addEventListener('change', () => { RETRY_LIMIT = retryLimitSelect.value; autoSaveToday(); });
+document.getElementById('notify-email-input').addEventListener('change', (e) => {
+  const email = e.target.value.trim();
+  if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    setStatus(document.getElementById('today-status'), '이메일 형식을 확인해 주세요', true);
+    return;
+  }
+  NOTIFY_EMAIL = email; autoSaveToday();
+});
 
 function closeSettings(){
   screenSettings.style.display = 'none';
@@ -1704,16 +1941,7 @@ headerTitle.addEventListener('click', () => {
   location.href = location.pathname + '?t=' + encodeURIComponent(TEACHER_ID) + (isAdm ? '&admin=1' : '');
 });
 
-settingsCancel.onclick = () => { history.back(); };
-
-/* ---- Admin submission list ---- */
-viewSubmissionsBtn.onclick = async () => {
-  screenSettings.style.display = 'none';
-  screenAdminList.style.display = 'flex';
-  headerTitle.textContent = '제출 현황';
-  history.pushState({ screen: 'adminList' }, '');
-  await renderAdminList();
-};
+/* ---- 제출된 결과 목록 (결과·검토 탭 안) ---- */
 
 async function renderAdminList(){
   adminListBody.innerHTML = '<p style="color:var(--muted);font-size:13px;">불러오는 중...</p>';
@@ -1758,20 +1986,9 @@ async function renderAdminList(){
   }
 }
 
-adminListBack.onclick = () => {
-  history.back();
-};
-
 /* ---- Review queue (instructor review mode) ---- */
 let currentReviewId = null;
 let currentReviewRecord = null;
-
-viewReviewQueueBtn.onclick = async () => {
-  screenSettings.style.display = 'none';
-  screenReviewList.style.display = 'flex';
-  headerTitle.textContent = '검토 대기함';
-  await renderReviewList();
-};
 
 async function renderReviewList(){
   reviewListBody.innerHTML = '<p style="color:var(--muted);font-size:13px;">불러오는 중...</p>';
@@ -1805,15 +2022,9 @@ async function renderReviewList(){
   }
 }
 
-reviewListBack.onclick = () => {
-  screenReviewList.style.display = 'none';
-  screenSettings.style.display = 'flex';
-  headerTitle.textContent = '설정';
-};
-
 async function openReviewDetail(id){
   currentReviewId = id;
-  screenReviewList.style.display = 'none';
+  screenSettings.style.display = 'none';
   screenReviewDetail.style.display = 'flex';
   headerTitle.textContent = '검토';
   reviewDetailBody.innerHTML = '<p style="color:var(--muted);font-size:13px;">불러오는 중...</p>';
@@ -1861,8 +2072,9 @@ async function openReviewDetail(id){
 
 reviewDetailBack.onclick = () => {
   screenReviewDetail.style.display = 'none';
-  screenReviewList.style.display = 'flex';
-  headerTitle.textContent = '검토 대기함';
+  screenSettings.style.display = 'flex';
+  headerTitle.textContent = '강사 설정';
+  showSettingsTab('results');
 };
 
 reviewApproveBtn.onclick = async () => {
@@ -1909,70 +2121,17 @@ reviewApproveBtn.onclick = async () => {
     linkModal.style.display = 'flex';
 
     screenReviewDetail.style.display = 'none';
-    screenReviewList.style.display = 'flex';
-    headerTitle.textContent = '검토 대기함';
+    screenSettings.style.display = 'flex';
+    headerTitle.textContent = '강사 설정';
     currentReviewId = null;
     currentReviewRecord = null;
-    await renderReviewList();
+    showSettingsTab('results');
   }catch(err){
     alert('승인 처리 중 문제가 발생했어요. 다시 시도해주세요.');
     console.error(err);
   }
   reviewApproveBtn.disabled = false;
   reviewApproveBtn.textContent = '✅ 승인 및 학생 링크 생성';
-};
-
-document.getElementById('save-notify-email-btn').onclick = async () => {
-  const input = document.getElementById('notify-email-input');
-  const status = document.getElementById('notify-email-status');
-  const email = input.value.trim();
-  if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
-    status.style.color = '#b91c1c';
-    status.textContent = '이메일 형식을 확인해 주세요.';
-    return;
-  }
-  NOTIFY_EMAIL = email;
-  status.style.color = '';
-  status.textContent = '저장 중...';
-  const ok = await saveConfig();
-  status.textContent = ok ? '저장됨 ✓' : '저장 실패, 다시 시도해 주세요';
-};
-
-reviewModeToggle.addEventListener('change', async () => {
-  REVIEW_MODE = reviewModeToggle.checked;
-  saveStatus.textContent = '저장 중...';
-  const ok = await saveConfig();
-  saveStatus.textContent = ok ? '검토 방식 저장됨 ✓' : '저장 실패, 다시 시도해 주세요';
-});
-
-settingsSave.onclick = async () => {
-  const textareas = settingsQuestions.querySelectorAll('textarea[data-cat-idx]');
-  textareas.forEach(ta => {
-    const idx = parseInt(ta.getAttribute('data-cat-idx'), 10);
-    const lines = ta.value.split('\n').map(s => s.trim()).filter(Boolean);
-    if(lines.length > 0){
-      CATEGORIES[idx].questions = lines;
-    }
-  });
-  const newPrompt = settingsPrompt.value.trim();
-  if(newPrompt) SYSTEM_PROMPT = newPrompt;
-  REVIEW_MODE = reviewModeToggle.checked;
-  RETRY_LIMIT = retryLimitSelect.value;
-  NOTIFY_EMAIL = document.getElementById('notify-email-input').value.trim();
-  INSTITUTION_NAME = document.getElementById('institution-name-input').value.trim();
-  {
-    const days = parseInt(document.getElementById('group-expiry-input').value, 10);
-    GROUP_CODE_EXPIRY_DAYS = (days && days > 0) ? days : 5;
-  }
-  TARGET_FIELD = document.getElementById('target-field-input').value.trim();
-
-  saveStatus.textContent = '저장 중...';
-  const ok = await saveConfig();
-  saveStatus.textContent = ok ? '저장됨 ✓' : '저장 실패, 다시 시도해주세요';
-  if(ok){
-    renderCategories();
-    setTimeout(() => { history.back(); }, 500);
-  }
 };
 
 /* ---- Student result link ---- */
@@ -2138,11 +2297,6 @@ window.addEventListener('popstate', (e) => {
     if(cat) startCategory(cat, true);
   } else if(state.screen === 'settings'){
     openSettings(true);
-  } else if(state.screen === 'adminList'){
-    screenSettings.style.display = 'none';
-    screenAdminList.style.display = 'flex';
-    headerTitle.textContent = '제출 현황';
-    renderAdminList();
   } else {
     showSelectScreen();
   }
@@ -2438,7 +2592,7 @@ function renderBlockedScreen(forTeacher){
 
   history.replaceState({ screen: 'select' }, '');
   await loadConfig();
-  if(!isAdmin && JOB_QUESTION_SETS.length > 0){
+  if(!isAdmin && visibleJobSets().length > 0){
     renderJobSelectScreen();
   } else {
     renderCategories();
