@@ -632,6 +632,8 @@
     <label>🎯 직무 특화 질문 자동 생성</label>
     <div class="sub">위 전공·직무를 기준으로, "직무 특화 질문" 유형의 6개 질문을 AI가 새로 만들어드려요. 만든 뒤에도 아래 질문 목록에서 자유롭게 수정할 수 있어요. 자주 쓰는 전공·직무는 세트로 저장해두면 나중에 다시 생성할 필요 없이 클릭 한 번으로 불러올 수 있어요.</div>
     <div class="preset-row" id="job-set-row" style="margin-bottom:10px"></div>
+    <div class="sub" style="margin-top:4px">이 세트에 연결할 평가 기준 — 학생이 첫 화면에서 이 세트를 고르면, 여기서 고른 평가 기준으로 피드백을 받아요. (여러 전공이 섞인 캠프용)</div>
+    <select id="job-set-preset-select" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-family:inherit;font-size:13px;margin-bottom:10px;background:var(--white)"></select>
     <button class="btn btn-add-preset" id="save-job-set-btn" type="button" style="margin-bottom:10px">+ 지금 질문을 새 세트로 저장</button>
     <button class="btn btn-primary" id="gen-job-questions-btn" type="button">전공·직무 입력값으로 질문 생성하기</button>
     <div id="gen-job-questions-status" style="font-size:12px;color:var(--muted);margin-top:8px;display:none"></div>
@@ -896,6 +898,19 @@ const DEFAULT_PRESETS = [
   "follow_up": {"reason": "이유형 꼬리질문", "alternative": "대안형 꼬리질문", "quantify": "수치형 꼬리질문"}
 }
 따뜻하지만 명확한 코치 톤으로 작성하세요. 지나친 칭찬이나 지나친 지적 없이 균형 있게 평가하세요.`
+  },
+  {
+    name: "객실승무원",
+    prompt: DEFAULT_SYSTEM_PROMPT + `
+
+[객실승무원 직무 특화 기준 — 반드시 반영]
+1) 간결성: 승무원 면접은 답변 시간이 짧다. 결론을 첫 문장에 말하고 30~45초 분량(글자로 약 200~250자)으로 정리했는지 본다. 길면 improve에서 반드시 짚고, rewritten은 이 분량 안으로 줄여서 쓴다.
+2) 안전 의식: 서비스보다 안전이 우선이라는 인식이 드러나는지 본다. 상황 질문에서 규정을 어기고 승객 요구를 들어주는 답은 결격 신호로 분명히 지적한다.
+3) 고객 관점: "제가 ~했다"로 끝나지 않고 "승객이 ~를 느꼈다"까지 담겼는지 본다.
+4) 팀워크: 기내는 팀 단위 근무다. 혼자 해결한 이야기보다 선후배·동료와 협력한 흔적을 높게 평가한다.
+5) 태도와 어휘: 밝고 공손한 어조인지 본다. 부정적 단어, 타인 비난, 불평은 감점 요인으로 짚는다.
+6) 지원 동기의 근거: "어릴 적 꿈", "여행이 좋아서", "비행기가 좋아서"만으로는 약하다. 꿈을 위해 실제로 준비한 과정과 그 항공사를 고른 이유가 있는지 본다.
+7) 외모·키·체형에 대한 평가나 조언은 하지 않는다. 특정 항공사의 채용 절차나 합격 기준을 단정하지 않는다.`
   }
 ];
 
@@ -914,6 +929,7 @@ let TARGET_FIELD = '';
 let JOB_QUESTION_SETS = [];
 let STUDENT_TARGET_FIELD_OVERRIDE = '';
 let STUDENT_INSTITUTION_OVERRIDE = '';
+let STUDENT_PROMPT_OVERRIDE = ''; // 학생이 고른 세트에 평가 기준 프리셋이 연결돼 있으면 그 기준으로 평가
 
 let currentCategory = null;
 let currentQuestionIdx = 0;
@@ -1022,7 +1038,15 @@ async function loadConfig(){
         });
       }
       if(parsed.systemPrompt) SYSTEM_PROMPT = parsed.systemPrompt;
-      if(parsed.presets && parsed.presets.length) PRESETS = parsed.presets;
+      if(parsed.presets && parsed.presets.length){
+        PRESETS = parsed.presets;
+        // 코드에 새 기본 프리셋이 추가된 경우, 예전에 저장된 목록에 없으면 자동으로 보충
+        DEFAULT_PRESETS.forEach(defP => {
+          if(!PRESETS.some(p => p.name === defP.name)){
+            PRESETS.push(JSON.parse(JSON.stringify(defP)));
+          }
+        });
+      }
       if(typeof parsed.reviewMode === 'boolean') REVIEW_MODE = parsed.reviewMode;
       if(typeof parsed.retryLimit === 'string') RETRY_LIMIT = parsed.retryLimit;
       if(typeof parsed.notifyEmail === 'string') NOTIFY_EMAIL = parsed.notifyEmail;
@@ -1051,6 +1075,12 @@ async function saveConfig(){
   }
 }
 
+// 세트에 연결된 평가 기준 프리셋을 찾아줌 (연결이 없거나, 그 프리셋이 삭제됐으면 null → 강사 기본 설정 사용)
+function findLinkedPreset(set){
+  if(!set || !set.presetName) return null;
+  return PRESETS.find(p => p.name === set.presetName) || null;
+}
+
 function renderJobSelectScreen(){
   catList.innerHTML = `
     <p class="lead" style="margin-bottom:16px">본인 전공·지원직무를 선택해주세요. 선택하시면 "직무 특화 질문"과 전체 피드백이 그에 맞게 조정돼요.</p>
@@ -1071,6 +1101,8 @@ function renderJobSelectScreen(){
       if(jobCat) jobCat.questions = set.questions.slice();
       STUDENT_TARGET_FIELD_OVERRIDE = set.targetField || set.name;
       STUDENT_INSTITUTION_OVERRIDE = set.institutionName || '';
+      const linked = findLinkedPreset(set);
+      STUDENT_PROMPT_OVERRIDE = linked ? linked.prompt : '';
       renderCategories();
     };
     catList.appendChild(card);
@@ -1082,7 +1114,10 @@ function renderJobSelectScreen(){
     <span class="cat-text"><span><div class="cat-title">해당사항 없음 / 건너뛰기</div></span></span>
     <span class="arrow">›</span>
   `;
-  skipBtn.onclick = () => renderCategories();
+  skipBtn.onclick = () => {
+    STUDENT_PROMPT_OVERRIDE = '';
+    renderCategories();
+  };
   catList.appendChild(skipBtn);
 }
 
@@ -1368,10 +1403,12 @@ async function submitAnswer(){
     const jobContext = effectiveField
       ? `\n\n[직무 맥락] 이 수강생은 '${effectiveField}' 전공·직무를 준비 중입니다. 가능하면 good/improve/sample_direction/rewritten/interviewer_inference 코멘트에 이 직무의 특성(관련 역량, 현장에서 자주 겪는 상황 등)을 자연스럽게 반영해서 답변해 주세요.`
       : '';
+    // 학생이 고른 세트에 연결된 평가 기준이 있으면 그 기준을, 없으면 강사가 설정한 기본 기준을 사용
+    const basePrompt = STUDENT_PROMPT_OVERRIDE || SYSTEM_PROMPT;
     const response = await fetch("/api/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question, answer: text, systemPrompt: SYSTEM_PROMPT + jobContext })
+      body: JSON.stringify({ question, answer: text, systemPrompt: basePrompt + jobContext })
     });
     const fb = await response.json();
     if(fb.error) throw new Error(fb.error);
@@ -1521,10 +1558,22 @@ function renderPresetRow(){
         PRESETS.splice(idx, 1);
         saveConfig();
         renderPresetRow();
+        renderJobSetRow();
       }
     };
     presetRow.appendChild(chip);
   });
+  renderJobSetPresetSelect();
+}
+
+// 세트에 연결할 평가 기준 선택 칸 — 프리셋 목록이 바뀔 때마다 다시 그림
+function renderJobSetPresetSelect(){
+  const sel = document.getElementById('job-set-preset-select');
+  if(!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">연결 안 함 (강사 기본 설정 따르기)</option>' +
+    PRESETS.map(p => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`).join('');
+  if(prev && PRESETS.some(p => p.name === prev)) sel.value = prev;
 }
 
 addPresetBtn.onclick = () => {
@@ -1541,13 +1590,19 @@ function renderJobSetRow(){
   JOB_QUESTION_SETS.forEach((set, idx) => {
     const chip = document.createElement('div');
     chip.className = 'preset-chip';
-    chip.innerHTML = `<span>${escapeHtml(set.name)}${set.institutionName ? ` <small style="opacity:0.7">(${escapeHtml(set.institutionName)})</small>` : ''}</span><button class="preset-del" data-idx="${idx}" title="삭제">✕</button>`;
+    const linked = findLinkedPreset(set);
+    const linkLabel = linked
+      ? ` <small style="color:var(--deep-green)">· 기준: ${escapeHtml(linked.name)}</small>`
+      : (set.presetName ? ` <small style="color:#b91c1c">· 기준 삭제됨(기본 사용)</small>` : '');
+    chip.innerHTML = `<span>${escapeHtml(set.name)}${set.institutionName ? ` <small style="opacity:0.7">(${escapeHtml(set.institutionName)})</small>` : ''}${linkLabel}</span><button class="preset-del" data-idx="${idx}" title="삭제">✕</button>`;
     chip.querySelector('span').onclick = () => {
       const jobCat = CATEGORIES.find(c => c.id === 'job-specific');
       if(jobCat) jobCat.questions = set.questions.slice();
       document.getElementById('target-field-input').value = set.targetField || set.name;
       TARGET_FIELD = set.targetField || set.name;
       openSettings(true);
+      const sel = document.getElementById('job-set-preset-select');
+      if(sel) sel.value = linked ? linked.name : '';
     };
     chip.querySelector('.preset-del').onclick = (e) => {
       e.stopPropagation();
@@ -1568,11 +1623,23 @@ document.getElementById('save-job-set-btn').onclick = () => {
   const defaultName = field || '새 세트';
   const name = window.prompt('세트 이름을 입력해주세요 (예: 물리치료과)', defaultName);
   if(name === null || !name.trim()) return;
-  const institution = window.prompt('이 세트가 쓰일 소속 기관명을 입력해주세요 (여러 기관을 동시에 다니실 때 구분용, 비워두면 아래 기본 기관명 설정을 따라요)', INSTITUTION_NAME || '');
+  const trimmedName = name.trim();
+  // 같은 이름의 세트가 이미 있으면 덮어쓸지 먼저 확인 (똑같은 칩이 2개 생기지 않게)
+  const existingIdx = JOB_QUESTION_SETS.findIndex(s => s.name === trimmedName);
+  if(existingIdx >= 0 && !confirm(`"${trimmedName}" 세트가 이미 있어요. 지금 내용으로 덮어쓸까요?`)) return;
+  const prevInstitution = existingIdx >= 0 ? (JOB_QUESTION_SETS[existingIdx].institutionName || '') : (INSTITUTION_NAME || '');
+  const institution = window.prompt('이 세트가 쓰일 소속 기관명을 입력해주세요 (여러 기관을 동시에 다니실 때 구분용, 비워두면 아래 기본 기관명 설정을 따라요)', prevInstitution);
   // 현재 화면(textarea)에 있는 최신 질문 내용을 읽어서 저장
   const ta = settingsQuestions.querySelector(`textarea[data-cat-idx="${CATEGORIES.indexOf(jobCat)}"]`);
   const currentQuestions = ta ? ta.value.split('\n').map(s => s.trim()).filter(Boolean) : jobCat.questions;
-  JOB_QUESTION_SETS.push({ name: name.trim(), targetField: field, institutionName: (institution || '').trim(), questions: currentQuestions });
+  const presetSel = document.getElementById('job-set-preset-select');
+  const presetName = presetSel ? presetSel.value : '';
+  const newSet = { name: trimmedName, targetField: field, institutionName: (institution || '').trim(), questions: currentQuestions, presetName };
+  if(existingIdx >= 0){
+    JOB_QUESTION_SETS[existingIdx] = newSet;
+  } else {
+    JOB_QUESTION_SETS.push(newSet);
+  }
   saveConfig();
   renderJobSetRow();
 };
