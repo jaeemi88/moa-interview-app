@@ -607,6 +607,7 @@
     <button class="btn-outline" id="st-qr-btn" type="button" style="flex:1">QR 보기</button>
     <button class="btn-outline" id="st-preview-btn" type="button" style="flex:1">학생 화면 미리보기</button>
   </div>
+  <button class="btn-outline" id="st-live-btn" type="button" style="width:100%;margin-top:8px">🔒 🎯 면접관 체험 보드 (수업 시연용)</button>
   <div class="st-tabs">
     <button class="st-tab" data-st-tab="pkg" type="button">전공 패키지</button>
     <button class="st-tab" data-st-tab="today" type="button">오늘 수업</button>
@@ -2982,8 +2983,315 @@ function renderBlockedScreen(forTeacher){
     : '이 링크는 더 이상 사용할 수 없어요. 담당 강사님께 문의해 주세요.') + '</p>';
 }
 
+// =====================================================================
+// 🎯 면접관 체험 보드 (2026-09-26 추가)
+// 한 학생이 시연하면 나머지 학생이 휴대폰으로 "10자 한 줄 인상"을 보내고, 강사 화면에 키워드 보드로 모임
+// 합격/보류/탈락 같은 평가는 받지 않음 (학생 자신감 보호) · 이름 등 개인정보 없음 · 하루 뒤 자동 삭제
+// =====================================================================
+const LIVE_MAX = 10;
+const LIVE_NORM = s => String(s || '').replace(/[\s.,!?~·…'"()\[\]]/g, '').toLowerCase();
+let LIVE = { code: '', round: 1, title: '', timer: null, view: 'raw', data: null };
+
+function liveStudentUrl(code){
+  return location.origin + location.pathname + '?live=' + encodeURIComponent(code);
+}
+
+function openLiveBoard(){
+  let el = document.getElementById('live-board');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'live-board';
+    el.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#fff;display:flex;flex-direction:column;font-family:inherit;color:var(--ink);overflow:auto';
+    document.body.appendChild(el);
+  }
+  el.style.display = 'flex';
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid var(--line)">
+      <div style="font-weight:800;font-size:13px;letter-spacing:1px;color:var(--navy)">MOA FORMULA</div>
+      <div style="font-weight:800;font-size:20px">🎯 면접관 체험 보드</div>
+      <button type="button" class="btn-outline" id="lv-close" style="min-height:36px">닫기</button>
+    </div>
+    <div id="lv-body" style="flex:1;display:flex;flex-direction:column;padding:16px 20px;gap:14px"></div>`;
+  el.querySelector('#lv-close').onclick = closeLiveBoard;
+  if(LIVE.code){ renderLiveBoard(); startLivePolling(); }
+  else renderLiveStart();
+}
+
+function closeLiveBoard(){
+  if(LIVE.timer){ clearInterval(LIVE.timer); LIVE.timer = null; }
+  const el = document.getElementById('live-board');
+  if(el) el.style.display = 'none';
+}
+
+function renderLiveStart(){
+  const body = document.getElementById('lv-body');
+  body.innerHTML = `
+    <div style="max-width:560px;margin:30px auto;text-align:center;line-height:1.7">
+      <p style="font-size:17px;margin:0 0 6px">한 학생이 모의면접을 시연하면, 나머지 학생들이 <b>면접관이 되어</b> 휴대폰으로 한 줄 인상(10자)을 보내요.</p>
+      <p style="font-size:14px;color:var(--muted);margin:0 0 18px">평가 점수(합격·탈락)는 받지 않아요. 학생 이름은 적지 말고 "시연 1"처럼 적어주세요.</p>
+      <input class="st-inp" id="lv-title-in" type="text" maxlength="40" placeholder="시연 질문 (선택) 예) 지원동기를 말씀해 주세요" style="margin-bottom:12px">
+      <button type="button" class="btn-outline" id="lv-start" style="width:100%;min-height:50px;font-size:16px">🔒 보드 시작하기</button>
+      <p id="lv-start-msg" style="font-size:13px;color:#C0392B;margin-top:10px"></p>
+    </div>`;
+  body.querySelector('#lv-start').onclick = async () => {
+    const btn = body.querySelector('#lv-start');
+    btn.disabled = true; btn.textContent = '시작하는 중...';
+    try{
+      const res = await fetch('/api/live', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'start', title: body.querySelector('#lv-title-in').value.trim() }) });
+      const d = await res.json();
+      if(!res.ok) throw new Error(d.error || '시작하지 못했어요.');
+      LIVE.code = d.code; LIVE.round = d.round; LIVE.title = d.title || ''; LIVE.view = 'raw'; LIVE.data = null;
+      renderLiveBoard(); startLivePolling();
+    }catch(err){
+      body.querySelector('#lv-start-msg').textContent = err.message + (String(err.message).includes('암호') ? ' (강사 화면에서 암호를 먼저 입력해 주세요)' : '');
+      btn.disabled = false; btn.textContent = '🔒 보드 시작하기';
+    }
+  };
+}
+
+function renderLiveBoard(){
+  const body = document.getElementById('lv-body');
+  body.innerHTML = `
+    <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:stretch">
+      <div style="flex:0 0 auto;border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center;min-width:220px">
+        <div id="lv-qr" style="display:inline-block"></div>
+        <div style="font-size:13px;color:var(--muted);margin-top:6px">휴대폰 카메라로 찍어주세요</div>
+        <div style="font-size:26px;font-weight:800;letter-spacing:4px;color:var(--navy)">${escapeHtml(LIVE.code)}</div>
+      </div>
+      <div style="flex:1;min-width:280px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+          <span style="font-size:15px;font-weight:700;background:#EEF3FF;color:var(--deep-green);border-radius:999px;padding:4px 12px">라운드 <span id="lv-round">${LIVE.round}</span></span>
+          <span style="font-size:15px;color:var(--muted)">응답 <b id="lv-count" style="color:var(--ink);font-size:22px">0</b>명</span>
+        </div>
+        <div id="lv-title-show" style="font-size:22px;font-weight:700;line-height:1.4">${LIVE.title ? '❓ ' + escapeHtml(LIVE.title) : '<span style="color:var(--muted);font-weight:400;font-size:16px">시연 질문을 적으면 학생 화면에도 보여요</span>'}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input class="st-inp" id="lv-title-edit" type="text" maxlength="40" placeholder="시연 질문 바꾸기 (선택)" value="${escapeHtml(LIVE.title)}" style="flex:1;min-width:180px;padding:8px 10px">
+          <button type="button" class="btn-outline" id="lv-title-save" style="min-height:38px">질문 저장</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" class="btn-outline" id="lv-sum" style="min-height:42px">🔒 🤖 AI로 키워드 묶기</button>
+          <button type="button" class="btn-outline" id="lv-view" style="min-height:42px">키워드로 보기</button>
+          <button type="button" class="btn-outline" id="lv-next" style="min-height:42px">🔒 다음 라운드 ▶</button>
+        </div>
+        <div id="lv-msg" style="font-size:13px;color:var(--muted)">같은 말이 많을수록 글자가 커져요. 부적절한 말은 눌러서 숨길 수 있어요.</div>
+      </div>
+    </div>
+    <div id="lv-summary"></div>
+    <div id="lv-cloud" style="flex:1;min-height:280px;border:1px solid var(--line);border-radius:14px;padding:24px;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:10px 22px;background:#FAFBFF"></div>`;
+  try{
+    new QRCode(body.querySelector('#lv-qr'), { text: liveStudentUrl(LIVE.code), width: 200, height: 200, colorDark: '#1A3FB8', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.M });
+  }catch(e){ body.querySelector('#lv-qr').innerHTML = `<div style="font-size:12px;word-break:break-all;max-width:200px">${escapeHtml(liveStudentUrl(LIVE.code))}</div>`; }
+
+  const msg = body.querySelector('#lv-msg');
+  const post = async (payload) => {
+    const res = await fetch('/api/live', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: LIVE.code, ...payload }) });
+    const d = await res.json();
+    if(!res.ok) throw new Error(d.error || '처리하지 못했어요.');
+    return d;
+  };
+  body.querySelector('#lv-title-save').onclick = async () => {
+    const t = body.querySelector('#lv-title-edit').value.trim();
+    try{ await post({ action: 'title', title: t }); LIVE.title = t;
+      body.querySelector('#lv-title-show').innerHTML = t ? '❓ ' + escapeHtml(t) : '<span style="color:var(--muted);font-weight:400;font-size:16px">시연 질문을 적으면 학생 화면에도 보여요</span>';
+    }catch(err){ msg.textContent = err.message; }
+  };
+  body.querySelector('#lv-next').onclick = async () => {
+    if(!confirm('다음 라운드로 넘어갈까요? 지금 보드는 새로 비워지고, 학생 휴대폰도 자동으로 새 입력칸이 열려요.')) return;
+    try{
+      const t = body.querySelector('#lv-title-edit').value.trim();
+      const d = await post({ action: 'next', title: t });
+      LIVE.round = d.round; LIVE.title = d.title || ''; LIVE.view = 'raw'; LIVE.data = null;
+      renderLiveBoard(); refreshLive();
+    }catch(err){ msg.textContent = err.message; }
+  };
+  body.querySelector('#lv-sum').onclick = async () => {
+    const btn = body.querySelector('#lv-sum');
+    btn.disabled = true; btn.textContent = '묶는 중...';
+    msg.textContent = 'AI가 비슷한 말끼리 묶고 있어요. 10초 정도 걸려요.';
+    try{
+      const d = await post({ action: 'summarize' });
+      if(LIVE.data) LIVE.data.summary = d.summary;
+      LIVE.view = 'keyword';
+      drawLive();
+      msg.textContent = '키워드로 묶었어요. 새 응답이 더 오면 다시 눌러주세요.';
+    }catch(err){ msg.textContent = err.message; }
+    btn.disabled = false; btn.textContent = '🔒 🤖 AI로 키워드 묶기';
+  };
+  body.querySelector('#lv-view').onclick = () => {
+    if(LIVE.view === 'raw' && !(LIVE.data && LIVE.data.summary)){ msg.textContent = '먼저 "AI로 키워드 묶기"를 눌러주세요.'; return; }
+    LIVE.view = LIVE.view === 'raw' ? 'keyword' : 'raw';
+    drawLive();
+  };
+  body.querySelector('#lv-cloud').addEventListener('click', async (e) => {
+    const w = e.target.closest('.lv-word');
+    if(!w || LIVE.view !== 'raw') return;
+    if(!confirm(`"${w.dataset.text}" 을(를) 보드에서 숨길까요?`)) return;
+    try{ await post({ action: 'hide', text: w.dataset.text }); refreshLive(); }catch(err){ msg.textContent = err.message; }
+  });
+  drawLive();
+}
+
+function startLivePolling(){
+  if(LIVE.timer) clearInterval(LIVE.timer);
+  refreshLive();
+  LIVE.timer = setInterval(refreshLive, 3000);
+}
+
+async function refreshLive(){
+  if(!LIVE.code) return;
+  try{
+    const res = await fetch('/api/live?code=' + encodeURIComponent(LIVE.code));
+    const d = await res.json();
+    if(!res.ok) return;
+    LIVE.data = d;
+    if(d.round !== LIVE.round){ LIVE.round = d.round; LIVE.title = d.title || ''; renderLiveBoard(); }
+    drawLive();
+  }catch(e){ /* 잠깐 끊겨도 다음 주기에 다시 시도 */ }
+}
+
+function drawLive(){
+  const cloud = document.getElementById('lv-cloud');
+  const sumBox = document.getElementById('lv-summary');
+  const countEl = document.getElementById('lv-count');
+  const viewBtn = document.getElementById('lv-view');
+  if(!cloud) return;
+  const d = LIVE.data || { msgs: [], total: 0, summary: null };
+  if(countEl) countEl.textContent = d.total || 0;
+  if(viewBtn) viewBtn.textContent = LIVE.view === 'raw' ? '키워드로 보기' : '원문으로 보기';
+
+  const sum = d.summary;
+  if(sumBox){
+    if(sum && LIVE.view === 'keyword'){
+      const st = sum.groups.filter(g => g.type === 'strength').map(g => escapeHtml(g.keyword)).join(' · ');
+      const im = sum.groups.filter(g => g.type === 'improve').map(g => escapeHtml(g.keyword)).join(' · ');
+      sumBox.innerHTML = `<div style="background:#EEF3FF;border-radius:12px;padding:14px 18px;line-height:1.7">
+        <div style="font-size:14px;color:var(--muted)">🤖 면접관 ${d.total}명의 한 줄 총평</div>
+        <div style="font-size:22px;font-weight:700;margin:2px 0 6px">"${escapeHtml(sum.summary || '')}"</div>
+        ${st ? `<div style="font-size:16px"><b style="color:var(--navy)">👍 강점</b> ${st}</div>` : ''}
+        ${im ? `<div style="font-size:16px"><b style="color:#C2410C">🔧 다듬을 점</b> ${im}</div>` : ''}
+      </div>`;
+    } else sumBox.innerHTML = '';
+  }
+
+  let items = [];
+  if(LIVE.view === 'keyword' && sum){
+    items = sum.groups.map(g => ({ text: g.keyword, count: g.count, color: g.type === 'improve' ? '#C2410C' : '#295BF2' }));
+  } else {
+    const map = new Map();
+    (d.msgs || []).forEach(m => {
+      const k = LIVE_NORM(m);
+      if(!k) return;
+      if(!map.has(k)) map.set(k, { text: m, count: 0 });
+      map.get(k).count++;
+    });
+    const blues = ['#295BF2', '#1A3FB8', '#4C7BF5', '#11308C', '#6B85D6'];
+    items = Array.from(map.values()).sort((a, b) => b.count - a.count).slice(0, 60)
+      .map((it, i) => ({ ...it, color: blues[i % blues.length] }));
+  }
+  if(!items.length){
+    cloud.innerHTML = '<div style="font-size:18px;color:var(--muted)">학생들이 QR을 찍고 한 줄 인상을 보내면 여기에 나타나요</div>';
+    return;
+  }
+  const max = Math.max(...items.map(i => i.count)), min = Math.min(...items.map(i => i.count));
+  // 크기 순서를 섞어서 구름처럼 보이게 (가장 큰 말이 가운데 쪽)
+  const ordered = [];
+  items.forEach((it, i) => { if(i % 2) ordered.push(it); else ordered.unshift(it); });
+  cloud.innerHTML = ordered.map(it => {
+    const size = max === min ? 34 : Math.round(20 + (it.count - min) / (max - min) * 46);
+    return `<span class="lv-word" data-text="${escapeHtml(it.text)}" title="${it.count}명" style="font-size:${size}px;font-weight:${size > 40 ? 800 : 700};color:${it.color};line-height:1.2;cursor:${LIVE.view === 'raw' ? 'pointer' : 'default'};white-space:nowrap">${escapeHtml(it.text)}${it.count > 1 ? `<sup style="font-size:12px;color:var(--muted);margin-left:2px">${it.count}</sup>` : ''}</span>`;
+  }).join('');
+}
+
+// ---------- 학생 휴대폰 화면 (?live=코드) ----------
+function liveDeviceId(){
+  try{
+    let id = localStorage.getItem('moa_live_device');
+    if(!id){ id = 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10); localStorage.setItem('moa_live_device', id); }
+    return id;
+  }catch(e){
+    if(!window.__liveDev) window.__liveDev = 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    return window.__liveDev;
+  }
+}
+
+async function renderLiveStudent(code){
+  document.body.classList.add('role-student');
+  const badge = document.getElementById('role-badge');
+  if(badge) badge.textContent = '면접관 체험';
+  if(typeof headerTitle !== 'undefined' && headerTitle) headerTitle.textContent = '내가 면접관이라면?';
+  const gb = document.getElementById('gear-btn'); if(gb) gb.style.display = 'none';
+  document.querySelectorAll('.hub-back, #hub-back-btn, a[href*="moa-hub"]').forEach(a => a.style.display = 'none');
+  const lead = document.querySelector('#screen-select .lead'); if(lead) lead.style.display = 'none';
+  let round = 0, sentRound = 0;
+  const box = catList;
+  const sentKey = r => 'moa_live_sent_' + code + '_' + r;
+
+  function draw(title){
+    let sent = false; try{ sent = localStorage.getItem(sentKey(round)) === '1'; }catch(e){}
+    if(sent || sentRound === round){
+      box.innerHTML = `<div style="background:var(--white);border:1px solid var(--line);border-radius:12px;padding:28px 18px;text-align:center;line-height:1.7">
+        <div style="font-size:40px">✅</div>
+        <div style="font-size:18px;font-weight:700">보냈어요!</div>
+        <div style="font-size:14px;color:var(--muted)">화면에 모이는 키워드를 함께 봐요.<br>다음 시연이 시작되면 자동으로 새 입력칸이 열려요.</div>
+      </div>`;
+      return;
+    }
+    box.innerHTML = `<div style="background:var(--white);border:1px solid var(--line);border-radius:12px;padding:20px 18px;line-height:1.6">
+      <div style="font-size:13px;color:var(--muted)">라운드 ${round}</div>
+      <div style="font-size:19px;font-weight:800;margin:4px 0 6px">🎯 내가 면접관이라면?</div>
+      ${title ? `<div style="font-size:14px;background:#EEF3FF;border-radius:8px;padding:8px 10px;margin-bottom:10px">❓ ${escapeHtml(title)}</div>` : ''}
+      <div style="font-size:14px;color:var(--muted);margin-bottom:10px">방금 답변한 지원자는 어떤 사람으로 보였나요? <b>10자 이내</b>로 적어주세요.</div>
+      <input class="st-inp" id="lv-in" type="text" maxlength="${LIVE_MAX}" placeholder="예) 준비된 느낌, 목소리 작음" autocomplete="off" style="font-size:17px">
+      <div id="lv-cnt" style="text-align:right;font-size:12px;color:var(--muted);margin-top:4px">0 / ${LIVE_MAX}자</div>
+      <button type="button" class="btn btn-primary" id="lv-send" style="width:100%;margin-top:8px;min-height:48px;font-size:16px">보내기</button>
+      <div id="lv-err" style="font-size:13px;color:#C0392B;margin-top:8px"></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:10px">이름 없이 익명으로 보내져요. 외모 이야기나 상처 주는 말은 적지 말아요.</div>
+    </div>`;
+    const inp = box.querySelector('#lv-in'), cnt = box.querySelector('#lv-cnt'), err = box.querySelector('#lv-err'), btn = box.querySelector('#lv-send');
+    inp.addEventListener('input', () => { cnt.textContent = Array.from(inp.value).length + ' / ' + LIVE_MAX + '자'; });
+    const send = async () => {
+      const text = inp.value.trim();
+      if(!text){ err.textContent = '한 줄 인상을 적어주세요.'; return; }
+      if(Array.from(text).length > LIVE_MAX){ err.textContent = LIVE_MAX + '자 이내로 적어주세요.'; return; }
+      btn.disabled = true; btn.textContent = '보내는 중...';
+      try{
+        const res = await fetch('/api/live', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'say', code, round, text, device: liveDeviceId() }) });
+        const d = await res.json();
+        if(res.ok || d.already){
+          sentRound = round; try{ localStorage.setItem(sentKey(round), '1'); }catch(e){}
+          draw(title); return;
+        }
+        if(res.status === 409 && d.round){ round = d.round; draw(d.title || ''); return; }
+        throw new Error(d.error || '보내지 못했어요.');
+      }catch(e){ err.textContent = e.message; btn.disabled = false; btn.textContent = '보내기'; }
+    };
+    btn.onclick = send;
+    inp.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); send(); } });
+  }
+
+  async function peek(first){
+    try{
+      const res = await fetch('/api/live?peek=1&code=' + encodeURIComponent(code));
+      const d = await res.json();
+      if(!res.ok){ if(first) box.innerHTML = `<div class="empty" style="padding:30px;text-align:center">${escapeHtml(d.error || '보드를 찾을 수 없어요.')}</div>`; return; }
+      const typing = document.activeElement && document.activeElement.id === 'lv-in';
+      if(d.round !== round){ round = d.round; draw(d.title); }
+      else if(first) draw(d.title);
+      else if(!typing && sentRound !== round){ /* 입력 중이 아니면 제목만 갱신 */ }
+    }catch(e){ if(first) box.innerHTML = '<div class="empty" style="padding:30px;text-align:center">연결이 불안정해요. 잠시 후 새로고침 해주세요.</div>'; }
+  }
+  await peek(true);
+  setInterval(() => peek(false), 4000);
+}
+
+document.getElementById('st-live-btn').onclick = openLiveBoard;
+
 (async function init(){
   const params = new URLSearchParams(location.search);
+  if(params.get('live')){
+    await renderLiveStudent(String(params.get('live')).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8));
+    return;
+  }
   if(params.get('master') === '1'){
     document.body.classList.add('role-teacher');
     document.getElementById('role-badge').textContent = '관리자';
