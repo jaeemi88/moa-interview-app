@@ -638,6 +638,14 @@
         <textarea class="st-inp" id="pk-criteria" rows="6" placeholder="예) 1) 간결성: 30~45초 분량으로 결론부터 말했는지&#10;2) 안전 의식: 서비스보다 안전이 우선인지"></textarea>
         <p class="st-sub" id="pk-criteria-hint">버튼을 누르면 이 전공만의 기준 5~7줄이 채워져요. 직접 적어도 되고, 비워두면 공통 기준으로만 평가해요.</p>
       </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+          <label class="st-lbl" for="pk-redflag"><span class="st-step">4</span>결격 검증 질문 <span style="font-weight:400;color:var(--muted);font-size:13px">(선택)</span></label>
+          <button class="btn-outline" id="pk-rf-gen-btn" type="button" style="font-size:13px">🔒 AI로 결격 검증 질문 만들기</button>
+        </div>
+        <textarea class="st-inp" id="pk-redflag" rows="7" placeholder="한 줄에 하나씩: 질문 // 걸러내는 것&#10;예) 더 조건 좋은 병원에서 연락이 오면 어떻게 하시겠어요? // 경유지 태도·짧은 근속"></textarea>
+        <p class="st-sub" id="pk-rf-status">이 전공에서 면접관이 특히 걸러내는 태도를 확인하는 꼬리질문이에요. "//" 뒤의 설명은 학생에게 안 보이고, AI 피드백과 검토 화면에만 쓰여요. 비워두면 기본 결격 검증 질문이 나와요.</p>
+      </div>
       <button class="btn-outline" id="pk-save-btn" type="button" style="width:100%;min-height:48px;font-size:15px">이 패키지 저장</button>
       <button class="btn-small" id="pk-cancel-edit-btn" type="button" style="display:none">수정 그만두고 새로 만들기</button>
       <span id="pk-save-status"></span>
@@ -857,8 +865,63 @@ const DEFAULT_CATEGORIES = [
       "동료 또는 협력 부서와의 관계에서 이 직무 특성상 중요한 점은 무엇인가요?",
       "이 직무를 5년 이상 지속하기 위해 본인에게 필요한 것은 무엇이라고 생각하시나요?"
     ]
+  },
+  {
+    // 2026-09-26 추가: 결격 검증 질문 (전공 패키지에 결격 검증 질문이 있으면 그 질문으로 바뀜)
+    id: "redflag",
+    title: "결격 검증 질문",
+    desc: "면접관이 걸러내는 포인트 점검",
+    questions: [
+      "지금까지 가장 힘들었던 팀 활동과, 그때 어려웠던 이유를 말씀해 주세요.",
+      "함께 지낸 사람 중 가장 맞지 않았던 분은 어떤 분이었고, 어떻게 지내셨나요?",
+      "저희 회사가 같은 업계의 다른 곳과 다른 점을 한 가지 말씀해 주세요.",
+      "지금까지 낸 성과 중 가장 자신 있는 것을, 본인이 직접 한 일만 떼어서 설명해 주세요.",
+      "입사하면 가장 먼저 해보고 싶은 일을 구체적으로 말씀해 주세요.",
+      "입사 후 더 좋은 조건의 회사에서 연락이 오면 어떻게 하시겠어요?"
+    ]
   }
 ];
+
+// 결격 검증 기본 질문이 걸러내려는 포인트 (학생에게는 안 보이고, AI 피드백과 강사 검토 화면에만 쓰임)
+const DEFAULT_REDFLAG_NOTES = {
+  "지금까지 가장 힘들었던 팀 활동과, 그때 어려웠던 이유를 말씀해 주세요.": "남 탓·환경 탓 여부",
+  "함께 지낸 사람 중 가장 맞지 않았던 분은 어떤 분이었고, 어떻게 지내셨나요?": "동료를 깎아내리는지, 갈등 조율 방식",
+  "저희 회사가 같은 업계의 다른 곳과 다른 점을 한 가지 말씀해 주세요.": "회사·직무에 대한 관심과 이해",
+  "지금까지 낸 성과 중 가장 자신 있는 것을, 본인이 직접 한 일만 떼어서 설명해 주세요.": "과장·검증 불가 표현",
+  "입사하면 가장 먼저 해보고 싶은 일을 구체적으로 말씀해 주세요.": "추상적 다짐으로 끝나는지",
+  "입사 후 더 좋은 조건의 회사에서 연락이 오면 어떻게 하시겠어요?": "조기 이탈(경유지) 신호"
+};
+let REDFLAG_BASE_QUESTIONS = null; // 전공을 바꿀 때 되돌아갈 기본 결격 검증 질문
+
+// 질문 문장으로 "걸러내려는 포인트"를 찾아줌 (기본 질문 + 모든 전공 패키지의 결격 검증 질문)
+function findRedflagNote(question){
+  if(!question) return '';
+  if(DEFAULT_REDFLAG_NOTES[question]) return DEFAULT_REDFLAG_NOTES[question];
+  for(const set of (JOB_QUESTION_SETS || [])){
+    const hit = (set.redflagQuestions || []).find(x => x && x.q === question);
+    if(hit && hit.note) return hit.note;
+  }
+  return '';
+}
+
+// 결격 신호(red_flags) 표시 블록 — 학생 피드백 카드·결과 페이지 공용
+function redFlagsHtml(flags){
+  if(!Array.isArray(flags)) return '';
+  const list = flags.filter(f => f && (f.quote || f.why));
+  if(!list.length){
+    return `<div style="background:#EAF7EF;border:1px solid #BfE3CC;border-radius:8px;padding:10px 12px;margin:0 0 10px;font-size:13.5px;color:#1E6B41;line-height:1.6">✅ <b>결격 신호 없음</b> — "일 잘할 것 같은 인상 + 큰 흠 없음" 기준을 통과했어요</div>`;
+  }
+  return `<div style="background:#FFF7E8;border:1px solid #F5C26B;border-radius:8px;padding:10px 12px;margin:0 0 10px;line-height:1.6">
+    <div style="font-weight:700;font-size:14px;color:#8A5A00;margin-bottom:6px">⚠️ 면접관이 멈칫할 수 있는 표현 (${list.length}개)</div>
+    ${list.map(f => `
+      <div style="border-top:1px dashed #F5C26B;padding-top:8px;margin-top:8px;font-size:13.5px;color:#333">
+        ${f.type ? `<span style="display:inline-block;background:#fff;border:1px solid #F5C26B;color:#8A5A00;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:700;margin-bottom:4px">${escapeHtml(f.type)}</span>` : ''}
+        ${f.quote ? `<div style="font-weight:700">"${escapeHtml(f.quote)}"</div>` : ''}
+        ${f.why ? `<div>→ ${escapeHtml(f.why)}</div>` : ''}
+        ${f.fix ? `<div style="margin-top:2px">✏️ 이렇게: ${escapeHtml(f.fix)}</div>` : ''}
+      </div>`).join('')}
+  </div>`;
+}
 
 const DEFAULT_SYSTEM_PROMPT = `당신은 15년 경력의 취업면접 코치입니다. "MOA FORMULA — 면접의 공식" 기준으로 수강생의 모의면접 답변을 평가합니다.
 평가 기준: 1) 이미지메이킹(첫인상, 자신감 있는 태도, 진정성) 2) 논리 구조(STAR 구조 - 상황/과제/행동/결과가 필요한 질문인 경우) 3) 내용의 구체성(추상적 표현이 아닌 실제 경험/수치)
@@ -1168,6 +1231,15 @@ function visibleJobSets(){
   return JOB_QUESTION_SETS.filter(s => s.visible !== false);
 }
 
+// 학생이 고른 전공 패키지에 결격 검증 질문이 있으면 그 질문으로, 없으면 기본 질문으로
+function applyRedflagQuestions(set){
+  const rfCat = CATEGORIES.find(c => c.id === 'redflag');
+  if(!rfCat) return;
+  if(!REDFLAG_BASE_QUESTIONS) REDFLAG_BASE_QUESTIONS = rfCat.questions.slice();
+  const own = set && Array.isArray(set.redflagQuestions) ? set.redflagQuestions.map(x => x && x.q).filter(Boolean) : [];
+  rfCat.questions = own.length ? own : REDFLAG_BASE_QUESTIONS.slice();
+}
+
 function renderJobSelectScreen(){
   catList.innerHTML = `
     <p class="lead" style="margin-bottom:16px">본인 전공·지원직무를 선택해주세요. 질문과 피드백 기준이 그 전공에 맞게 바뀌어요.</p>
@@ -1186,6 +1258,7 @@ function renderJobSelectScreen(){
     card.onclick = () => {
       const jobCat = CATEGORIES.find(c => c.id === 'job-specific');
       if(jobCat) jobCat.questions = set.questions.slice();
+      applyRedflagQuestions(set);
       STUDENT_TARGET_FIELD_OVERRIDE = set.targetField || set.name;
       STUDENT_INSTITUTION_OVERRIDE = set.institutionName || '';
       STUDENT_PROMPT_OVERRIDE = buildPackagePrompt(set);
@@ -1201,6 +1274,7 @@ function renderJobSelectScreen(){
     <span class="arrow">›</span>
   `;
   skipBtn.onclick = () => {
+    applyRedflagQuestions(null);
     STUDENT_PROMPT_OVERRIDE = '';
     renderCategories();
   };
@@ -1445,6 +1519,7 @@ function addFeedbackBubble(fb){
   b.innerHTML = `
     <div class="f-title">👍 좋았던 점</div>
     <div style="margin-bottom:10px;">${escapeHtml(fb.good)}</div>
+    ${redFlagsHtml(fb.red_flags)}
     <div class="f-title">🔧 이렇게 다듬어보세요</div>
     <div style="margin-bottom:10px;">${escapeHtml(fb.improve)}</div>
     <div class="f-title">💡 모범답안 방향</div>
@@ -1506,10 +1581,15 @@ async function submitAnswer(){
     const companyContext = STUDENT_COMPANY
       ? `\n\n[지원 기업] 이 수강생의 지원 기업은 '${STUDENT_COMPANY}'입니다. 입사 후 포부 관련 질문이면 이 기업명을 넣어 코멘트와 모범답안을 작성하되, 위 사실 확인 원칙대로 이 기업의 구체적인 제도명·특허·지사명·수치는 지어내지 말고 대괄호 빈칸으로 남기세요.`
       : '';
+    // 결격 검증 질문이면, 이 질문이 걸러내려는 포인트를 AI에게 알려줌 (학생 화면에는 안 보임)
+    const rfNote = findRedflagNote(question);
+    const redflagContext = rfNote
+      ? `\n\n[결격 검증 질문] 이 질문은 '${rfNote}'을(를) 확인하려는 질문입니다. 답변에서 이 부분이 어떻게 읽히는지를 improve와 red_flags에 우선 반영하고, 면접관이 안심할 수 있는 답변 방향을 sample_direction에 제시하세요.`
+      : '';
     const response = await fetch("/api/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question, answer: text, systemPrompt: basePrompt + jobContext + ASPIRATION_GUIDE + companyContext })
+      body: JSON.stringify({ question, answer: text, systemPrompt: basePrompt + jobContext + ASPIRATION_GUIDE + companyContext + redflagContext })
     });
     const fb = await response.json();
     if(fb.error) throw new Error(fb.error);
@@ -1700,6 +1780,10 @@ function renderPackageEditor(){
     }
   }
   document.getElementById('pk-criteria').value = criteria;
+  document.getElementById('pk-redflag').value = set ? redflagToText(set.redflagQuestions) : '';
+  const rs = document.getElementById('pk-rf-status');
+  rs.className = 'st-sub';
+  rs.textContent = '이 전공에서 면접관이 특히 걸러내는 태도를 확인하는 꼬리질문이에요. "//" 뒤의 설명은 학생에게 안 보이고, AI 피드백과 검토 화면에만 쓰여요. 비워두면 기본 결격 검증 질문이 나와요.';
   setStatus(document.getElementById('pk-save-status'), '');
   const gs = document.getElementById('pk-gen-status');
   gs.className = 'st-sub';
@@ -1711,7 +1795,8 @@ function packageMeta(set){
   let crit = '공통 기준만';
   if(set.criteria && set.criteria.trim()) crit = '전공 기준 있음';
   else if(findLinkedPreset(set)) crit = '예전 기준 연결됨';
-  return `질문 ${qn}개 · ${crit}` + (set.visible === false ? ' · 학생 화면에 숨김' : '');
+  const rn = (set.redflagQuestions || []).length;
+  return `질문 ${qn}개 · ${crit}` + (rn ? ` · 결격 검증 ${rn}개` : '') + (set.visible === false ? ' · 학생 화면에 숨김' : '');
 }
 
 function renderPackageList(){
@@ -1842,6 +1927,56 @@ document.getElementById('pk-crit-gen-btn').onclick = async () => {
   btn.disabled = false; btn.textContent = 'AI로 기준 만들기';
 };
 
+// 결격 검증 질문 ↔ 입력칸 글자 변환 ("질문 // 걸러내는 것")
+function redflagToText(items){
+  return (items || []).map(x => x && x.q ? (x.note ? `${x.q} // ${x.note}` : x.q) : '').filter(Boolean).join('\n');
+}
+function textToRedflag(text){
+  return String(text || '').split('\n').map(line => {
+    const t = line.trim();
+    if(!t) return null;
+    const cut = t.indexOf('//');
+    if(cut < 0) return { q: t, note: '' };
+    const q = t.slice(0, cut).trim();
+    return q ? { q, note: t.slice(cut + 2).trim() } : null;
+  }).filter(Boolean);
+}
+
+document.getElementById('pk-rf-gen-btn').onclick = async () => {
+  const name = document.getElementById('pk-name').value.trim();
+  const box = document.getElementById('pk-redflag');
+  const statusEl = document.getElementById('pk-rf-status');
+  const btn = document.getElementById('pk-rf-gen-btn');
+  if(!name){
+    statusEl.className = 'st-err';
+    statusEl.textContent = '먼저 1번 칸에 전공 이름을 적어주세요.';
+    return;
+  }
+  if(box.value.trim() && !confirm('지금 적혀 있는 결격 검증 질문을 AI가 만든 질문으로 바꿀까요?')) return;
+  btn.disabled = true; btn.textContent = '만드는 중...';
+  statusEl.className = 'st-sub';
+  statusEl.textContent = 'AI가 결격 검증 질문을 만들고 있어요. 10~20초 정도 걸려요.';
+  try{
+    const res = await fetch(apiUrl('/api/generate-questions'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetField: name, mode: 'redflag' })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || '생성에 실패했어요.');
+    if(!Array.isArray(data.items) || !data.items.length){
+      throw new Error('질문을 받지 못했어요. 서버 파일(api/generate-questions.js)이 새 버전인지 확인해 주세요.');
+    }
+    box.value = redflagToText(data.items);
+    statusEl.className = 'st-ok';
+    statusEl.textContent = '결격 검증 질문을 만들었어요. "//" 뒤 설명은 학생에게 안 보여요. 확인 후 저장해 주세요.';
+  }catch(err){
+    statusEl.className = 'st-err';
+    statusEl.textContent = err.message;
+  }
+  btn.disabled = false; btn.textContent = '🔒 AI로 결격 검증 질문 만들기';
+};
+
 document.getElementById('pk-save-btn').onclick = async () => {
   const statusEl = document.getElementById('pk-save-status');
   const name = document.getElementById('pk-name').value.trim();
@@ -1865,6 +2000,7 @@ document.getElementById('pk-save-btn').onclick = async () => {
     institutionName: prev.institutionName || '',
     questions,
     criteria,
+    redflagQuestions: textToRedflag(document.getElementById('pk-redflag').value),
     presetName: prev.presetName || '',
     visible: prev.visible === false ? false : true
   };
@@ -1883,7 +2019,9 @@ function renderCommonQuestions(){
   settingsQuestions.innerHTML = '';
   CATEGORIES.forEach((cat, idx) => {
     const block = document.createElement('div');
-    const label = cat.id === 'job-specific' ? `${idx+1}. ${cat.title} (전공을 고르지 않은 학생용)` : `${idx+1}. ${cat.title}`;
+    const label = cat.id === 'job-specific' ? `${idx+1}. ${cat.title} (전공을 고르지 않은 학생용)`
+      : cat.id === 'redflag' ? `${idx+1}. ${cat.title} (전공 패키지에 결격 검증 질문이 없을 때 나오는 기본 질문)`
+      : `${idx+1}. ${cat.title}`;
     block.innerHTML = `
       <label class="st-lbl" style="margin-bottom:6px">${escapeHtml(label)}</label>
       <textarea class="st-inp" data-cat-idx="${idx}" rows="${Math.max(4, cat.questions.length)}">${escapeHtml(cat.questions.join('\n'))}</textarea>
@@ -2109,7 +2247,9 @@ async function openReviewDetail(id){
       block.className = 'review-q-block';
       block.innerHTML = `
         <div class="rq-question">${item.categoryTitle ? `<span style="font-size:11px;color:var(--muted);font-weight:400">[${escapeHtml(item.categoryTitle)}]</span> ` : ''}Q${i+1}. ${escapeHtml(item.question)}</div>
+        ${findRedflagNote(item.question) ? `<div style="font-size:12.5px;color:#8A5A00;margin:4px 0 6px">🔒 검증 포인트: ${escapeHtml(findRedflagNote(item.question))}</div>` : ''}
         <div class="rq-answer">${escapeHtml(item.answer)}</div>
+        ${reviewRedFlagsHtml(item.feedback.red_flags, i)}
         <label>👍 좋았던 점</label>
         <textarea data-item-idx="${i}" data-field="good" rows="2">${escapeHtml(item.feedback.good || '')}</textarea>
         <label>🔧 개선점</label>
@@ -2142,8 +2282,34 @@ reviewDetailBack.onclick = () => {
   showSettingsTab('results');
 };
 
+// 강사 검토 화면용 결격 신호 — 체크를 풀면 학생에게 그 항목이 안 보임
+function reviewRedFlagsHtml(flags, itemIdx){
+  if(!Array.isArray(flags)) return '';
+  if(!flags.length) return `<label>⚠️ 결격 신호</label><div style="font-size:13px;color:#1E6B41;margin-bottom:6px">✅ 없음</div>`;
+  return `<label>⚠️ 결격 신호 (체크를 풀면 학생에게 안 보여요)</label>
+    <div style="background:#FFF7E8;border:1px solid #F5C26B;border-radius:8px;padding:8px 10px;margin-bottom:6px">
+      ${flags.map((f, k) => `
+        <label style="display:flex;gap:8px;align-items:flex-start;font-weight:400;font-size:13px;line-height:1.5;margin:4px 0;cursor:pointer">
+          <input type="checkbox" data-rf-item="${itemIdx}" data-rf-idx="${k}" checked style="margin-top:3px">
+          <span><b>[${escapeHtml(f.type || '')}]</b> "${escapeHtml(f.quote || '')}"<br>→ ${escapeHtml(f.why || '')}${f.fix ? `<br>✏️ ${escapeHtml(f.fix)}` : ''}</span>
+        </label>`).join('')}
+    </div>`;
+}
+
 reviewApproveBtn.onclick = async () => {
   if(!currentReviewRecord || !currentReviewId) return;
+  // 체크 해제한 결격 신호는 빼고 전달
+  const rfDrop = {};
+  reviewDetailBody.querySelectorAll('input[data-rf-item]').forEach(cb => {
+    if(!cb.checked){
+      const it = cb.getAttribute('data-rf-item');
+      (rfDrop[it] = rfDrop[it] || []).push(parseInt(cb.getAttribute('data-rf-idx'), 10));
+    }
+  });
+  Object.keys(rfDrop).forEach(it => {
+    const fb = currentReviewRecord.items[it] && currentReviewRecord.items[it].feedback;
+    if(fb && Array.isArray(fb.red_flags)) fb.red_flags = fb.red_flags.filter((_, k) => !rfDrop[it].includes(k));
+  });
   const textareas = reviewDetailBody.querySelectorAll('textarea[data-item-idx]');
   textareas.forEach(ta => {
     const idx = parseInt(ta.getAttribute('data-item-idx'), 10);
@@ -2326,6 +2492,7 @@ async function renderResultView(id){
         ${rewrittenBlock}
         <div class="r-f-title">👍 좋았던 점</div>
         <div class="r-f-body">${escapeHtml(item.feedback.good)}</div>
+        ${redFlagsHtml(item.feedback.red_flags)}
         <div class="r-f-title">🔧 이렇게 다듬어보세요</div>
         <div class="r-f-body">${escapeHtml(item.feedback.improve)}</div>
         <div class="r-f-title">💡 모범답안 방향</div>
