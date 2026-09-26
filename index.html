@@ -3077,7 +3077,7 @@ function renderLiveBoard(){
       </div>
     </div>
     <div id="lv-summary"></div>
-    <div id="lv-cloud" style="flex:1;min-height:280px;border:1px solid var(--line);border-radius:14px;padding:24px;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:10px 22px;background:#FAFBFF"></div>`;
+    <div id="lv-cloud" style="flex:1;min-height:360px;height:48vh;border:1px solid var(--line);border-radius:14px;padding:10px;position:relative;overflow:hidden;background:radial-gradient(ellipse at center,#F3F6FF 0%,#FAFBFF 60%,#FFFFFF 100%)"></div>`;
   try{
     new QRCode(body.querySelector('#lv-qr'), { text: liveStudentUrl(LIVE.code), width: 200, height: 200, colorDark: '#1A3FB8', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.M });
   }catch(e){ body.querySelector('#lv-qr').innerHTML = `<div style="font-size:12px;word-break:break-all;max-width:200px">${escapeHtml(liveStudentUrl(LIVE.code))}</div>`; }
@@ -3189,17 +3189,65 @@ function drawLive(){
       .map((it, i) => ({ ...it, color: blues[i % blues.length] }));
   }
   if(!items.length){
-    cloud.innerHTML = '<div style="font-size:18px;color:var(--muted)">학생들이 QR을 찍고 한 줄 인상을 보내면 여기에 나타나요</div>';
+    cloud.dataset.key = '';
+    cloud.innerHTML = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--muted)">학생들이 QR을 찍고 한 줄 인상을 보내면 여기에 나타나요</div>';
     return;
   }
+  layoutLiveCloud(cloud, items);
+}
+
+// 진짜 "구름"처럼 배치: 가장 많이 나온 말을 가운데에 크게 두고, 나머지는 나선형으로 돌며 빈자리에 흩어 놓음
+// (같은 내용이면 다시 그리지 않아서 3초마다 글자가 흔들리지 않음)
+function liveHash(str){ let h = 0; for(const ch of String(str)) h = (h * 31 + ch.charCodeAt(0)) | 0; return Math.abs(h); }
+function layoutLiveCloud(cloud, items){
+  const W = Math.max(cloud.clientWidth - 20, 280);
+  const H = Math.max(cloud.clientHeight - 20, 300);
+  const key = W + 'x' + H + '|' + items.map(i => i.text + ':' + i.count + ':' + i.color).join('|') + '|' + LIVE.view;
+  if(cloud.dataset.key === key) return;
+  cloud.dataset.key = key;
+  const prevWords = new Set(Array.from(cloud.querySelectorAll('.lv-word')).map(w => w.dataset.text));
+  cloud.style.display = 'block';
+  cloud.style.position = 'relative';
+  cloud.style.overflow = 'hidden';
+  cloud.innerHTML = '';
+
   const max = Math.max(...items.map(i => i.count)), min = Math.min(...items.map(i => i.count));
-  // 크기 순서를 섞어서 구름처럼 보이게 (가장 큰 말이 가운데 쪽)
-  const ordered = [];
-  items.forEach((it, i) => { if(i % 2) ordered.push(it); else ordered.unshift(it); });
-  cloud.innerHTML = ordered.map(it => {
-    const size = max === min ? 34 : Math.round(20 + (it.count - min) / (max - min) * 46);
-    return `<span class="lv-word" data-text="${escapeHtml(it.text)}" title="${it.count}명" style="font-size:${size}px;font-weight:${size > 40 ? 800 : 700};color:${it.color};line-height:1.2;cursor:${LIVE.view === 'raw' ? 'pointer' : 'default'};white-space:nowrap">${escapeHtml(it.text)}${it.count > 1 ? `<sup style="font-size:12px;color:var(--muted);margin-left:2px">${it.count}</sup>` : ''}</span>`;
-  }).join('');
+  const scale = Math.min(1.25, Math.max(0.7, W / 1000));
+  const minF = Math.round(18 * scale), maxF = Math.round((items.length <= 3 ? 72 : 64) * scale);
+  const cx = W / 2 + 10, cy = H / 2 + 10;
+  const placed = [];
+  const hit = (a) => placed.some(b => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y);
+
+  items.forEach((it, idx) => {
+    let size = max === min ? Math.round((minF + maxF) / 2) : Math.round(minF + (it.count - min) / (max - min) * (maxF - minF));
+    const el = document.createElement('span');
+    el.className = 'lv-word';
+    el.dataset.text = it.text;
+    el.title = it.count + '명';
+    el.innerHTML = escapeHtml(it.text) + (it.count > 1 ? `<sup style="font-size:12px;color:var(--muted);margin-left:2px;font-weight:600">${it.count}</sup>` : '');
+    el.style.cssText = `position:absolute;left:0;top:0;white-space:nowrap;line-height:1.15;color:${it.color};font-weight:${size >= 40 ? 800 : 700};cursor:${LIVE.view === 'raw' ? 'pointer' : 'default'};visibility:hidden;transition:opacity .6s ease, transform .6s ease`;
+    cloud.appendChild(el);
+
+    let ok = false;
+    for(let attempt = 0; attempt < 4 && !ok; attempt++){
+      el.style.fontSize = size + 'px';
+      const w = el.offsetWidth + 10, h = el.offsetHeight + 4;
+      const turn = (liveHash(it.text) % 628) / 100;   // 말마다 시작 방향을 다르게
+      for(let t = 0; t < 60; t += 0.09){
+        const r = idx === 0 ? t * 2 : 6 + t * 5.5;
+        const x = cx + r * 1.6 * Math.cos(t + turn) - w / 2;   // 가로로 넓은 타원형 구름
+        const y = cy + r * 0.9 * Math.sin(t + turn) - h / 2;
+        if(x < 6 || y < 6 || x + w > W + 14 || y + h > H + 14) continue;
+        const box = { x, y, w, h };
+        if(!hit(box)){ placed.push(box); el.style.left = (x + 5) + 'px'; el.style.top = (y + 2) + 'px'; ok = true; break; }
+      }
+      if(!ok) size = Math.max(12, Math.round(size * 0.8));   // 자리가 없으면 조금 줄여서 다시
+    }
+    if(!ok){ el.remove(); return; }
+    const isNew = prevWords.size && !prevWords.has(it.text);
+    el.style.visibility = 'visible';
+    if(isNew){ el.style.opacity = '0'; el.style.transform = 'scale(.6)'; requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'scale(1)'; }); }
+  });
 }
 
 // ---------- 학생 휴대폰 화면 (?live=코드) ----------
@@ -3285,6 +3333,7 @@ async function renderLiveStudent(code){
 }
 
 document.getElementById('st-live-btn').onclick = openLiveBoard;
+window.addEventListener('resize', () => { const c = document.getElementById('lv-cloud'); if(c && document.getElementById('live-board') && document.getElementById('live-board').style.display !== 'none'){ c.dataset.key = ''; drawLive(); } });
 
 (async function init(){
   const params = new URLSearchParams(location.search);
