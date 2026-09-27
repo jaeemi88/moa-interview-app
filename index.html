@@ -772,6 +772,24 @@
 <script src="/staff-guard.js" data-mode="admin" data-color="#295BF2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
+// ── 날짜 표시 통일 (2026-09-28, 면접스킬 전 앱 공통 규칙) ──
+// 기본(기록) 2026.10.26 · week(일정) 2026.10.26(월) · short 10.26(월) · time 2026.10.26 14:00 · stime 10.26(월) 14:00 · ym 2000.03 · formal 2026년 9월 27일
+function moaDate(v, kind){
+  if(v === null || v === undefined || v === '') return '';
+  var d;
+  if(typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)){ var p = v.split('-'); d = new Date(+p[0], +p[1]-1, +p[2]); }
+  else d = new Date(v);
+  if(isNaN(d.getTime())) return String(v);
+  var y = d.getFullYear(), m = ('0'+(d.getMonth()+1)).slice(-2), dd = ('0'+d.getDate()).slice(-2), w = '(' + '일월화수목금토'[d.getDay()] + ')';
+  var hm = ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2);
+  if(kind === 'week') return y + '.' + m + '.' + dd + w;
+  if(kind === 'short') return m + '.' + dd + w;
+  if(kind === 'time') return y + '.' + m + '.' + dd + ' ' + hm;
+  if(kind === 'stime') return m + '.' + dd + w + ' ' + hm;
+  if(kind === 'ym') return y + '.' + m;
+  if(kind === 'formal') return y + '년 ' + (d.getMonth()+1) + '월 ' + d.getDate() + '일';
+  return y + '.' + m + '.' + dd;
+}
 // ---------- 여러 강사 분리 시스템 (자소서 첨삭 앱과 동일한 방식) ----------
 // 강사별로 설정·검수함·결과가 서로 섞이지 않도록, 모든 /api/config·/api/reviews·/api/results
 // 호출에 강사 코드(t)를 자동으로 붙여서 보냅니다.
@@ -2351,7 +2369,7 @@ async function renderAdminList(){
       const div = document.createElement('div');
       div.className = 'submission-item';
       const d = new Date(item.createdAt);
-      const dateStr = d.toLocaleDateString('ko-KR') + ' ' + d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+      const dateStr = moaDate(d, 'time');
       const expiredBadge = item.expiresAt ? (Date.now() > item.expiresAt ? ' <span style="color:#b91c1c;font-size:12px">(학생 조회 만료)</span>' : ` <span style="color:var(--sage);font-size:12px">(${daysRemainingText(item.expiresAt)})</span>`) : '';
       div.innerHTML = `
         <div>
@@ -2398,7 +2416,7 @@ async function renderReviewList(){
       const div = document.createElement('div');
       div.className = 'review-item';
       const d = new Date(item.createdAt);
-      const dateStr = d.toLocaleDateString('ko-KR') + ' ' + d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+      const dateStr = moaDate(d, 'time');
       div.innerHTML = `
         <div>
           <div class="s-name">${escapeHtml(item.studentName)} · ${escapeHtml(item.category)}</div>
@@ -2653,7 +2671,7 @@ async function renderResultView(id){
     currentResultRecord = record;
     resultTitle.textContent = record.studentName + '님의 "' + record.category + '" 연습 결과';
     const d = new Date(record.createdAt);
-    resultMeta.textContent = d.toLocaleDateString('ko-KR') + ' 연습';
+    resultMeta.textContent = moaDate(d) + ' 연습';
 
     resultItems.innerHTML = '';
     (record.items || []).forEach((item, i) => {
@@ -2805,7 +2823,7 @@ function daysRemainingText(expiresAt){
   if(!expiresAt) return '무제한';
   const diff = Math.ceil((expiresAt - Date.now()) / (24 * 60 * 60 * 1000));
   if(diff <= 0) return '기간만료';
-  return `${diff}일 남음 (${new Date(expiresAt).toLocaleDateString('ko-KR')}까지)`;
+  return `${diff}일 남음 (${moaDate(expiresAt)}까지)`;
 }
 
 function renderMasterTeacherList(){
@@ -2891,7 +2909,7 @@ function renderMasterTeacherList(){
         row.innerHTML = `
           <div>
             <b>${escapeHtml(t.name)}</b> <span style="color:var(--muted);font-size:12px">(코드: ${escapeHtml(t.code)})</span><br>
-            <span style="font-size:12px;color:var(--muted)">등록일: ${new Date(t.approvedAt).toLocaleDateString('ko-KR')} · 첫 등록 앱: ${t.firstApp || '-'}</span>
+            <span style="font-size:12px;color:var(--muted)">등록일: ${moaDate(t.approvedAt)} · 첫 등록 앱: ${t.firstApp || '-'}</span>
           </div>
           <button class="btn btn-danger del-teacher-btn" style="flex-shrink:0">삭제</button>
         `;
@@ -2938,7 +2956,7 @@ function renderMasterTeacherList(){
         row.innerHTML = `
           <div>
             <b>${iv.code}</b>${iv.label ? ` <span style="color:var(--navy);font-size:12px">(${escapeHtml(iv.label)})</span>` : ''} ${statusHtml}<br>
-            <span style="font-size:12px;color:var(--muted)">발급일: ${new Date(iv.createdAt).toLocaleDateString('ko-KR')} · 유효기간: ${daysRemainingText(iv.expiresAt)}</span>
+            <span style="font-size:12px;color:var(--muted)">발급일: ${moaDate(iv.createdAt)} · 유효기간: ${daysRemainingText(iv.expiresAt)}</span>
           </div>
           ${!iv.used ? '<button class="btn btn-danger del-invite-btn" style="flex-shrink:0">취소</button>' : ''}
         `;
