@@ -2790,9 +2790,29 @@ function renderTeacherSetupScreen(){
       const data = await res.json();
       if(!res.ok) throw new Error(data.error || '등록에 실패했습니다.');
       localStorage.removeItem('moa_teacher_setup_draft');
+      if(data.hubKey){
+        // 강사 개인 승인 링크 (2026-09-28) — 이 링크 하나로 암호 없이 허브·자소서·모의면접 강사용 사용
+        try{ localStorage.setItem('moa_staff_key', data.hubKey); }catch(e){}
+        const hubLink = 'https://moa-hub.vercel.app/?k=' + encodeURIComponent(data.hubKey);
+        screenSelect.innerHTML = `
+          <div class="setup-card">
+            <h3>✅ 등록 완료!</h3>
+            <p style="font-size:14px;line-height:1.7">지금 보고 계신 카톡 링크는 <b>1회용 초대 링크</b>라 앞으로는 못 써요. 아래가 <b>${escapeHtml(name || code)}님만의 승인 링크</b>예요 — 꼭 복사해서 카톡 "나에게 보내기"로 저장해두세요.</p>
+            <p style="font-size:13px;color:#666;line-height:1.7;margin-top:6px">이 링크를 누르면 <b>암호 없이</b> MOA FORMULA 허브가 열리고, 자소서 첨삭·모의면접 강사용 화면을 바로 쓸 수 있어요. 다른 사람에게는 공유하지 마세요.</p>
+            <div style="display:flex;gap:8px;align-items:center;background:var(--cream,#EAF2AE);border-radius:8px;padding:10px 12px;margin-top:10px">
+              <span style="word-break:break-all;font-size:13px">${hubLink}</span>
+              <button class="btn btn-secondary" style="margin-left:auto;flex-shrink:0" onclick="navigator.clipboard.writeText('${hubLink}')">링크 복사</button>
+            </div>
+            <button class="btn btn-primary" id="goToDashboardBtn" style="margin-top:12px">허브로 가기</button>
+          </div>
+        `;
+        document.getElementById('goToDashboardBtn').addEventListener('click', () => { location.href = hubLink; });
+        return;
+      }
       const p = new URLSearchParams(location.search);
       p.set('admin', '1');
       p.set('t', code);
+      p.delete('invite');
       const permanentLink = location.origin + location.pathname + '?' + p.toString();
       screenSelect.innerHTML = `
         <div class="setup-card">
