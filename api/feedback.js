@@ -110,6 +110,20 @@ function parseAIJson(raw) {
   return null;
 }
 
+// ───────────────────────────────────────────
+// ★ 답변 방향 단계 (2026-09-30 추가 · 모든 요청에 자동 적용, 강사 개인 프리셋 포함)
+//   결과 화면에서 "경험 한 장면 → 그때 느낀 점 → …" 칩으로 보여주는 용도
+//   sample_direction(설명 문장)은 그대로 두고 새 필드만 추가 → 예전 결과도 그대로 열림
+// ───────────────────────────────────────────
+const DIRECTION_STEPS_RULE = `
+
+[답변 방향 단계 — direction_steps 필드, 반드시 채움]
+sample_direction의 내용을 학생이 말하는 순서대로 3~4단계로 압축해 direction_steps 배열에 넣는다.
+- 각 단계는 명사형 키워드 한 줄, 12자 안팎 (예: 「경험 한 장면」, 「그때 느낀 점」, 「기관과 연결」, 「입사 후 기여」)
+- 정답 문장을 쓰지 않는다. 학생이 자기 경험을 채워 넣을 틀만 준다
+- 학생 답변이 비어 있어도 질문에 맞는 일반적인 순서로 채운다
+형식: "direction_steps": ["1단계", "2단계", "3단계", "4단계"]`;
+
 const JSON_SAFETY_RULE = `
 
 [JSON 작성 주의 — 매우 중요]
@@ -195,6 +209,7 @@ export default async function handler(req, res) {
     hiringRules +
     DIVERSITY_RULES +
     variety +
+    DIRECTION_STEPS_RULE +
     JSON_SAFETY_RULE;
 
   try {
@@ -236,6 +251,9 @@ export default async function handler(req, res) {
     }
 
     if (!Array.isArray(feedback.red_flags)) feedback.red_flags = [];
+    feedback.direction_steps = Array.isArray(feedback.direction_steps)
+      ? feedback.direction_steps.map(x => String(x || '').trim().slice(0, 24)).filter(Boolean).slice(0, 4)
+      : [];
 
     return res.status(200).json(feedback);
   } catch (err) {
