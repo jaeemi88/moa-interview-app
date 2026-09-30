@@ -232,12 +232,36 @@
     border-bottom-right-radius:2px;
   }
   .bubble.f{
-    background:#EEF3EE;
-    border:1px solid #D6E3D9;
-    border-left:4px solid var(--deep-green);
+    background:#EFF6FF;
+    border:1px solid #DBEAFE;
     align-self:flex-start;
-    border-radius:8px;
+    border-radius:14px;
+    border-bottom-left-radius:4px;
+    color:#0F172A;
   }
+  /* 연습 중 AI 피드백 카드 (2026-09-30 · 결과 화면 '리허설 리포트'와 같은 구조·톤) */
+  .fb-h{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:900;color:#1A43C9;margin-bottom:10px;}
+  .fb-row{display:flex;gap:10px;margin-bottom:12px;}
+  .fb-num{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:#fff;border:1.5px solid;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;}
+  .fb-row h5{margin:0 0 2px;font-size:14.5px;font-weight:700;}
+  .fb-row p{margin:0;}
+  .fb-row.good .fb-num{border-color:#10B981;color:#047857;} .fb-row.good h5{color:#047857;}
+  .fb-row.fix .fb-num{border-color:#295BF2;color:#1A43C9;} .fb-row.fix h5{color:#1A43C9;}
+  .fb-dir{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:12px 14px;margin:4px 0 10px;}
+  .fb-dir h5{margin:0 0 8px;font-size:14px;font-weight:700;color:#0F172A;}
+  .fb-steps{display:flex;flex-wrap:wrap;gap:6px 22px;margin:0 0 6px;padding:0;list-style:none;}
+  .fb-steps li{position:relative;padding:5px 10px;border-radius:8px;background:#F1F5F9;font-size:13px;font-weight:700;}
+  .fb-steps li:not(:last-child)::after{content:'→';position:absolute;right:-16px;top:50%;transform:translateY(-50%);color:#94A3B8;font-weight:400;}
+  .fb-dir .hint{margin:0;font-size:12.5px;color:#64748B;}
+  .bubble.f details{margin:6px 0 0;}
+  .bubble.f summary{cursor:pointer;min-height:40px;display:flex;align-items:center;font-size:13.5px;font-weight:700;color:#334155;}
+  .bubble.f summary{list-style:none;gap:8px;} .bubble.f summary::-webkit-details-marker{display:none;}
+  .bubble.f summary::after{content:'펼치기';margin-left:auto;font-size:12px;font-weight:500;color:#64748B;}
+  .bubble.f details[open] > summary::after{content:'접기';}
+  .bubble.f summary:focus-visible{outline:3px solid #93B4FB;outline-offset:2px;border-radius:6px;}
+  .bubble.f details > div{padding:0 0 8px;}
+  .fb-sample{font-family:'Noto Serif KR',serif;background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:10px;padding:10px 12px;}
+  .fb-sub{font-size:13px;font-weight:700;color:#334155;margin:8px 0 6px;}
   .bubble.f .f-title{
     font-weight:700;
     color:var(--deep-green);
@@ -1022,11 +1046,11 @@ function redFlagsHtml(flags){
   if(!list.length){
     return `<div style="background:#EAF7EF;border:1px solid #BfE3CC;border-radius:8px;padding:10px 12px;margin:0 0 10px;font-size:13.5px;color:#1E6B41;line-height:1.6">✅ <b>결격 신호 없음</b> — "일 잘할 것 같은 인상 + 큰 흠 없음" 기준을 통과했어요</div>`;
   }
-  return `<div style="background:#FFF7E8;border:1px solid #F5C26B;border-radius:8px;padding:10px 12px;margin:0 0 10px;line-height:1.6">
-    <div style="font-weight:700;font-size:14px;color:#8A5A00;margin-bottom:6px">⚠️ 면접관이 멈칫할 수 있는 표현 (${list.length}개)</div>
+  return `<div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin:0 0 12px;line-height:1.6">
+    <div style="font-weight:700;font-size:14px;color:#B45309;margin-bottom:6px">! 면접관이 멈칫할 수 있는 표현 (${list.length}개)</div>
     ${list.map(f => `
-      <div style="border-top:1px dashed #F5C26B;padding-top:8px;margin-top:8px;font-size:13.5px;color:#333">
-        ${f.type ? `<span style="display:inline-block;background:#fff;border:1px solid #F5C26B;color:#8A5A00;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:700;margin-bottom:4px">${escapeHtml(f.type)}</span>` : ''}
+      <div style="border-top:1px dashed #CBD5E1;padding-top:8px;margin-top:8px;font-size:13.5px;color:#0F172A">
+        ${f.type ? `<span style="display:inline-block;background:#fff;border:1px solid #E2E8F0;color:#334155;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:700;margin-bottom:4px">${escapeHtml(f.type)}</span>` : ''}
         ${f.quote ? `<div style="font-weight:700">"${escapeHtml(f.quote)}"</div>` : ''}
         ${f.why ? `<div>→ ${escapeHtml(f.why)}</div>` : ''}
         ${f.fix ? `<div style="margin-top:2px">✏️ 이렇게: ${escapeHtml(f.fix)}</div>` : ''}
@@ -1807,29 +1831,33 @@ function addBubble(type, text){
 }
 
 function addFeedbackBubble(fb){
+  // 2026-09-30: 결과 화면 '리허설 리포트'와 같은 흐름 — 잘한 점 → 보완할 점 → 멈칫 표현 → 답변 방향(단계) → 예시 답변(접기)
+  fb = fb || {};
   const b = document.createElement('div');
   b.className = 'bubble f';
-  const rewrittenBlock = fb.rewritten
-    ? `<div class="f-title">✏️ 다듬은 완성 문장</div><div style="margin-bottom:10px;">${escapeHtml(fb.rewritten)}</div>`
+  const steps = Array.isArray(fb.direction_steps) ? fb.direction_steps.filter(Boolean) : [];
+  const dirBody = steps.length
+    ? `<ol class="fb-steps">${steps.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ol>`
+    : (fb.sample_direction ? `<p style="margin:0 0 6px">${escapeHtml(fb.sample_direction)}</p>` : '');
+  const dirBlock = (dirBody || fb.rewritten)
+    ? `<div class="fb-dir"><h5>AI가 제안하는 답변 방향</h5>${dirBody}<p class="hint">정답을 외우기보다, 내 경험에 맞게 바꿔 말해 보세요.</p>
+        ${fb.rewritten ? `<details><summary>예시 답변 보기</summary><div class="fb-sample">${escapeHtml(fb.rewritten)}</div></details>` : ''}</div>`
     : '';
   const inferenceBlock = fb.interviewer_inference
-    ? `<div class="f-title">🎯 면접관 시점 — 평소 모습 추론</div><div style="margin-bottom:10px;">${escapeHtml(fb.interviewer_inference)}</div>`
+    ? `<details><summary>면접관 시점 — 이 답변으로 보이는 평소 모습</summary><div>${escapeHtml(fb.interviewer_inference)}</div></details>`
     : '';
   const fu = fb.follow_up || {};
   const followUpBlock = (fu.reason || fu.alternative || fu.quantify)
-    ? `<div class="f-title">❓ 예상 꼬리질문 ${REVIEW_MODE ? '' : '<span style="font-weight:400;color:var(--muted);font-size:12px">— 눌러서 바로 답해보세요</span>'}</div><div style="margin-bottom:10px;">${followUpPracticeHtml('이유형', fu.reason)}${followUpPracticeHtml('대안형', fu.alternative)}${followUpPracticeHtml('수치형', fu.quantify)}</div>`
+    ? `<div class="fb-sub">예상 꼬리질문 ${REVIEW_MODE ? '' : '<span style="font-weight:400;color:#64748B;font-size:12px">— 눌러서 바로 답해보세요</span>'}</div><div style="margin-bottom:6px;">${followUpPracticeHtml('이유형', fu.reason)}${followUpPracticeHtml('대안형', fu.alternative)}${followUpPracticeHtml('수치형', fu.quantify)}</div>`
     : '';
   b.innerHTML = `
-    <div class="f-title">👍 좋았던 점</div>
-    <div style="margin-bottom:10px;">${escapeHtml(fb.good)}</div>
+    <div class="fb-h"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path></svg>AI 피드백</div>
+    ${fb.good ? `<div class="fb-row good"><span class="fb-num">1</span><div><h5>잘한 점</h5><p>${escapeHtml(fb.good)}</p></div></div>` : ''}
+    ${fb.improve ? `<div class="fb-row fix"><span class="fb-num">2</span><div><h5>보완할 점</h5><p>${escapeHtml(fb.improve)}</p></div></div>` : ''}
     ${redFlagsHtml(fb.red_flags)}
-    <div class="f-title">🔧 이렇게 다듬어보세요</div>
-    <div style="margin-bottom:10px;">${escapeHtml(fb.improve)}</div>
-    <div class="f-title">💡 모범답안 방향</div>
-    <div style="margin-bottom:10px;">${escapeHtml(fb.sample_direction)}</div>
-    ${rewrittenBlock}
-    ${inferenceBlock}
+    ${dirBlock}
     ${followUpBlock}
+    ${inferenceBlock}
   `;
   // 태그 사이 줄바꿈이 말풍선(pre-wrap)에서 빈 줄로 보이지 않도록 정리 (본문 속 줄바꿈은 그대로 유지)
   b.innerHTML = b.innerHTML.replace(/>\s+</g, '><').trim();
