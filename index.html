@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>모의면접 시뮬레이터 — 진로모아커리어센터</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800;900&family=Noto+Serif+KR:wght@400;600&display=swap">
 <meta name="theme-color" content="#295BF2">
 <style>
   :root{
@@ -505,6 +505,98 @@
   .result-item .r-compare-label{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;}
   .result-item .r-f-title{font-size:12px;font-weight:700;color:var(--deep-green);margin-top:8px;}
   .result-item .r-f-body{font-size:13px;margin:4px 0 8px;line-height:1.6;}
+
+  /* ===== 결과 화면 '리허설 리포트' (2026-09-30 디자인 개편) =====
+     흐름: 내가 한 답변 → AI 피드백 → AI가 제안하는 답변 방향 → 다시 말해보기
+     색 역할: 블루=주요 행동 · 연한 블루=AI 피드백 · 에메랄드=잘한 점 · 앰버=주의 · 나머지는 슬레이트 무채색 */
+  #screen-result.rr{
+    --rr-blue:#295BF2; --rr-blue-ink:#1A43C9; --rr-blue-soft:#EFF6FF; --rr-blue-line:#DBEAFE; --rr-blue-focus:#93B4FB;
+    --rr-ink:#0F172A; --rr-ink2:#334155; --rr-muted:#64748B; --rr-line:#E2E8F0; --rr-line2:#CBD5E1;
+    --rr-bg:#F8FAFC; --rr-bg2:#F1F5F9; --rr-green:#10B981; --rr-green-ink:#047857; --rr-amber:#D97706; --rr-amber-ink:#B45309;
+    background:var(--rr-bg); color:var(--rr-ink); padding:28px 16px 56px;
+  }
+  #screen-result.rr > *{width:100%;max-width:880px;margin-left:auto;margin-right:auto;}
+  #screen-result.rr .result-header{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;}
+  #screen-result.rr .r-brand{font-size:12px;color:var(--rr-muted);}
+  #screen-result.rr .result-header h2{font-family:'Noto Serif KR',serif;font-size:28px;font-weight:600;color:var(--rr-ink);line-height:1.3;}
+  #screen-result.rr .r-meta{font-size:13px;color:var(--rr-muted);margin:0;}
+  #screen-result.rr #result-download-btn{align-self:flex-start;background:#fff;border:1.5px solid var(--rr-blue);color:var(--rr-blue);border-radius:10px;min-height:40px;font-weight:700;}
+  .rr-steps{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;font-weight:700;color:var(--rr-muted);margin-bottom:6px;}
+  .rr-steps .on{padding:4px 12px;border-radius:999px;background:var(--rr-blue);color:#fff;}
+  .rr-steps .done::before{content:'✓ ';color:var(--rr-green);}
+  .rr-steps i{width:20px;height:1px;background:var(--rr-line2);}
+  .rr-nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0 16px;}
+  .rr-nav .lbl{font-size:13px;color:var(--rr-muted);margin-right:4px;}
+  .rr-nav button{position:relative;width:44px;height:44px;border-radius:50%;border:1px solid var(--rr-line);background:#fff;color:var(--rr-ink2);font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;padding:0;}
+  .rr-nav button[aria-current="step"]{background:var(--rr-blue);border-color:var(--rr-blue);color:#fff;}
+  .rr-nav button .dot{position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;background:var(--rr-amber);border:2px solid #fff;}
+  .rr-card{display:none;flex-direction:column;gap:18px;padding:28px;border-radius:20px;background:#fff;border:1px solid var(--rr-line);margin-bottom:16px;}
+  .rr-card.on{display:flex;}
+  .rr-qlabel{font-size:13px;font-weight:700;color:var(--rr-blue);}
+  .rr-q{margin:4px 0 0;font-family:'Noto Serif KR',serif;font-size:22px;font-weight:600;line-height:1.5;color:var(--rr-ink);}
+  .rr-mine{padding:18px 20px;border-radius:14px;background:var(--rr-bg);border:1px solid var(--rr-line);}
+  .rr-lbl{font-size:13px;font-weight:700;color:var(--rr-muted);margin-bottom:6px;}
+  .rr-mine p{margin:0;font-size:16px;line-height:1.8;color:var(--rr-ink2);white-space:pre-wrap;}
+  .rr-arrow{display:flex;justify-content:center;color:var(--rr-blue-focus);}
+  .rr-ai{display:flex;flex-direction:column;gap:18px;padding:22px;border-radius:16px;background:var(--rr-blue-soft);border:1px solid var(--rr-blue-line);}
+  .rr-ai-h{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:900;color:var(--rr-blue-ink);}
+  .rr-row{display:flex;gap:14px;}
+  .rr-num{flex-shrink:0;width:30px;height:30px;border-radius:50%;background:#fff;border:1.5px solid;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;}
+  .rr-row h4{margin:0 0 4px;font-size:17px;font-weight:700;}
+  .rr-row p{margin:0;font-size:15px;line-height:1.7;color:var(--rr-ink);white-space:pre-wrap;}
+  .rr-row.good .rr-num{border-color:var(--rr-green);color:var(--rr-green-ink);} .rr-row.good h4{color:var(--rr-green-ink);}
+  .rr-row.fix .rr-num{border-color:var(--rr-blue);color:var(--rr-blue-ink);} .rr-row.fix h4{color:var(--rr-blue-ink);}
+  .rr-row.warn .rr-num{border-color:var(--rr-amber);color:var(--rr-amber-ink);} .rr-row.warn h4{color:var(--rr-amber-ink);}
+  .rr-flag + .rr-flag{margin-top:10px;padding-top:10px;border-top:1px dashed var(--rr-line2);}
+  .rr-flag .tag{display:inline-block;padding:1px 8px;border-radius:999px;border:1px solid var(--rr-line2);background:#fff;font-size:12px;font-weight:700;color:var(--rr-ink2);margin-bottom:4px;}
+  .rr-flag .how{margin-top:4px;color:var(--rr-ink2);}
+  .rr-ok{font-size:14px;color:var(--rr-green-ink);}
+  .rr-dir{display:flex;flex-direction:column;gap:12px;padding:22px;border-radius:16px;background:#fff;border:1px solid var(--rr-line);}
+  .rr-dir h4{margin:0;font-size:17px;font-weight:700;color:var(--rr-ink);}
+  .rr-chips{display:flex;align-items:center;gap:8px 30px;flex-wrap:wrap;margin:0;padding:0;list-style:none;}
+  .rr-chips li{position:relative;padding:8px 14px;border-radius:10px;background:var(--rr-bg2);font-size:15px;font-weight:700;color:var(--rr-ink);}
+  .rr-chips li:not(:last-child)::after{content:'→';position:absolute;right:-22px;top:50%;transform:translateY(-50%);color:#94A3B8;font-weight:400;}
+  .rr-dir .desc{margin:0;font-size:15px;line-height:1.7;color:var(--rr-ink2);white-space:pre-wrap;}
+  .rr-hint{margin:0;font-size:14px;color:var(--rr-muted);}
+  .rr-card details{border-radius:12px;}
+  .rr-card summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:52px;padding:0 4px;font-size:15px;font-weight:700;color:var(--rr-ink2);}
+  .rr-card summary::-webkit-details-marker{display:none;}
+  .rr-card summary::after{content:'펼치기';font-size:13px;font-weight:500;color:var(--rr-muted);}
+  .rr-card details[open] > summary::after{content:'접기';}
+  .rr-card summary:focus-visible,.rr-card a:focus-visible,.rr-nav button:focus-visible{outline:3px solid var(--rr-blue-focus);outline-offset:2px;}
+  .rr-sample summary{min-height:42px;padding:0 16px;border:1px solid var(--rr-line);border-radius:10px;display:inline-flex;gap:10px;}
+  .rr-sample summary::after{content:'';}
+  .rr-sample summary .t2{display:none;} .rr-sample[open] summary .t1{display:none;} .rr-sample[open] summary .t2{display:inline;}
+  .rr-sample .body{margin-top:10px;padding:16px 18px;border-radius:12px;background:var(--rr-bg);border:1px dashed var(--rr-line2);}
+  .rr-sample .body p{margin:0;font-family:'Noto Serif KR',serif;font-size:15px;line-height:1.85;color:var(--rr-ink2);white-space:pre-wrap;}
+  .rr-retry{display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px 0;}
+  .rr-retry a{display:inline-flex;align-items:center;gap:10px;min-height:52px;padding:0 32px;border-radius:12px;background:var(--rr-blue);color:#fff;font-size:16px;font-weight:700;text-decoration:none;}
+  .rr-retry span{font-size:13px;color:var(--rr-muted);text-align:center;}
+  .rr-more{border-top:1px solid var(--rr-line);}
+  .rr-more details{border-bottom:1px solid var(--rr-line);}
+  .rr-infer{margin:0 0 14px;padding:14px 18px;border-left:3px solid var(--rr-blue);background:var(--rr-bg2);font-family:'Noto Serif KR',serif;font-size:15px;line-height:1.75;color:var(--rr-ink);}
+  .rr-fu{display:flex;flex-direction:column;gap:10px;padding:0 4px 14px;}
+  .rr-fu div{display:flex;gap:10px;align-items:baseline;font-size:15px;line-height:1.6;}
+  .rr-fu b{flex-shrink:0;padding:2px 10px;border-radius:999px;border:1px solid var(--rr-line);font-size:12px;color:var(--rr-ink2);}
+  .rr-next{display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;min-height:68px;padding:0 24px;border-radius:16px;background:#fff;border:1px solid var(--rr-line);font-family:inherit;text-align:left;cursor:pointer;margin-bottom:16px;}
+  .rr-next small{display:block;font-size:12px;font-weight:700;color:var(--rr-muted);}
+  .rr-next strong{font-size:16px;color:var(--rr-ink);}
+  .rr-survey{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 4px;font-size:14px;color:var(--rr-muted);}
+  .rr-survey a{font-weight:700;color:var(--rr-blue);text-decoration:none;min-height:44px;display:inline-flex;align-items:center;}
+  @media (max-width:600px){
+    #screen-result.rr{padding:20px 12px 48px;}
+    #screen-result.rr .result-header h2{font-size:24px;}
+    .rr-card{padding:20px 16px;gap:14px;border-radius:18px;}
+    .rr-q{font-size:19px;}
+    .rr-mine p{font-size:15px;}
+    .rr-ai,.rr-dir{padding:16px;}
+    .rr-row{gap:10px;} .rr-row h4{font-size:16px;} .rr-row p{font-size:14px;}
+    .rr-chips{flex-direction:column;align-items:stretch;}
+    .rr-chips{gap:8px;}
+    .rr-chips li:not(:last-child)::after{content:'';}
+    .rr-retry a{width:100%;justify-content:center;padding:0 16px;}
+    .rr-nav .lbl{width:100%;}
+  }
 
   /* ===== 강사 설정 화면 (탭 구조, 2026-09 개편) ===== */
   #screen-settings{padding:0 0 60px;}
@@ -1146,7 +1238,12 @@ function resolveCssVarsForExport(html) {
 }
 
 resultDownloadBtn.onclick = () => {
-  const innerHtml = resolveCssVarsForExport(resultItems.innerHTML);
+  // 결과 화면의 이동 버튼·재연습 버튼 등은 빼고, 모든 질문과 접힌 내용까지 워드에 담음
+  const exportClone = resultItems.cloneNode(true);
+  exportClone.querySelectorAll('.rr-noexport').forEach(el => el.remove());
+  exportClone.querySelectorAll('details').forEach(el => el.setAttribute('open', ''));
+  exportClone.querySelectorAll('summary').forEach(el => { const h = document.createElement('h4'); h.textContent = el.textContent.replace('예시 답변 보기예시 답변 접기', '예시 답변'); el.replaceWith(h); });
+  const innerHtml = resolveCssVarsForExport(exportClone.innerHTML);
   const titleText = currentResultRecord ? (currentResultRecord.studentName + '님의 "' + currentResultRecord.category + '" 연습 결과') : '모의면접 결과';
   // 외부 라이브러리 없이도 워드에서 바로 열리도록, HTML을 .doc 형식으로 감싸서 저장 (모바일에서도 안정적으로 동작)
   const fullHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
@@ -2655,6 +2752,7 @@ async function renderResultView(id){
   screenChat.style.display = 'none';
   screenSettings.style.display = 'none';
   screenResult.style.display = 'flex';
+  screenResult.classList.add('rr'); // 2026-09-30 '리허설 리포트' 디자인
 
   try{
     // 강사용(admin=1)으로 열었는지 여기서 직접 확인 — isAdmin은 init() 안에만 있는 변수라 이 함수에서는 쓸 수 없음
@@ -2669,59 +2767,105 @@ async function renderResultView(id){
     }
     const record = data.record;
     currentResultRecord = record;
-    resultTitle.textContent = record.studentName + '님의 "' + record.category + '" 연습 결과';
-    const d = new Date(record.createdAt);
-    resultMeta.textContent = moaDate(d) + ' 연습';
+    try { await loadConfig(); } catch(e){} // 강사님 재도전 설정(RETRY_LIMIT) 확인용
+    const showRetry = !isAdminView && RETRY_LIMIT !== '0';
+    const retryHref = location.pathname + '?t=' + encodeURIComponent(TEACHER_ID);
 
-    resultItems.innerHTML = '';
-    (record.items || []).forEach((item, i) => {
-      item.feedback = item.feedback || {}; // 피드백이 비어 있는 항목이 있어도 화면 전체가 멈추지 않게
-      const div = document.createElement('div');
-      div.className = 'result-item';
-      const rewrittenBlock = item.feedback.rewritten
-        ? `<div class="r-compare-label">✏️ 다듬은 완성 문장 (비교해보세요)</div><div class="r-a r-a-rewritten">${escapeHtml(item.feedback.rewritten)}</div>`
-        : '';
-      const fu = item.feedback.follow_up || {};
-      const followUpBlock = (fu.reason || fu.alternative || fu.quantify)
-        ? `<div class="r-f-title">❓ 예상 꼬리질문</div>
-           <div class="r-f-body">
-             ${fu.reason ? `<div>· (이유형) ${escapeHtml(fu.reason)}</div>` : ''}
-             ${fu.alternative ? `<div>· (대안형) ${escapeHtml(fu.alternative)}</div>` : ''}
-             ${fu.quantify ? `<div>· (수치형) ${escapeHtml(fu.quantify)}</div>` : ''}
-           </div>`
-        : '';
-      const inferenceBlock = item.feedback.interviewer_inference
-        ? `<div class="r-f-title">🎯 면접관 시점 — 평소 모습 추론</div><div class="r-f-body">${escapeHtml(item.feedback.interviewer_inference)}</div>`
-        : '';
-      div.innerHTML = `
-        <div class="r-q">${item.categoryTitle ? `<span style="font-size:11px;color:var(--muted);font-weight:400">[${escapeHtml(item.categoryTitle)}]</span> ` : ''}Q${i+1}. ${escapeHtml(item.question)}</div>
-        <div class="r-compare-label">내가 쓴 답변</div>
-        <div class="r-a">${escapeHtml(item.answer)}</div>
-        ${rewrittenBlock}
-        <div class="r-f-title">👍 좋았던 점</div>
-        <div class="r-f-body">${escapeHtml(item.feedback.good)}</div>
-        ${redFlagsHtml(item.feedback.red_flags)}
-        <div class="r-f-title">🔧 이렇게 다듬어보세요</div>
-        <div class="r-f-body">${escapeHtml(item.feedback.improve)}</div>
-        <div class="r-f-title">💡 모범답안 방향</div>
-        <div class="r-f-body">${escapeHtml(item.feedback.sample_direction)}</div>
-        ${inferenceBlock}
-        ${followUpBlock}
-      `;
-      resultItems.appendChild(div);
+    resultTitle.textContent = (record.category || '면접') + ' 리허설';
+    const d = new Date(record.createdAt);
+    resultMeta.textContent = (record.studentName ? record.studentName + '님 · ' : '') + moaDate(d) + ' 연습';
+
+    const items = record.items || [];
+    const flagsOf = (fb) => (Array.isArray(fb && fb.red_flags) ? fb.red_flags.filter(f => f && (f.quote || f.why)) : []);
+    const arrowSvg = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M6 13l6 6 6-6"></path></svg>';
+    const sparkSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path></svg>';
+    const micSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>';
+
+    let html = `
+      <div class="rr-steps rr-noexport" aria-label="진행 단계"><span class="done">리허설</span><i></i><span class="on">AI 피드백</span><i></i><span>다시 말해보기</span></div>
+      <nav class="rr-nav rr-noexport" aria-label="질문 이동"><span class="lbl" id="rr-pos">Q1 / ${items.length}</span>
+        ${items.map((it, i) => `<button type="button" data-rr="${i}" ${i === 0 ? 'aria-current="step"' : ''} aria-label="${i + 1}번 질문${flagsOf(it.feedback).length ? ', 멈칫할 표현 있음' : ''}">${i + 1}${flagsOf(it.feedback).length ? '<span class="dot"></span>' : ''}</button>`).join('')}
+      </nav>`;
+
+    items.forEach((item, i) => {
+      const fb = item.feedback || {}; // 피드백이 비어 있는 항목이 있어도 화면 전체가 멈추지 않게
+      const flags = flagsOf(fb);
+      const fu = fb.follow_up || {};
+      const steps = Array.isArray(fb.direction_steps) ? fb.direction_steps.filter(Boolean) : [];
+      const catName = item.categoryTitle || record.category || '';
+      const flagsBlock = flags.length ? `
+          <div class="rr-row warn"><span class="rr-num">!</span><div>
+            <h4>면접관이 멈칫할 표현</h4>
+            ${flags.map(f => `<div class="rr-flag">
+              ${f.type ? `<span class="tag">${escapeHtml(f.type)}</span>` : ''}
+              <p>${f.quote ? `<b>“${escapeHtml(f.quote)}”</b> — ` : ''}${escapeHtml(f.why || '')}</p>
+              ${f.fix ? `<p class="how">이렇게: ${escapeHtml(f.fix)}</p>` : ''}
+            </div>`).join('')}
+          </div></div>` : (Array.isArray(fb.red_flags) ? `<div class="rr-ok">✓ 면접관이 멈칫할 표현은 없어요</div>` : '');
+      const dirBody = steps.length
+        ? `<ol class="rr-chips">${steps.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ol>`
+        : (fb.sample_direction ? `<p class="desc">${escapeHtml(fb.sample_direction)}</p>` : '');
+      html += `
+      <article class="rr-card${i === 0 ? ' on' : ''}" data-rr-card="${i}">
+        <div>
+          <div class="rr-qlabel">Q${i + 1}${catName ? ' · ' + escapeHtml(catName) : ''}</div>
+          <h3 class="rr-q">${escapeHtml(item.question)}</h3>
+        </div>
+        <div class="rr-mine"><div class="rr-lbl">내가 한 답변</div><p>${escapeHtml(item.answer)}</p></div>
+        <div class="rr-arrow rr-noexport">${arrowSvg}</div>
+        <section class="rr-ai" aria-label="AI 피드백">
+          <div class="rr-ai-h">${sparkSvg}AI 피드백</div>
+          ${fb.good ? `<div class="rr-row good"><span class="rr-num">1</span><div><h4>잘한 점</h4><p>${escapeHtml(fb.good)}</p></div></div>` : ''}
+          ${fb.improve ? `<div class="rr-row fix"><span class="rr-num">2</span><div><h4>보완할 점</h4><p>${escapeHtml(fb.improve)}</p></div></div>` : ''}
+          ${flagsBlock}
+        </section>
+        ${(dirBody || fb.rewritten) ? `
+        <section class="rr-dir" aria-label="AI가 제안하는 답변 방향">
+          <h4>AI가 제안하는 답변 방향</h4>
+          ${dirBody}
+          <p class="rr-hint">정답을 외우기보다, 내 경험에 맞게 바꿔 말해 보세요.</p>
+          ${fb.rewritten ? `<details class="rr-sample"><summary><span class="t1">예시 답변 보기</span><span class="t2">예시 답변 접기</span></summary>
+            <div class="body"><div class="rr-lbl">예시 답변 — 참고만 하세요</div><p>${escapeHtml(fb.rewritten)}</p></div></details>` : ''}
+        </section>` : ''}
+        ${showRetry ? `<div class="rr-retry rr-noexport"><a href="${retryHref}">${micSvg}다시 말해보기</a><span>연습 화면에서 같은 유형을 골라, 방향을 참고해 내 경험으로 한 번 더 답해 보세요</span></div>` : ''}
+        ${(fb.interviewer_inference || fu.reason || fu.alternative || fu.quantify) ? `<div class="rr-more">
+          ${fb.interviewer_inference ? `<details><summary>면접관 시점 — 이 답변으로 보이는 평소 모습</summary><p class="rr-infer">${escapeHtml(fb.interviewer_inference)}</p></details>` : ''}
+          ${(fu.reason || fu.alternative || fu.quantify) ? `<details><summary>다음 리허설 대비 — 예상 꼬리질문</summary><div class="rr-fu">
+            ${fu.reason ? `<div><b>이유형</b>${escapeHtml(fu.reason)}</div>` : ''}
+            ${fu.alternative ? `<div><b>대안형</b>${escapeHtml(fu.alternative)}</div>` : ''}
+            ${fu.quantify ? `<div><b>수치형</b>${escapeHtml(fu.quantify)}</div>` : ''}
+          </div></details>` : ''}
+        </div>` : ''}
+      </article>`;
     });
 
+    html += `<button type="button" class="rr-next rr-noexport" id="rr-next"><span><small>다음 질문</small><strong id="rr-next-q"></strong></span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#295BF2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M13 6l6 6-6 6"></path></svg></button>`;
+
     if(record.trackerProgramId){
-      const surveyDiv = document.createElement('div');
-      surveyDiv.className = 'result-item';
-      surveyDiv.style.textAlign = 'center';
-      surveyDiv.style.background = 'var(--cream, #EAF2AE)';
-      surveyDiv.innerHTML = `
-        <p style="margin:0 0 10px;font-size:13px;color:#333">연습 결과, 어떠셨나요? 더 나은 서비스를 위해 짧은 의견 부탁드려요 🙏</p>
-        <a href="https://moa-tracker-tau.vercel.app/?survey=1&t=${encodeURIComponent(TEACHER_ID)}&p=${encodeURIComponent(record.trackerProgramId)}" target="_blank" style="display:inline-block;text-decoration:none;padding:10px 24px;background:var(--navy);color:#fff;border-radius:8px;font-weight:700">30초 만족도 남기기</a>
-      `;
-      resultItems.appendChild(surveyDiv);
+      html += `<div class="rr-survey rr-noexport"><span>리허설 결과, 도움이 되었나요?</span>
+        <a href="https://moa-tracker-tau.vercel.app/?survey=1&t=${encodeURIComponent(TEACHER_ID)}&p=${encodeURIComponent(record.trackerProgramId)}" target="_blank" rel="noopener">30초 만족도 남기기 →</a></div>`;
     }
+    resultItems.innerHTML = html;
+
+    // 질문 하나씩 보기
+    const cards = resultItems.querySelectorAll('[data-rr-card]');
+    const navBtns = resultItems.querySelectorAll('[data-rr]');
+    const nextBtn = document.getElementById('rr-next');
+    const show = (n, scroll) => {
+      cards.forEach((c, k) => c.classList.toggle('on', k === n));
+      navBtns.forEach((b, k) => { if(k === n) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+      document.getElementById('rr-pos').textContent = 'Q' + (n + 1) + ' / ' + items.length;
+      if(n + 1 < items.length){
+        nextBtn.style.display = '';
+        document.getElementById('rr-next-q').textContent = 'Q' + (n + 2) + '. ' + (items[n + 1].question || '');
+        nextBtn.onclick = () => show(n + 1, true);
+      } else {
+        nextBtn.style.display = 'none';
+      }
+      if(scroll) screenResult.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    navBtns.forEach((b, k) => b.addEventListener('click', () => show(k, true)));
+    if(items.length) show(0, false); else nextBtn.style.display = 'none';
   }catch(err){
     resultItems.innerHTML = '<p style="color:var(--muted);font-size:13px;">결과를 불러오는 중 문제가 발생했어요.</p><p style="color:var(--muted);font-size:12px;">(오류 내용: ' + escapeHtml(err && err.message ? err.message : String(err)) + ')</p>';
     console.error(err);
