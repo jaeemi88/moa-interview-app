@@ -3603,7 +3603,7 @@ const REFUND_POLICY_HTML = `<div style="font-size:13px;line-height:1.75;color:#3
 <b>■ 최종 제출 전: 전액 환불</b><br>- 결제 후 앱에서 '최종 제출'을 누르기 전까지는 언제든 전액 환불됩니다.<br>- 작성 중 자동 저장된 내용은 환불과 함께 삭제됩니다.<br>
 <b>■ 최종 제출 후: 환불 불가</b><br>- 제출과 동시에 AI 분석 및 강사 검토가 시작되어 서비스 제공이 개시됩니다.<br>- 제출 전 확인 창에서 이 내용에 동의한 후 제출됩니다.<br>
 <b>■ 세트 상품(자소서 + 모의면접)</b><br>- 자소서 제출 후 모의면접 제출 전 취소 시: 40,000원 환불<br>- 두 항목 모두 제출 후: 환불 불가<br>
-<b>■ 이용 기간</b><br>- 입장 링크 발송일로부터 14일 이내에 제출해 주세요.<br>- 기간 내 사정이 생기면 만료 전 이메일로 요청 시 1회 7일 연장됩니다.<br>- 기간 만료 후 미제출 건은 환불되지 않습니다.<br>
+<b>■ 이용 기간</b><br>- 입장 링크 발송일로부터 14일 이내에 제출해 주세요.<br>- 기간 내 사정이 생기면 만료 전 이메일로 요청 시 1회 7일 연장됩니다.<br>- 기간 만료 후 미제출 건은 환불되지 않습니다.<br>- 결제 후 30일 이내 입장 등록이 없으면 이용 의사가 없는 것으로 보고 전액 환불 후 종료합니다.<br>
 <b>■ 예외:</b> 시스템 오류 등 당사 사정으로 결과를 제공하지 못한 경우 전액 환불합니다.<br>
 <span style="color:#666">※ 본 서비스는 제출 시점에 제공이 개시되는 용역으로, 제출 후에는 전자상거래법 제17조 제2항에 따라 청약철회가 제한됩니다.</span><br>환불 문의: jinromoa@naver.com</div>`;
 function refundDetailsHtml() {
@@ -3656,6 +3656,10 @@ function clientBannerHtml(short){
 }
 // 예약 확인 중(하루 등록 상한 초과 등) — 답변 저장은 되고, 최종 제출(AI 피드백)만 원장님 확인 후 (2026-10-02)
 const CLIENT_HOLD_MSG = '예약 확인이 끝나면 제출할 수 있어요. 작성한 내용은 자동 저장되니 그대로 두시면 돼요. (보통 하루 안에 확인돼요)';
+// 제출 오류는 원장님께 자동 알림 (같은 고객 1시간에 1번)
+function clientReportError(where, msg){
+  try{ fetch('/api/client-code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'reportError', code: CLIENT.code, where, message: String(msg || '').slice(0, 300) }) }); }catch(x){}
+}
 async function clientHoldCleared(){
   try{
     const r = await fetch('/api/client-code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'verify', code: CLIENT.code }) });
@@ -3699,7 +3703,7 @@ async function renderShopJoin(key){
       <label class="st-lbl">지원 기업 <span style="font-weight:400;color:var(--muted);font-size:13px">(선택)</span></label><input class="st-inp" id="sj-company" type="text" placeholder="예) ○○병원" style="margin:6px 0 12px">
       <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.6;cursor:pointer">
         <input type="checkbox" id="sj-agree" style="margin-top:4px">
-        <span>[필수] 개인정보 수집·이용에 동의해요.<br><span style="color:var(--muted)">수집 항목: 이름·이메일·예약번호·답변 내용 / 목적: 모의면접 결과 제공 / 보관: 이용 기간이 끝나고 30일 뒤 자동 삭제</span></span>
+        <span>[필수] 개인정보 수집·이용에 동의해요.<br><span style="color:var(--muted)">수집 항목: 이름·이메일·예약번호·답변 내용 / 목적: 모의면접 결과 제공 / 보관: 작성 내용은 이용 기간이 끝나고 30일 뒤 자동 삭제, 결제·환불 기록(이름·이메일·예약번호·금액)은 법령에 따라 5년</span> <a href="https://moa-hub.vercel.app/privacy.html" target="_blank" rel="noopener">개인정보처리방침 보기</a></span>
       </label>
       <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.6;cursor:pointer;margin-top:10px">
         <input type="checkbox" id="sj-refund" style="margin-top:4px">
@@ -3881,6 +3885,7 @@ async function clientFinalSubmit(){
     await Promise.all(workers);
   }catch(e){
     ov.remove();
+    clientReportError('모의면접 AI 피드백', e && e.message);
     alert('일부 답변의 피드백을 만들지 못했어요. 인터넷 연결을 확인하고 "최종 제출하기"를 한 번 더 눌러 주세요.\n(이미 만든 피드백은 그대로 이어서 진행돼요)');
     return;
   }
@@ -3903,6 +3908,7 @@ async function clientFinalSubmit(){
     if(!r.ok || data.error) throw new Error(data.error || '제출하지 못했어요.');
   }catch(e){
     ov.remove();
+    if(!/예약 확인|환불 처리|이미 제출/.test(e.message)) clientReportError('모의면접 최종 제출', e.message);
     alert(e.message);
     return;
   }
