@@ -3611,7 +3611,18 @@ function clientBannerHtml(short){
       <span style="font-size:12.5px;background:#fff;border-radius:999px;padding:3px 10px;color:#1B3FA8">이용 기간 ${moaDate(CLIENT.expiresAt - 1, 'short')}까지 · D-${left}</span>
     </div>
     ${short ? '' : `<p style="margin:8px 0 0;font-size:13px;color:var(--muted);line-height:1.6">${CLIENT.product === 'set' ? '지금은 <b>② 모의면접</b> 단계예요. ' : ''}원하는 유형을 골라 질문에 답해 주세요. 답변은 <b>자동 저장</b>되고 언제든 고칠 수 있어요. 이용 기간 안에는 <b>나갔다가 다시 들어와도 이어서</b> 할 수 있어요(다른 기기도 OK). 다 마치면 맨 아래 <b>📮 최종 제출하기</b>를 눌러 주세요 — 제출은 <b>한 번만</b> 가능해요.</p>`}
+    ${CLIENT.hold ? `<div style="margin-top:10px;padding:10px 12px;background:#FFF4DC;color:#7A4D00;border-radius:6px;font-size:13px;line-height:1.7">⏳ <b>예약 확인 중이에요.</b> 지금 바로 답변을 시작하셔도 돼요. 확인이 끝나면 이메일로 알려드리고, 그때부터 <b>최종 제출</b>할 수 있어요.</div>` : ''}
   </div>`;
+}
+// 예약 확인 중(하루 등록 상한 초과 등) — 답변 저장은 되고, 최종 제출(AI 피드백)만 원장님 확인 후 (2026-10-02)
+const CLIENT_HOLD_MSG = '예약 확인이 끝나면 제출할 수 있어요. 작성한 내용은 자동 저장되니 그대로 두시면 돼요. (보통 하루 안에 확인돼요)';
+async function clientHoldCleared(){
+  try{
+    const r = await fetch('/api/client-code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'verify', code: CLIENT.code }) });
+    const d = await r.json();
+    if(d && d.client) CLIENT.hold = !!d.client.hold;
+  }catch(e){}
+  return !CLIENT.hold;
 }
 // ---------- 네이버 예약 자동 입장 (모의면접 상품용 등록 화면 · 2026-10-02) ----------
 async function renderShopJoin(key){
@@ -3786,6 +3797,7 @@ async function clientFinalSubmit(){
     Object.keys(b.items).map(k => parseInt(k, 10)).sort((a, z) => a - z).forEach(idx => items.push(Object.assign(b.items[idx], { categoryTitle: b.catTitle })));
   });
   if(!items.length) return;
+  if(CLIENT.hold && !(await clientHoldCleared())){ alert('⏳ ' + CLIENT_HOLD_MSG); return; }
   if(!confirm(`답변 ${items.length}개를 최종 제출할까요?\n\n⚠️ 제출은 한 번만 가능하고, 제출 후에는 수정할 수 없어요.\n빠진 질문이나 고칠 답변이 없는지 한 번 더 확인해 주세요.`)) return;
   const name = CLIENT.name || window.prompt('이름을 입력해 주세요 (결과지 제목에 표시돼요)', '');
   if(name === null) return;
