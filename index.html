@@ -3727,7 +3727,7 @@ async function clientFinalSubmit(){
   });
   if(!items.length) return;
   if(!confirm(`답변 ${items.length}개를 최종 제출할까요?\n\n⚠️ 제출은 한 번만 가능하고, 제출 후에는 수정할 수 없어요.\n빠진 질문이나 고칠 답변이 없는지 한 번 더 확인해 주세요.`)) return;
-  const name = window.prompt('이름을 입력해 주세요 (결과지 제목에 표시돼요)', '');
+  const name = CLIENT.name || window.prompt('이름을 입력해 주세요 (결과지 제목에 표시돼요)', '');
   if(name === null) return;
   let email = '';
   if(!CLIENT.hasEmail){
