@@ -1435,7 +1435,7 @@ function renderCategories(){
   `;
   const companyInput = companyBox.querySelector('#student-company');
   companyInput.value = STUDENT_COMPANY;
-  companyInput.addEventListener('input', e => { STUDENT_COMPANY = e.target.value.trim(); });
+  companyInput.addEventListener('input', e => { STUDENT_COMPANY = e.target.value.trim(); if(CLIENT) clientSaveDraft(); });
   catList.appendChild(companyBox);
   const hiringBox = document.createElement('div');
   hiringBox.style.cssText = 'background:var(--white);border:1px solid var(--line);border-radius:6px;padding:14px 16px;margin-bottom:6px;';
@@ -1447,7 +1447,7 @@ function renderCategories(){
     </div>
     <p style="margin:8px 0 0;font-size:12.5px;color:var(--muted);line-height:1.5">일반 면접은 과목명·기관명 같은 이름을 넣으면 믿음이 가고, 블라인드 면접은 학교·지역·가족이 드러나는 말을 빼야 해요.</p>
   `;
-  hiringBox.querySelectorAll('input[name="hiring-type"]').forEach(r => r.addEventListener('change', e => { HIRING_TYPE = e.target.value; }));
+  hiringBox.querySelectorAll('input[name="hiring-type"]').forEach(r => r.addEventListener('change', e => { HIRING_TYPE = e.target.value; if(CLIENT) clientSaveDraft(); }));
   catList.appendChild(hiringBox);
   CATEGORIES.forEach((cat, i) => {
     const card = document.createElement('button');
@@ -1474,7 +1474,7 @@ function renderCategories(){
       const fin = document.createElement('button');
       fin.className = 'cat-card';
       fin.style.cssText = 'margin-top:14px;background:var(--navy,#295BF2);color:#fff';
-      fin.innerHTML = `<span class="cat-text"><span><div class="cat-title">📮 최종 제출하기</div><div class="cat-desc" style="color:#fff;opacity:.9">${catIds.length}개 유형 · 답변 ${n}개 · 제출은 한 번만 가능해요</div></span></span><span class="arrow">›</span>`;
+      fin.innerHTML = `<span class="cat-text"><span><div class="cat-title">📮 최종 제출하기</div><div class="cat-desc" style="color:#fff;opacity:.9">${catIds.length}개 유형 · 답변 ${n}개 · 제출은 한 번만 가능해요<br>제출하면 강사가 검토해 결과지를 보내드려요</div></span></span><span class="arrow">›</span>`;
       fin.onclick = clientFinalSubmit;
       catList.appendChild(fin);
     }
@@ -1924,6 +1924,25 @@ function updateCharCount(){
 
 answerInput.addEventListener('input', updateCharCount);
 
+// 답변 1개에 대한 AI 피드백 요청 내용 (직무·지원 기업·결격 질문 맥락 포함)
+function buildFeedbackReq(question, text){
+  const effectiveField = STUDENT_TARGET_FIELD_OVERRIDE || TARGET_FIELD;
+  const jobContext = effectiveField
+    ? `\n\n[직무 맥락] 이 수강생은 '${effectiveField}' 전공·직무를 준비 중입니다. 가능하면 good/improve/sample_direction/rewritten/interviewer_inference 코멘트에 이 직무의 특성(관련 역량, 현장에서 자주 겪는 상황 등)을 자연스럽게 반영해서 답변해 주세요.`
+    : '';
+  // 학생이 고른 세트에 연결된 평가 기준이 있으면 그 기준을, 없으면 강사가 설정한 기본 기준을 사용
+  const basePrompt = STUDENT_PROMPT_OVERRIDE || SYSTEM_PROMPT;
+  const companyContext = STUDENT_COMPANY
+    ? `\n\n[지원 기업] 이 수강생의 지원 기업은 '${STUDENT_COMPANY}'입니다. 입사 후 포부 관련 질문이면 이 기업명을 넣어 코멘트와 모범답안을 작성하되, 위 사실 확인 원칙대로 이 기업의 구체적인 제도명·특허·지사명·수치는 지어내지 말고 대괄호 빈칸으로 남기세요.`
+    : '';
+  // 결격 검증 질문이면, 이 질문이 걸러내려는 포인트를 AI에게 알려줌 (학생 화면에는 안 보임)
+  const rfNote = findRedflagNote(question);
+  const redflagContext = rfNote
+    ? `\n\n[결격 검증 질문] 이 질문은 '${rfNote}'을(를) 확인하려는 질문입니다. 답변에서 이 부분이 어떻게 읽히는지를 improve와 red_flags에 우선 반영하고, 면접관이 안심할 수 있는 답변 방향을 sample_direction에 제시하세요.`
+    : '';
+  return { question, answer: text, hiringType: HIRING_TYPE, systemPrompt: basePrompt + jobContext + ASPIRATION_GUIDE + companyContext + redflagContext };
+}
+
 async function submitAnswer(){
   const text = answerInput.value.trim();
   if(!text) return;
@@ -1940,21 +1959,7 @@ async function submitAnswer(){
 
   try{
     const question = currentCategory.questions[currentQuestionIdx];
-    const effectiveField = STUDENT_TARGET_FIELD_OVERRIDE || TARGET_FIELD;
-    const jobContext = effectiveField
-      ? `\n\n[직무 맥락] 이 수강생은 '${effectiveField}' 전공·직무를 준비 중입니다. 가능하면 good/improve/sample_direction/rewritten/interviewer_inference 코멘트에 이 직무의 특성(관련 역량, 현장에서 자주 겪는 상황 등)을 자연스럽게 반영해서 답변해 주세요.`
-      : '';
-    // 학생이 고른 세트에 연결된 평가 기준이 있으면 그 기준을, 없으면 강사가 설정한 기본 기준을 사용
-    const basePrompt = STUDENT_PROMPT_OVERRIDE || SYSTEM_PROMPT;
-    const companyContext = STUDENT_COMPANY
-      ? `\n\n[지원 기업] 이 수강생의 지원 기업은 '${STUDENT_COMPANY}'입니다. 입사 후 포부 관련 질문이면 이 기업명을 넣어 코멘트와 모범답안을 작성하되, 위 사실 확인 원칙대로 이 기업의 구체적인 제도명·특허·지사명·수치는 지어내지 말고 대괄호 빈칸으로 남기세요.`
-      : '';
-    // 결격 검증 질문이면, 이 질문이 걸러내려는 포인트를 AI에게 알려줌 (학생 화면에는 안 보임)
-    const rfNote = findRedflagNote(question);
-    const redflagContext = rfNote
-      ? `\n\n[결격 검증 질문] 이 질문은 '${rfNote}'을(를) 확인하려는 질문입니다. 답변에서 이 부분이 어떻게 읽히는지를 improve와 red_flags에 우선 반영하고, 면접관이 안심할 수 있는 답변 방향을 sample_direction에 제시하세요.`
-      : '';
-    const fbReq = { question, answer: text, hiringType: HIRING_TYPE, systemPrompt: basePrompt + jobContext + ASPIRATION_GUIDE + companyContext + redflagContext };
+    const fbReq = buildFeedbackReq(question, text);
     // 개인 고객: 답변만 저장하고, AI 피드백은 "최종 제출" 때 한 번에 만들어 강사 검토로 보냄
     if(CLIENT){ loadingBubble.remove(); clientSaveAnswer(question, text, fbReq); return; }
     const response = await fetch("/api/feedback", {
@@ -3590,6 +3595,7 @@ window.addEventListener('resize', () => { const c = document.getElementById('lv-
 // - 답변은 저장만 하고 고칠 수 있음 → "최종 제출" 1번에 AI 피드백을 만들어 원장님 검토 대기함으로
 // - 세트 상품은 자소서를 먼저 제출해야 면접 제출 가능 (서버에서도 확인)
 let CLIENT = null;
+let CLIENT_DRAFT = null;
 const RESUME_APP_URL = 'https://resume-feedback-app-phi.vercel.app/';
 const CLIENT_PRODUCT_NAMES = { resume: '자소서 첨삭', interview: '모의면접', set: '세트 (자소서 → 모의면접)' };
 
@@ -3600,7 +3606,7 @@ function clientBannerHtml(short){
       <b style="font-size:16px;color:#1B3FA8">${escapeHtml(CLIENT_PRODUCT_NAMES[CLIENT.product] || '')}</b>
       <span style="font-size:12.5px;background:#fff;border-radius:999px;padding:3px 10px;color:#1B3FA8">이용 기간 ${moaDate(CLIENT.expiresAt - 1, 'short')}까지 · D-${left}</span>
     </div>
-    ${short ? '' : `<p style="margin:8px 0 0;font-size:13px;color:var(--muted);line-height:1.6">${CLIENT.product === 'set' ? '지금은 <b>② 모의면접</b> 단계예요. ' : ''}원하는 유형을 골라 질문에 답해 주세요. 답변은 <b>저장만</b>되고 언제든 고칠 수 있어요. 다 마치면 맨 아래 <b>📮 최종 제출하기</b>를 눌러 주세요 — 제출은 <b>한 번만</b> 가능해요.</p>`}
+    ${short ? '' : `<p style="margin:8px 0 0;font-size:13px;color:var(--muted);line-height:1.6">${CLIENT.product === 'set' ? '지금은 <b>② 모의면접</b> 단계예요. ' : ''}원하는 유형을 골라 질문에 답해 주세요. 답변은 <b>자동 저장</b>되고 언제든 고칠 수 있어요. 이용 기간 안에는 <b>나갔다가 다시 들어와도 이어서</b> 할 수 있어요(다른 기기도 OK). 다 마치면 맨 아래 <b>📮 최종 제출하기</b>를 눌러 주세요 — 제출은 <b>한 번만</b> 가능해요.</p>`}
   </div>`;
 }
 function clientMessage(title, html){
@@ -3614,14 +3620,34 @@ function clientUpdateButtons(){
   bundleAllBtn.textContent = `📮 최종 제출하기 (답변 ${n}개)`;
 }
 function clientSaveAnswer(question, text, fbReq){
-  const item = { question, answer: text, feedback: null, _req: fbReq };
+  const item = { question, answer: text, feedback: null };
   answersByIdx[currentQuestionIdx] = item;
   if(!ALL_ANSWERS[currentCategory.id]) ALL_ANSWERS[currentCategory.id] = { catTitle: currentCategory.title, items: {} };
   ALL_ANSWERS[currentCategory.id].items[currentQuestionIdx] = item;
   renderQuestionCard();
   clientUpdateButtons();
+  clientSaveDraft();
   // 다음 질문으로 자연스럽게 넘어가기
   if(currentQuestionIdx < currentCategory.questions.length - 1) setTimeout(goNext, 700);
+}
+
+// 제출 전 작성 내용을 서버에 자동 저장 → 기간 안에는 나갔다 들어와도(다른 기기도) 이어서
+let CLIENT_SAVE_TIMER = null;
+function clientSaveDraft(){
+  if(!CLIENT) return;
+  clearTimeout(CLIENT_SAVE_TIMER);
+  CLIENT_SAVE_TIMER = setTimeout(async () => {
+    const answers = {};
+    Object.keys(ALL_ANSWERS).forEach(id => {
+      const b = ALL_ANSWERS[id]; const items = {};
+      Object.keys(b.items).forEach(k => { items[k] = { question: b.items[k].question, answer: b.items[k].answer }; });
+      answers[id] = { catTitle: b.catTitle, items };
+    });
+    try{
+      await fetch('/api/client-code', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'saveDraft', code: CLIENT.code, part: 'interview', data: { answers, company: STUDENT_COMPANY, hiring: HIRING_TYPE } }) });
+    }catch(e){ /* 다음 저장 때 다시 시도 */ }
+  }, 600);
 }
 
 async function initClientMode(rawCode){
@@ -3630,10 +3656,11 @@ async function initClientMode(rawCode){
   gearBtn.style.display = 'none';
   document.querySelectorAll('.moa-hubbar a').forEach(a => a.style.display = 'none');
   try{
-    const res = await fetch('/api/client-code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'verify', code: rawCode }) });
+    const res = await fetch('/api/client-code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'verify', code: rawCode, part: 'interview' }) });
     const data = await res.json().catch(() => ({}));
     if(!res.ok || !data.ok) throw new Error(data.error || '입장 코드를 확인하지 못했어요.');
     CLIENT = data.client;
+    CLIENT_DRAFT = data.draft && data.draft.data;
     TEACHER_ID = CLIENT.t;
     const lead = document.querySelector('#screen-select .lead');
     if(lead) lead.textContent = '연습할 질문 유형을 골라 답해 주세요. AI 피드백과 강사 코멘트는 최종 제출 후 결과지로 보내드려요.';
@@ -3674,6 +3701,18 @@ async function initClientMode(rawCode){
   } else if(CLIENT.job){
     STUDENT_TARGET_FIELD_OVERRIDE = CLIENT.job;
   }
+  // 이어서 하기: 저장해 둔 답변 불러오기
+  if(CLIENT_DRAFT){
+    if(CLIENT_DRAFT.company) STUDENT_COMPANY = CLIENT_DRAFT.company;
+    if(CLIENT_DRAFT.hiring) HIRING_TYPE = CLIENT_DRAFT.hiring;
+    const ans = CLIENT_DRAFT.answers || {};
+    Object.keys(ans).forEach(id => {
+      if(!CATEGORIES.some(c => c.id === id)) return;
+      const items = {};
+      Object.keys(ans[id].items || {}).forEach(k => { const it = ans[id].items[k]; if(it && it.answer) items[k] = { question: it.question, answer: it.answer, feedback: null }; });
+      if(Object.keys(items).length) ALL_ANSWERS[id] = { catTitle: ans[id].catTitle, items };
+    });
+  }
   bundleAllBtn.onclick = clientFinalSubmit;
   history.replaceState({ screen: 'select' }, '');
   renderCategories();
@@ -3698,8 +3737,8 @@ async function clientFinalSubmit(){
   const ov = document.createElement('div');
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px';
   ov.innerHTML = `<div style="background:#fff;border-radius:10px;padding:22px 20px;max-width:340px;width:100%;text-align:center">
-    <div style="font-weight:700;font-size:16px;margin-bottom:6px">제출 준비 중이에요</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:14px">답변마다 AI 피드백을 만들고 있어요. 화면을 닫지 말아 주세요.</div>
+    <div style="font-weight:700;font-size:16px;margin-bottom:6px">제출하는 중이에요</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px">강사 검토용으로 답변을 정리하고 있어요.<br>1~2분쯤 걸릴 수 있으니 화면을 닫지 말아 주세요.</div>
     <div style="height:10px;background:#E8EEFB;border-radius:999px;overflow:hidden"><div id="cl-bar" style="height:100%;width:0;background:#295BF2;transition:width .3s"></div></div>
     <div id="cl-cnt" style="font-size:13px;margin-top:8px;color:var(--muted)">0 / ${items.length}</div></div>`;
   document.body.appendChild(ov);
@@ -3711,7 +3750,7 @@ async function clientFinalSubmit(){
   async function makeFeedback(it){
     for(let tryNo = 0; tryNo < 2; tryNo++){
       try{
-        const r = await fetch('/api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(it._req) });
+        const r = await fetch('/api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(buildFeedbackReq(it.question, it.answer)) });
         const fb = await r.json();
         if(!r.ok || fb.error) throw new Error(fb.error || '피드백 오류');
         it.feedback = fb; done++; tick(); return;
@@ -3733,7 +3772,7 @@ async function clientFinalSubmit(){
     studentName: name.trim() || '개인 고객',
     studentEmail: email.trim(),
     category: '개인 고객 (' + catIds.map(id => ALL_ANSWERS[id].catTitle).join(', ') + ')',
-    items: items.map(({ _req, ...rest }) => rest),
+    items,
     studentInstitution: '개인 고객',
     studentTargetField: STUDENT_TARGET_FIELD_OVERRIDE || '',
     clientCode: CLIENT.code,
