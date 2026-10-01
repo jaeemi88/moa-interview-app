@@ -911,7 +911,7 @@ function moaDate(v, kind){
 // 호출에 강사 코드(t)를 자동으로 붙여서 보냅니다.
 const __params = new URLSearchParams(location.search);
 let TEACHER_ID = (__params.get('t') || '').trim().toLowerCase().replace(/[^a-z0-9가-힣_-]/g, '').slice(0, 40);
-try{ if(TEACHER_ID){ localStorage.setItem('moa_teacher_id', TEACHER_ID); } else if(!__params.get('master')){ const __saved=(localStorage.getItem('moa_teacher_id')||'').trim(); if(__saved){ TEACHER_ID=__saved; const __u=new URL(location.href); __u.searchParams.set('t',__saved); history.replaceState(null,'',__u.toString()); } } }catch(e){}
+try{ if(TEACHER_ID){ localStorage.setItem('moa_teacher_id', TEACHER_ID); } else if(!__params.get('master') && !__params.get('c')){ const __saved=(localStorage.getItem('moa_teacher_id')||'').trim(); if(__saved){ TEACHER_ID=__saved; const __u=new URL(location.href); __u.searchParams.set('t',__saved); history.replaceState(null,'',__u.toString()); } } }catch(e){}
 let IS_BLOCKED = false;
 
 function apiUrl(path){
@@ -1424,6 +1424,7 @@ function renderJobSelectScreen(){
 
 function renderCategories(){
   catList.innerHTML = '';
+  if(CLIENT) catList.insertAdjacentHTML('beforeend', clientBannerHtml());
   // 지원 기업명 입력칸 (선택) — 입사 후 포부 피드백을 회사 맞춤으로
   const companyBox = document.createElement('div');
   companyBox.style.cssText = 'background:var(--white);border:1px solid var(--line);border-radius:6px;padding:14px 16px;margin-bottom:6px;';
@@ -1457,7 +1458,7 @@ function renderCategories(){
         <span>
           <div class="cat-title">${escapeHtml(cat.title)}</div>
           <div class="cat-desc">${escapeHtml(cat.desc)}</div>
-          <div class="cat-count">질문 ${cat.questions.length}개</div>
+          <div class="cat-count">질문 ${cat.questions.length}개${CLIENT && ALL_ANSWERS[cat.id] ? ' · <b style="color:var(--blue,#295BF2)">답변 ' + Object.keys(ALL_ANSWERS[cat.id].items).length + '개 저장됨</b>' : ''}</div>
         </span>
       </span>
       <span class="arrow">›</span>
@@ -1467,6 +1468,18 @@ function renderCategories(){
   });
 
   const catIds = Object.keys(ALL_ANSWERS);
+  if(CLIENT){
+    if(catIds.length > 0){
+      const n = catIds.reduce((sum, id) => sum + Object.keys(ALL_ANSWERS[id].items).length, 0);
+      const fin = document.createElement('button');
+      fin.className = 'cat-card';
+      fin.style.cssText = 'margin-top:14px;background:var(--navy,#295BF2);color:#fff';
+      fin.innerHTML = `<span class="cat-text"><span><div class="cat-title">📮 최종 제출하기</div><div class="cat-desc" style="color:#fff;opacity:.9">${catIds.length}개 유형 · 답변 ${n}개 · 제출은 한 번만 가능해요</div></span></span><span class="arrow">›</span>`;
+      fin.onclick = clientFinalSubmit;
+      catList.appendChild(fin);
+    }
+    return;
+  }
   if(catIds.length > 0){
     const totalQuestions = catIds.reduce((sum, id) => sum + Object.keys(ALL_ANSWERS[id].items).length, 0);
     const bundleBtn = document.createElement('button');
@@ -1559,6 +1572,7 @@ function startCategory(cat, skipHistory){
   currentCategory = cat;
   currentQuestionIdx = 0;
   answersByIdx = {};
+  if(CLIENT && ALL_ANSWERS[cat.id]) Object.assign(answersByIdx, ALL_ANSWERS[cat.id].items);
   screenSelect.style.display = 'none';
   screenChat.style.display = 'flex';
   headerTitle.textContent = cat.title + ' 연습';
@@ -1567,6 +1581,7 @@ function startCategory(cat, skipHistory){
   bundleAllBtn.style.display = Object.keys(ALL_ANSWERS).length > 1 ? 'block' : 'none';
   swipeHint.style.display = 'block';
   renderQuestionCard();
+  if(CLIENT) clientUpdateButtons();
   if(!skipHistory){
     history.pushState({ screen: 'chat', catId: cat.id }, '');
   }
@@ -1771,7 +1786,27 @@ function renderQuestionCard(){
   currentCharLimit = extractCharLimit(question);
 
   const existing = answersByIdx[currentQuestionIdx];
-  if(existing){
+  if(existing && CLIENT){
+    addBubble('a', existing.answer);
+    addBubble('f', '💾 저장됐어요. 최종 제출 전까지는 언제든 고칠 수 있어요.');
+    const editBtn = document.createElement('button');
+    editBtn.className = 'redo-btn';
+    editBtn.textContent = '✏️ 고치기';
+    editBtn.onclick = () => {
+      const old = existing.answer;
+      delete answersByIdx[currentQuestionIdx];
+      const bucket = ALL_ANSWERS[currentCategory.id];
+      if(bucket){ delete bucket.items[currentQuestionIdx]; if(!Object.keys(bucket.items).length) delete ALL_ANSWERS[currentCategory.id]; }
+      renderQuestionCard();
+      answerInput.value = old;
+      updateCharCount();
+      clientUpdateButtons();
+    };
+    chatBody.appendChild(editBtn);
+    answerInput.style.display = 'none';
+    sendBtn.style.display = 'none';
+    charCountRow.style.display = 'none';
+  } else if(existing){
     addBubble('a', existing.answer);
     if(REVIEW_MODE){
       addBubble('f', '🕓 제출 완료 — 강사님이 확인한 후 결과를 보내드릴게요.');
@@ -1919,10 +1954,13 @@ async function submitAnswer(){
     const redflagContext = rfNote
       ? `\n\n[결격 검증 질문] 이 질문은 '${rfNote}'을(를) 확인하려는 질문입니다. 답변에서 이 부분이 어떻게 읽히는지를 improve와 red_flags에 우선 반영하고, 면접관이 안심할 수 있는 답변 방향을 sample_direction에 제시하세요.`
       : '';
+    const fbReq = { question, answer: text, hiringType: HIRING_TYPE, systemPrompt: basePrompt + jobContext + ASPIRATION_GUIDE + companyContext + redflagContext };
+    // 개인 고객: 답변만 저장하고, AI 피드백은 "최종 제출" 때 한 번에 만들어 강사 검토로 보냄
+    if(CLIENT){ loadingBubble.remove(); clientSaveAnswer(question, text, fbReq); return; }
     const response = await fetch("/api/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question, answer: text, hiringType: HIRING_TYPE, systemPrompt: basePrompt + jobContext + ASPIRATION_GUIDE + companyContext + redflagContext })
+      body: JSON.stringify(fbReq)
     });
     const fb = await response.json();
     if(fb.error) throw new Error(fb.error);
@@ -2544,7 +2582,7 @@ async function renderReviewList(){
       const dateStr = moaDate(d, 'time');
       div.innerHTML = `
         <div>
-          <div class="s-name">${escapeHtml(item.studentName)} · ${escapeHtml(item.category)}</div>
+          <div class="s-name">${item.clientCode ? '<span style="background:#FFF4DC;color:#9A6200;border-radius:999px;padding:1px 8px;font-size:12px;margin-right:4px">👤 개인 고객</span>' : ''}${escapeHtml(item.studentName)} · ${escapeHtml(item.category)}</div>
           <div class="s-meta">${dateStr}</div>
         </div>
         <div class="s-arrow">›</div>
@@ -2668,6 +2706,7 @@ reviewApproveBtn.onclick = async () => {
       items: currentReviewRecord.items,
       studentInstitution: currentReviewRecord.studentInstitution || '',
       studentTargetField: currentReviewRecord.studentTargetField || '',
+      clientCode: currentReviewRecord.clientCode || '',
       createdAt: new Date().toISOString()
     };
     const response = await fetch(apiUrl('/api/results'), {
@@ -2911,6 +2950,7 @@ window.addEventListener('popstate', (e) => {
     openSettings(true);
   } else {
     showSelectScreen();
+    if(CLIENT && !(CLIENT.used && CLIENT.used.interview)) renderCategories(); // 저장된 답변 수·최종 제출 버튼 갱신
   }
 });
 
@@ -3545,10 +3585,188 @@ async function renderLiveStudent(code){
 document.getElementById('st-live-btn').onclick = openLiveBoard;
 window.addEventListener('resize', () => { const c = document.getElementById('lv-cloud'); if(c && document.getElementById('live-board') && document.getElementById('live-board').style.display !== 'none'){ c.dataset.key = ''; drawLive(); } });
 
+// ---------- 개인 고객(네이버 예약) 모의면접 (2026-10-01) ----------
+// 원장님이 자소서 앱 강사 명부 화면의 "👤 개인 고객"에서 만든 링크(?c=코드)로 들어옴
+// - 답변은 저장만 하고 고칠 수 있음 → "최종 제출" 1번에 AI 피드백을 만들어 원장님 검토 대기함으로
+// - 세트 상품은 자소서를 먼저 제출해야 면접 제출 가능 (서버에서도 확인)
+let CLIENT = null;
+const RESUME_APP_URL = 'https://resume-feedback-app-phi.vercel.app/';
+const CLIENT_PRODUCT_NAMES = { resume: '자소서 첨삭', interview: '모의면접', set: '세트 (자소서 → 모의면접)' };
+
+function clientBannerHtml(short){
+  const left = Math.max(0, Math.ceil((CLIENT.expiresAt - Date.now()) / 86400000));
+  return `<div style="background:#EEF3FF;border-radius:6px;padding:14px 16px;margin-bottom:10px">
+    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center">
+      <b style="font-size:16px;color:#1B3FA8">${escapeHtml(CLIENT_PRODUCT_NAMES[CLIENT.product] || '')}</b>
+      <span style="font-size:12.5px;background:#fff;border-radius:999px;padding:3px 10px;color:#1B3FA8">이용 기간 ${moaDate(CLIENT.expiresAt - 1, 'short')}까지 · D-${left}</span>
+    </div>
+    ${short ? '' : `<p style="margin:8px 0 0;font-size:13px;color:var(--muted);line-height:1.6">${CLIENT.product === 'set' ? '지금은 <b>② 모의면접</b> 단계예요. ' : ''}원하는 유형을 골라 질문에 답해 주세요. 답변은 <b>저장만</b>되고 언제든 고칠 수 있어요. 다 마치면 맨 아래 <b>📮 최종 제출하기</b>를 눌러 주세요 — 제출은 <b>한 번만</b> 가능해요.</p>`}
+  </div>`;
+}
+function clientMessage(title, html){
+  screenSelect.style.display = 'block';
+  catList.innerHTML = (CLIENT ? clientBannerHtml(true) : '') + `<div style="background:var(--white);border:1px solid var(--line);border-radius:6px;padding:18px 16px"><div style="font-size:16px;font-weight:700;margin-bottom:8px">${title}</div><div style="font-size:14px;color:var(--muted);line-height:1.7">${html}</div></div>`;
+}
+function clientUpdateButtons(){
+  makeLinkBtn.style.display = 'none';
+  const n = Object.keys(ALL_ANSWERS).reduce((sum, id) => sum + Object.keys(ALL_ANSWERS[id].items).length, 0);
+  bundleAllBtn.style.display = n ? 'block' : 'none';
+  bundleAllBtn.textContent = `📮 최종 제출하기 (답변 ${n}개)`;
+}
+function clientSaveAnswer(question, text, fbReq){
+  const item = { question, answer: text, feedback: null, _req: fbReq };
+  answersByIdx[currentQuestionIdx] = item;
+  if(!ALL_ANSWERS[currentCategory.id]) ALL_ANSWERS[currentCategory.id] = { catTitle: currentCategory.title, items: {} };
+  ALL_ANSWERS[currentCategory.id].items[currentQuestionIdx] = item;
+  renderQuestionCard();
+  clientUpdateButtons();
+  // 다음 질문으로 자연스럽게 넘어가기
+  if(currentQuestionIdx < currentCategory.questions.length - 1) setTimeout(goNext, 700);
+}
+
+async function initClientMode(rawCode){
+  document.body.classList.add('role-student');
+  document.getElementById('role-badge').textContent = '개인 고객';
+  gearBtn.style.display = 'none';
+  document.querySelectorAll('.moa-hubbar a').forEach(a => a.style.display = 'none');
+  try{
+    const res = await fetch('/api/client-code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'verify', code: rawCode }) });
+    const data = await res.json().catch(() => ({}));
+    if(!res.ok || !data.ok) throw new Error(data.error || '입장 코드를 확인하지 못했어요.');
+    CLIENT = data.client;
+    TEACHER_ID = CLIENT.t;
+    const lead = document.querySelector('#screen-select .lead');
+    if(lead) lead.textContent = '연습할 질문 유형을 골라 답해 주세요. AI 피드백과 강사 코멘트는 최종 제출 후 결과지로 보내드려요.';
+  }catch(e){
+    clientMessage('입장할 수 없어요', escapeHtml(e.message) + '<br>문의: 진로모아커리어센터');
+    return;
+  }
+  const resumeLink = RESUME_APP_URL + '?c=' + encodeURIComponent(CLIENT.code);
+  if(CLIENT.product === 'resume'){
+    clientMessage('자기소개서 첨삭 상품이에요', `아래 버튼으로 이동해 주세요.<br><a href="${resumeLink}" class="link-cta" style="display:inline-block;margin-top:12px;text-decoration:none">자기소개서 첨삭으로 →</a>`);
+    return;
+  }
+  if(CLIENT.used && CLIENT.used.interview){
+    clientMessage('이미 제출을 마치셨어요', '강사가 AI 피드백을 직접 검토하고 코멘트를 더한 뒤 결과를 보내드려요. 결과가 준비되면 이메일로 알려드릴게요.');
+    return;
+  }
+  if(CLIENT.product === 'set' && !(CLIENT.used && CLIENT.used.resume)){
+    clientMessage('① 자기소개서를 먼저 제출해 주세요', `세트 상품은 <b>자기소개서 → 모의면접</b> 순서로 진행돼요. 자기소개서를 제출한 뒤 이 링크를 다시 열어 주세요.<br><a href="${resumeLink}" class="link-cta" style="display:inline-block;margin-top:12px;text-decoration:none">① 자기소개서 첨삭으로 →</a>`);
+    return;
+  }
+  await loadConfig();
+  REVIEW_MODE = true;
+  RETRY_LIMIT = 'unlimited';
+  STUDENT_COMPANY = CLIENT.company || '';
+  STUDENT_INSTITUTION_OVERRIDE = '개인 고객';
+  if(CLIENT.interviewCats && CLIENT.interviewCats.length){
+    CATEGORIES = CATEGORIES.filter(c => CLIENT.interviewCats.includes(c.id));
+  }
+  // 예약 때 받은 직무와 이름이 겹치는 전공 패키지가 있으면 자동 적용 (질문·평가 기준)
+  const job = String(CLIENT.job || '').replace(/\s/g, '');
+  const set = job && (JOB_QUESTION_SETS || []).find(st => { const nm = String(st.name || '').replace(/\s|과$/g, ''); return nm && (job.includes(nm) || nm.includes(job)); });
+  if(set){
+    const jobCat = CATEGORIES.find(c => c.id === 'job-specific');
+    if(jobCat) jobCat.questions = set.questions.slice();
+    applyRedflagQuestions(set);
+    STUDENT_TARGET_FIELD_OVERRIDE = set.targetField || set.name;
+    STUDENT_PROMPT_OVERRIDE = buildPackagePrompt(set);
+  } else if(CLIENT.job){
+    STUDENT_TARGET_FIELD_OVERRIDE = CLIENT.job;
+  }
+  bundleAllBtn.onclick = clientFinalSubmit;
+  history.replaceState({ screen: 'select' }, '');
+  renderCategories();
+}
+
+async function clientFinalSubmit(){
+  const catIds = Object.keys(ALL_ANSWERS);
+  const items = [];
+  catIds.forEach(id => {
+    const b = ALL_ANSWERS[id];
+    Object.keys(b.items).map(k => parseInt(k, 10)).sort((a, z) => a - z).forEach(idx => items.push(Object.assign(b.items[idx], { categoryTitle: b.catTitle })));
+  });
+  if(!items.length) return;
+  if(!confirm(`답변 ${items.length}개를 최종 제출할까요?\n\n⚠️ 제출은 한 번만 가능하고, 제출 후에는 수정할 수 없어요.\n빠진 질문이나 고칠 답변이 없는지 한 번 더 확인해 주세요.`)) return;
+  const name = window.prompt('이름을 입력해 주세요 (결과지 제목에 표시돼요)', '');
+  if(name === null) return;
+  let email = '';
+  if(!CLIENT.hasEmail){
+    email = window.prompt('결과 안내를 받을 이메일 주소를 입력해 주세요 (선택)', '') || '';
+  }
+
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML = `<div style="background:#fff;border-radius:10px;padding:22px 20px;max-width:340px;width:100%;text-align:center">
+    <div style="font-weight:700;font-size:16px;margin-bottom:6px">제출 준비 중이에요</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px">답변마다 AI 피드백을 만들고 있어요. 화면을 닫지 말아 주세요.</div>
+    <div style="height:10px;background:#E8EEFB;border-radius:999px;overflow:hidden"><div id="cl-bar" style="height:100%;width:0;background:#295BF2;transition:width .3s"></div></div>
+    <div id="cl-cnt" style="font-size:13px;margin-top:8px;color:var(--muted)">0 / ${items.length}</div></div>`;
+  document.body.appendChild(ov);
+  const bar = ov.querySelector('#cl-bar'), cnt = ov.querySelector('#cl-cnt');
+  let done = items.filter(it => it.feedback).length;
+  const tick = () => { bar.style.width = Math.round(done / items.length * 100) + '%'; cnt.textContent = done + ' / ' + items.length; };
+  tick();
+
+  async function makeFeedback(it){
+    for(let tryNo = 0; tryNo < 2; tryNo++){
+      try{
+        const r = await fetch('/api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(it._req) });
+        const fb = await r.json();
+        if(!r.ok || fb.error) throw new Error(fb.error || '피드백 오류');
+        it.feedback = fb; done++; tick(); return;
+      }catch(e){ if(tryNo === 1) throw e; }
+    }
+  }
+  try{
+    const queue = items.filter(it => !it.feedback);
+    const workers = Array.from({ length: Math.min(4, queue.length) }, async () => { while(queue.length){ await makeFeedback(queue.shift()); } });
+    await Promise.all(workers);
+  }catch(e){
+    ov.remove();
+    alert('일부 답변의 피드백을 만들지 못했어요. 인터넷 연결을 확인하고 "최종 제출하기"를 한 번 더 눌러 주세요.\n(이미 만든 피드백은 그대로 이어서 진행돼요)');
+    return;
+  }
+
+  cnt.textContent = '제출하는 중...';
+  const record = {
+    studentName: name.trim() || '개인 고객',
+    studentEmail: email.trim(),
+    category: '개인 고객 (' + catIds.map(id => ALL_ANSWERS[id].catTitle).join(', ') + ')',
+    items: items.map(({ _req, ...rest }) => rest),
+    studentInstitution: '개인 고객',
+    studentTargetField: STUDENT_TARGET_FIELD_OVERRIDE || '',
+    clientCode: CLIENT.code,
+    createdAt: new Date().toISOString()
+  };
+  try{
+    const r = await fetch(apiUrl('/api/reviews'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(record) });
+    const data = await r.json().catch(() => ({}));
+    if(!r.ok || data.error) throw new Error(data.error || '제출하지 못했어요.');
+  }catch(e){
+    ov.remove();
+    alert(e.message);
+    return;
+  }
+  ov.remove();
+  ALL_ANSWERS = {};
+  screenChat.style.display = 'none';
+  progressTrack.style.display = 'none';
+  swipeHint.style.display = 'none';
+  headerTitle.textContent = '모의면접 시뮬레이터';
+  bundleAllBtn.style.display = 'none';
+  CLIENT.used = Object.assign({}, CLIENT.used, { interview: { at: Date.now() } });
+  clientMessage('제출이 완료됐어요 ✅', '강사가 AI 피드백을 직접 검토하고 코멘트를 더한 뒤 결과를 보내드려요. 결과가 준비되면 이메일로 알려드릴게요.');
+}
+
 (async function init(){
   const params = new URLSearchParams(location.search);
   if(params.get('live')){
     await renderLiveStudent(String(params.get('live')).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8));
+    return;
+  }
+  if(params.get('c') && params.get('admin') !== '1'){
+    await initClientMode(params.get('c'));
     return;
   }
   if(params.get('master') === '1'){

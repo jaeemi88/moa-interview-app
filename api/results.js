@@ -175,6 +175,11 @@ export default async function handler(req, res) {
         record.expiresAt = new Date(now.getFullYear(), now.getMonth(), now.getDate() + groupCodeExpiryDays).getTime();
       }
 
+      // 개인 고객(네이버 예약)은 결과를 승인일부터 30일간 볼 수 있게 (2026-10-01)
+      if (record.clientCode) {
+        const d0 = new Date();
+        record.expiresAt = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + 30).getTime();
+      }
       await client.set(itemKey(id), JSON.stringify(record));
       const meta = JSON.stringify({
         id,

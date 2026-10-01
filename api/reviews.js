@@ -5,6 +5,7 @@
 
 import Redis from 'ioredis';
 import { isStaff } from './_staff.js';
+import { CLIENT_T, getClient, useClientPart, releaseClientPart, isPartUsed } from './client-code.js';
 
 let redis;
 function getRedis() {
@@ -67,14 +68,35 @@ export default async function handler(req, res) {
     if (!record || !record.items) {
       return res.status(400).json({ error: '저장할 데이터가 없습니다.' });
     }
+    // 개인 고객(네이버 예약): 코드당 면접 제출 1번 — 서버에서 잠금 (2026-10-01)
+    const clientCode = String(record.clientCode || '').trim();
+    if (clientCode) {
+      if (t !== CLIENT_T) return res.status(400).json({ error: '잘못된 제출 주소예요.' });
+      const info = await getClient(client, clientCode);
+      if (info && info.product === 'set' && !(await isPartUsed(client, clientCode, 'resume'))) {
+        return res.status(409).json({ error: '세트 상품은 자기소개서를 먼저 제출해 주세요.' });
+      }
+      const used = await useClientPart(client, clientCode, 'interview');
+      if (used.error) return res.status(used.status).json({ error: used.error });
+      record.clientCode = used.data.code;
+      record.clientProduct = used.data.product;
+      if (!record.studentEmail && used.data.email) record.studentEmail = used.data.email;
+      if (used.data.memo) record.clientMemo = used.data.memo;
+    }
     try {
       const id = generateId();
-      await client.set(itemKey(id), JSON.stringify(record));
+      try {
+        await client.set(itemKey(id), JSON.stringify(record));
+      } catch (e) {
+        if (clientCode) await releaseClientPart(client, clientCode, 'interview');
+        throw e;
+      }
       const meta = JSON.stringify({
         id,
         studentName: record.studentName,
         category: record.category,
-        createdAt: record.createdAt
+        createdAt: record.createdAt,
+        clientCode: record.clientCode || ''
       });
       await client.hset(indexKey, id, meta);
       await notifyByEmail(client, t, record); // 서버리스 환경에서는 응답 전에 완료를 기다려야 중간에 끊기지 않음
