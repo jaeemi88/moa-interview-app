@@ -2,6 +2,10 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<script>
+// 네이버 예약 안내 문구는 = 기호를 못 써서, 자동 입장 링크를 /go/키 모양으로 씀 → 앱 안에서는 ?shop=키 로 바꿔 처리
+(function(){var m=location.pathname.match(/^\/go\/([A-Za-z0-9_-]{6,40})\/?$/);if(m)history.replaceState(null,'','/?shop='+m[1]);})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>모의면접 시뮬레이터 — 진로모아커리어센터</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3609,6 +3613,62 @@ function clientBannerHtml(short){
     ${short ? '' : `<p style="margin:8px 0 0;font-size:13px;color:var(--muted);line-height:1.6">${CLIENT.product === 'set' ? '지금은 <b>② 모의면접</b> 단계예요. ' : ''}원하는 유형을 골라 질문에 답해 주세요. 답변은 <b>자동 저장</b>되고 언제든 고칠 수 있어요. 이용 기간 안에는 <b>나갔다가 다시 들어와도 이어서</b> 할 수 있어요(다른 기기도 OK). 다 마치면 맨 아래 <b>📮 최종 제출하기</b>를 눌러 주세요 — 제출은 <b>한 번만</b> 가능해요.</p>`}
   </div>`;
 }
+// ---------- 네이버 예약 자동 입장 (모의면접 상품용 등록 화면 · 2026-10-02) ----------
+async function renderShopJoin(key){
+  document.body.classList.add('role-student');
+  document.getElementById('role-badge').textContent = '개인 고객';
+  gearBtn.style.display = 'none';
+  document.querySelectorAll('.moa-hubbar a').forEach(a => a.style.display = 'none');
+  const lead = document.querySelector('#screen-select .lead'); if(lead) lead.style.display = 'none';
+  const post = async body => {
+    const r = await fetch('/api/client-code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json().catch(() => ({}));
+    if(!r.ok || !d.ok) throw new Error(d.error || '잠시 후 다시 시도해 주세요.');
+    return d;
+  };
+  let shop;
+  try{ shop = (await post({ action: 'shopInfo', key })).shop; }
+  catch(e){ clientMessage('입장할 수 없어요', escapeHtml(e.message)); return; }
+  // 자소서·세트 상품 링크로 잘못 들어오면 자소서 앱 등록 화면으로
+  if(shop.product !== 'interview'){ location.href = RESUME_APP_URL + 'go/' + encodeURIComponent(key); return; }
+  screenSelect.style.display = 'block';
+  catList.innerHTML = `
+    <div style="background:#EEF3FF;border-radius:6px;padding:14px 16px;margin-bottom:10px">
+      <b style="font-size:16px;color:#1B3FA8">${escapeHtml(CLIENT_PRODUCT_NAMES[shop.product])}</b>
+      <p style="margin:8px 0 0;font-size:13px;color:var(--muted);line-height:1.6">예약해 주셔서 감사해요. 아래 정보를 넣으면 <b>바로 시작</b>할 수 있어요.<br>이용 기간은 오늘부터 <b>${shop.days}일</b>이고, 입장 링크는 이메일로도 보내드려요.</p>
+    </div>
+    <div style="background:var(--white);border:1px solid var(--line);border-radius:6px;padding:16px">
+      <label class="st-lbl">이름</label><input class="st-inp" id="sj-name" type="text" autocomplete="name" style="margin:6px 0 12px">
+      <label class="st-lbl">이메일 <span style="font-weight:400;color:var(--muted);font-size:13px">(입장 링크와 결과를 받을 주소)</span></label>
+      <input class="st-inp" id="sj-email" type="text" inputmode="email" autocapitalize="none" autocomplete="email" placeholder="example@naver.com" style="margin:6px 0 12px">
+      <label class="st-lbl">네이버 예약번호</label>
+      <input class="st-inp" id="sj-booking" type="text" inputmode="numeric" placeholder="예약 확정 안내에 있는 번호" style="margin-top:6px">
+      <p style="font-size:12px;color:var(--muted);margin:4px 0 12px">네이버 앱 › 예약 내역에서 확인할 수 있어요.</p>
+      <label class="st-lbl">지원 직무</label><input class="st-inp" id="sj-job" type="text" placeholder="예) 병원 물리치료사, 객실승무원" style="margin:6px 0 12px">
+      <label class="st-lbl">지원 기업 <span style="font-weight:400;color:var(--muted);font-size:13px">(선택)</span></label><input class="st-inp" id="sj-company" type="text" placeholder="예) ○○병원" style="margin:6px 0 12px">
+      <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.6;cursor:pointer">
+        <input type="checkbox" id="sj-agree" style="margin-top:4px">
+        <span>[필수] 개인정보 수집·이용에 동의해요.<br><span style="color:var(--muted)">수집 항목: 이름·이메일·예약번호·답변 내용 / 목적: 모의면접 결과 제공 / 보관: 이용 기간이 끝나고 30일 뒤 자동 삭제</span></span>
+      </label>
+      <button class="link-cta" id="sj-go" style="margin-top:14px">시작하기</button>
+      <p id="sj-msg" style="color:#B42318;font-size:13px;margin:8px 0 0;display:none"></p>
+    </div>`;
+  document.getElementById('sj-go').onclick = async () => {
+    const btn = document.getElementById('sj-go'), msg = document.getElementById('sj-msg');
+    const v = id => document.getElementById(id).value.trim();
+    const fail = t => { msg.textContent = t; msg.style.display = 'block'; };
+    if(!v('sj-name')) return fail('이름을 입력해 주세요.');
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v('sj-email'))) return fail('이메일 주소를 다시 확인해 주세요.');
+    if(v('sj-booking').replace(/[^0-9A-Za-z]/g, '').length < 4) return fail('네이버 예약번호를 입력해 주세요.');
+    if(!document.getElementById('sj-agree').checked) return fail('개인정보 수집·이용에 동의해 주세요.');
+    btn.disabled = true; btn.textContent = '준비하는 중...';
+    try{
+      const d = await post({ action: 'shopJoin', key, name: v('sj-name'), email: v('sj-email'), bookingNo: v('sj-booking'), job: v('sj-job'), company: v('sj-company') });
+      location.href = d.link;
+    }catch(e){ fail(e.message); btn.disabled = false; btn.textContent = '시작하기'; }
+  };
+}
+
 function clientMessage(title, html){
   screenSelect.style.display = 'block';
   catList.innerHTML = (CLIENT ? clientBannerHtml(true) : '') + `<div style="background:var(--white);border:1px solid var(--line);border-radius:6px;padding:18px 16px"><div style="font-size:16px;font-weight:700;margin-bottom:8px">${title}</div><div style="font-size:14px;color:var(--muted);line-height:1.7">${html}</div></div>`;
@@ -3802,6 +3862,10 @@ async function clientFinalSubmit(){
   const params = new URLSearchParams(location.search);
   if(params.get('live')){
     await renderLiveStudent(String(params.get('live')).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8));
+    return;
+  }
+  if(params.get('shop') && params.get('admin') !== '1'){
+    await renderShopJoin(params.get('shop'));
     return;
   }
   if(params.get('c') && params.get('admin') !== '1'){

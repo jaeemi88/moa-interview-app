@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/go/:key", "destination": "/index.html" }
+  ]
+}
