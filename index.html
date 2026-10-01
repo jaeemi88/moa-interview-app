@@ -3598,6 +3598,45 @@ window.addEventListener('resize', () => { const c = document.getElementById('lv-
 // 원장님이 자소서 앱 강사 명부 화면의 "👤 개인 고객"에서 만든 링크(?c=코드)로 들어옴
 // - 답변은 저장만 하고 고칠 수 있음 → "최종 제출" 1번에 AI 피드백을 만들어 원장님 검토 대기함으로
 // - 세트 상품은 자소서를 먼저 제출해야 면접 제출 가능 (서버에서도 확인)
+// ---------- 취소·환불 규정 (2026-10-02 수익화 랩 확정 · 자소서·모의면접 앱 같은 문구) ----------
+const REFUND_POLICY_HTML = `<div style="font-size:13px;line-height:1.75;color:#333">
+<b>■ 최종 제출 전: 전액 환불</b><br>- 결제 후 앱에서 '최종 제출'을 누르기 전까지는 언제든 전액 환불됩니다.<br>- 작성 중 자동 저장된 내용은 환불과 함께 삭제됩니다.<br>
+<b>■ 최종 제출 후: 환불 불가</b><br>- 제출과 동시에 AI 분석 및 강사 검토가 시작되어 서비스 제공이 개시됩니다.<br>- 제출 전 확인 창에서 이 내용에 동의한 후 제출됩니다.<br>
+<b>■ 세트 상품(자소서 + 모의면접)</b><br>- 자소서 제출 후 모의면접 제출 전 취소 시: 40,000원 환불<br>- 두 항목 모두 제출 후: 환불 불가<br>
+<b>■ 이용 기간</b><br>- 결제일로부터 14일 이내에 제출해 주세요.<br>- 기간 내 사정이 생기면 만료 전 이메일로 요청 시 1회 7일 연장됩니다.<br>- 기간 만료 후 미제출 건은 환불되지 않습니다.<br>
+<b>■ 예외:</b> 시스템 오류 등 당사 사정으로 결과를 제공하지 못한 경우 전액 환불합니다.<br>
+<span style="color:#666">※ 본 서비스는 제출 시점에 제공이 개시되는 용역으로, 제출 후에는 전자상거래법 제17조 제2항에 따라 청약철회가 제한됩니다.</span><br>환불 문의: jinromoa@naver.com</div>`;
+function refundDetailsHtml() {
+  return `<details style="margin-top:4px"><summary style="cursor:pointer;color:#555;font-size:12.5px">취소·환불 규정 전체 보기</summary><div style="margin-top:6px;padding:10px 12px;background:#F7F8FA;border-radius:8px">${REFUND_POLICY_HTML}</div></details>`;
+}
+// 최종 제출 확인 창 — 환불 불가 동의를 체크해야 제출 버튼이 눌려요. 동의하면 true
+function refundSubmitConfirm(opts) {
+  return new Promise(resolve => {
+    const color = opts.color || '#295BF2';
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px';
+    ov.innerHTML = `<div style="background:#fff;border-radius:12px;padding:20px 18px;max-width:400px;width:100%;max-height:88vh;overflow:auto;font-family:inherit">
+      <div style="font-weight:800;font-size:17px;margin-bottom:8px">${opts.title}</div>
+      <div style="font-size:14px;line-height:1.7;color:#333">${opts.body}</div>
+      <div style="margin-top:12px;padding:12px;background:#FFF1F0;border-radius:8px;font-size:13.5px;line-height:1.7;color:#8A1C14">
+        <b>■ 최종 제출 후: 환불 불가</b><br>- 제출과 동시에 AI 분석 및 강사 검토가 시작되어 서비스 제공이 개시됩니다.${opts.setNote ? '<br>' + opts.setNote : ''}
+      </div>
+      ${refundDetailsHtml()}
+      <label style="display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.6;margin:12px 0 0;cursor:pointer;font-weight:600">
+        <input type="checkbox" id="rfAgree" style="width:auto;margin-top:4px;flex:none"> <span>위 내용을 확인했으며, 최종 제출 후 환불이 불가한 것에 동의합니다.</span>
+      </label>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button type="button" id="rfNo" style="flex:1;padding:12px;border-radius:8px;border:1px solid #D0D5DD;background:#fff;font-size:15px;font-family:inherit;cursor:pointer">다시 확인할게요</button>
+        <button type="button" id="rfYes" disabled style="flex:1;padding:12px;border-radius:8px;border:none;background:${color};color:#fff;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;opacity:.4">최종 제출</button>
+      </div></div>`;
+    document.body.appendChild(ov);
+    const yes = ov.querySelector('#rfYes');
+    ov.querySelector('#rfAgree').addEventListener('change', e => { yes.disabled = !e.target.checked; yes.style.opacity = e.target.checked ? '1' : '.4'; });
+    ov.querySelector('#rfNo').onclick = () => { ov.remove(); resolve(false); };
+    yes.onclick = () => { ov.remove(); resolve(true); };
+  });
+}
+
 let CLIENT = null;
 let CLIENT_DRAFT = null;
 const RESUME_APP_URL = 'https://resume-feedback-app-phi.vercel.app/';
@@ -3611,6 +3650,7 @@ function clientBannerHtml(short){
       <span style="font-size:12.5px;background:#fff;border-radius:999px;padding:3px 10px;color:#1B3FA8">이용 기간 ${moaDate(CLIENT.expiresAt - 1, 'short')}까지 · D-${left}</span>
     </div>
     ${short ? '' : `<p style="margin:8px 0 0;font-size:13px;color:var(--muted);line-height:1.6">${CLIENT.product === 'set' ? '지금은 <b>② 모의면접</b> 단계예요. ' : ''}원하는 유형을 골라 질문에 답해 주세요. 답변은 <b>자동 저장</b>되고 언제든 고칠 수 있어요. 이용 기간 안에는 <b>나갔다가 다시 들어와도 이어서</b> 할 수 있어요(다른 기기도 OK). 다 마치면 맨 아래 <b>📮 최종 제출하기</b>를 눌러 주세요 — 제출은 <b>한 번만</b> 가능해요.</p>`}
+    ${short ? '' : `<div style="margin-top:8px;font-size:12.5px;color:var(--muted)">최종 제출 전에는 전액 환불, 제출 후에는 환불이 불가해요.${refundDetailsHtml()}</div>`}
     ${CLIENT.hold ? `<div style="margin-top:10px;padding:10px 12px;background:#FFF4DC;color:#7A4D00;border-radius:6px;font-size:13px;line-height:1.7">⏳ <b>예약 확인 중이에요.</b> 지금 바로 답변을 시작하셔도 돼요. 확인이 끝나면 이메일로 알려드리고, 그때부터 <b>최종 제출</b>할 수 있어요.</div>` : ''}
   </div>`;
 }
@@ -3661,6 +3701,11 @@ async function renderShopJoin(key){
         <input type="checkbox" id="sj-agree" style="margin-top:4px">
         <span>[필수] 개인정보 수집·이용에 동의해요.<br><span style="color:var(--muted)">수집 항목: 이름·이메일·예약번호·답변 내용 / 목적: 모의면접 결과 제공 / 보관: 이용 기간이 끝나고 30일 뒤 자동 삭제</span></span>
       </label>
+      <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.6;cursor:pointer;margin-top:10px">
+        <input type="checkbox" id="sj-refund" style="margin-top:4px">
+        <span>[필수] 취소·환불 규정을 확인했어요.<br><span style="color:var(--muted)"><b style="color:#222">최종 제출 전에는 전액 환불</b>, <b style="color:#B42318">최종 제출 후에는 환불 불가</b>예요.</span></span>
+      </label>
+      ${refundDetailsHtml()}
       <button class="link-cta" id="sj-go" style="margin-top:14px">시작하기</button>
       <p id="sj-msg" style="color:#B42318;font-size:13px;margin:8px 0 0;display:none"></p>
     </div>`;
@@ -3672,9 +3717,10 @@ async function renderShopJoin(key){
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v('sj-email'))) return fail('이메일 주소를 다시 확인해 주세요.');
     if(v('sj-booking').replace(/[^0-9A-Za-z]/g, '').length < 4) return fail('네이버 예약번호를 입력해 주세요.');
     if(!document.getElementById('sj-agree').checked) return fail('개인정보 수집·이용에 동의해 주세요.');
+    if(!document.getElementById('sj-refund').checked) return fail('취소·환불 규정을 확인하고 체크해 주세요.');
     btn.disabled = true; btn.textContent = '준비하는 중...';
     try{
-      const d = await post({ action: 'shopJoin', key, name: v('sj-name'), email: v('sj-email'), bookingNo: v('sj-booking'), job: v('sj-job'), company: v('sj-company') });
+      const d = await post({ action: 'shopJoin', key, name: v('sj-name'), email: v('sj-email'), bookingNo: v('sj-booking'), job: v('sj-job'), company: v('sj-company'), agreeRefund: true });
       location.href = d.link;
     }catch(e){ fail(e.message); btn.disabled = false; btn.textContent = '시작하기'; }
   };
@@ -3798,7 +3844,7 @@ async function clientFinalSubmit(){
   });
   if(!items.length) return;
   if(CLIENT.hold && !(await clientHoldCleared())){ alert('⏳ ' + CLIENT_HOLD_MSG); return; }
-  if(!confirm(`답변 ${items.length}개를 최종 제출할까요?\n\n⚠️ 제출은 한 번만 가능하고, 제출 후에는 수정할 수 없어요.\n빠진 질문이나 고칠 답변이 없는지 한 번 더 확인해 주세요.`)) return;
+  if(!(await refundSubmitConfirm({ color: '#295BF2', title: `답변 ${items.length}개를 최종 제출할까요?`, body: '제출은 <b>한 번만</b> 가능하고, 제출 후에는 수정할 수 없어요. 빠진 질문이나 고칠 답변이 없는지 한 번 더 확인해 주세요.' }))) return;
   const name = CLIENT.name || window.prompt('이름을 입력해 주세요 (결과지 제목에 표시돼요)', '');
   if(name === null) return;
   let email = '';
@@ -3848,6 +3894,7 @@ async function clientFinalSubmit(){
     studentInstitution: '개인 고객',
     studentTargetField: STUDENT_TARGET_FIELD_OVERRIDE || '',
     clientCode: CLIENT.code,
+    refundAgreedAt: Date.now(),
     createdAt: new Date().toISOString()
   };
   try{
