@@ -25,16 +25,33 @@
   var EMOJI = /^[\s☀-➿\uD83C-􏰀-\uDFFF️‍]+/;
 
   /* ── 상단 바 ── */
+  function isTeacher() { return document.body.classList.contains('role-teacher'); }
   function applyShell() {
-    if (!isStudent()) { document.body.classList.remove('moa-ui', 'moa-stage'); return false; }
-    document.body.classList.add('moa-ui');
+    var b = document.body;
+    if (!b.classList.contains('role-student') && !b.classList.contains('role-teacher')) { b.classList.remove('moa-ui', 'moa-stage', 'moa-teacher'); return false; }
+    b.classList.add('moa-ui');
+    b.classList.toggle('moa-teacher', isTeacher());
     document.documentElement.style.setProperty('--moa-app', APP_COLOR);
     var header = document.querySelector('header');
     if (header && !header.querySelector('.moa-wordmark')) {
       header.insertBefore(el('div', { class: 'moa-wordmark', 'aria-label': 'MOA FORMULA' }, '<i></i>MOA FORMULA'), header.firstChild);
     }
+    // 강사 화면: 오른쪽에 테두리+자물쇠 버튼 (강사 설정 · 허브)
+    if (header && isTeacher() && !header.querySelector('.moa-head-right')) {
+      var right = el('div', { class: 'moa-head-right' });
+      var gear = document.getElementById('gear-btn');
+      if (gear && gear.style.display !== 'none') {
+        var set = el('button', { type: 'button', class: 'moa-lock' }, '강사 설정');
+        set.addEventListener('click', function () { gear.click(); });
+        right.appendChild(set);
+      }
+      var hub = document.querySelector('.moa-hubbar a');
+      if (hub && hub.style.display !== 'none') right.appendChild(el('a', { class: 'moa-lock', href: hub.getAttribute('href') }, '허브'));
+      var title = header.querySelector('.title-row');
+      header.insertBefore(right, title ? title.nextSibling : null);
+    }
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', document.body.classList.contains('moa-stage') ? '#0E1533' : '#FFFFFF');
+    if (meta) meta.setAttribute('content', b.classList.contains('moa-stage') ? '#0E1533' : '#FFFFFF');
     return true;
   }
 
@@ -118,7 +135,7 @@
       var answered = body.querySelector('.bubble.a, .bubble.loading');
       var input = document.getElementById('answer-input');
       var canAnswer = input && input.style.display !== 'none';
-      on = !!q && !answered && canAnswer;
+      on = !!q && !answered && canAnswer && isStudent();
       if (on) placeTimer(q);
     }
     if (!on) {
@@ -177,6 +194,8 @@
   function scan() {
     if (!applyShell()) return;
     enhanceSelect();
+    var live = document.getElementById('st-live-btn');
+    if (live && EMOJI.test(live.textContent)) live.textContent = live.textContent.replace(EMOJI, '');
     document.querySelectorAll('.sc-toggle').forEach(function (b) { if (EMOJI.test(b.textContent)) b.textContent = b.textContent.replace(EMOJI, ''); });
     wireInput();
     wireMic();
