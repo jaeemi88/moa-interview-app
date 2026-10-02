@@ -8,7 +8,7 @@
 // 0. 공통 원칙 (모든 전공·모든 요청에 자동 적용)
 // ───────────────────────────────────────────
 // Vercel 함수 최대 실행 시간 60초 (AI 답변이 길어져도 중간에 끊기지 않도록)
-export const config = { maxDuration: 60 };
+export const config = { maxDuration: 120 }; // 예시 답변 형광펜·보기 추가로 여유 있게 (2026-10-02)
 
 const COMMON_RULES = `■ 공통 원칙 (면접관 시점)
 - 학생 원문에 없는 경험·수치·사실은 절대 추가하지 않는다. 보완이 필요하면 "어느 문장 뒤에, 어떤 종류의 실제 경험을 넣으면 좋은지"를 구체적으로 안내한다.
@@ -166,6 +166,23 @@ const RED_FLAG_RULES = `
 red_flags 형식: [{"type": "유형 이름", "quote": "학생 답변 인용", "why": "면접관 시점 한 문장", "fix": "대체 문장 한 줄"}]`;
 
 // ───────────────────────────────────────────
+// ★ 예시 답변 형광펜 (2026-10-02 추가 · 자소서 앱과 세트 · 강사 프리셋보다 우선)
+//   rewritten을 빈칸 없이 끝까지 채우고, 학생 답변에 없는 부분만 {{ }}로 표시 → 결과 화면에서 형광펜·보기 3개
+// ───────────────────────────────────────────
+const EXAMPLE_RULES = `
+
+[예시 채우기 — rewritten은 빈칸 없는 완성 답변 (가장 중요, 위 지침보다 우선)]
+- rewritten에는 [ ] 대괄호 빈칸을 쓰지 않는다. 위 지침에서 대괄호 빈칸으로 남기라고 한 자리는 모두 이 규칙으로 바꿔 적용한다.
+- 학생 답변에 없는 경험·장면·숫자·고유명사·인용 한마디가 필요한 자리는, 학생의 전공·지원 직무·신분(고등학생/대학생/경력자)에 맞는 흔하고 그럴듯한 예시로 문장을 끝까지 채우고 그 부분만 {{ }}로 감싼다. 예) 저는 {{고등학교 방송부에서 3년간 아침 방송을 맡으며}} 약속한 시간을 지키는 습관을 들였습니다.
+- 학생 답변에서 온 사실은 {{ }}로 감싸지 않고, AI가 만든 사실은 반드시 {{ }} 안에만 둔다. 원문에 없는 「 」 인용 한마디는 따옴표 안쪽 전체를, 원문에 없는 인물·학년·기간·숫자도 {{ }} 안에 둔다. {{ }} 안은 구절 단위로 짧게(40자 이내) 쓰고 앞뒤 문장과 자연스럽게 잇는다.
+- 예시 자리는 최대 6개. 학생 답변 재료가 충분하면 0개여도 된다. {{ }} 안에 또 괄호를 넣지 않는다.
+- 지원 회사의 제도명·사업명·수치는 실제 이름처럼 단정하지 말고 일반 표현의 {{ }} 예시로 쓴다(예: {{신입 직무교육 과정}}).
+- exampleSlots 필드: rewritten에 {{ }}가 나온 순서대로 하나씩 [{"example": "{{ }} 안 글과 똑같이", "hint": "이 자리에 학생이 넣을 것 15자 이내", "options": ["같은 자리에 그대로 끼워도 자연스러운 다른 흔한 경험 표현", "2", "3"]}]. {{ }}가 없으면 빈 배열.
+- 분량: 질문에 글자수 제한(예: 500자 이내)이 있으면 {{ }} 기호를 뺀 글자 수로 제한의 80~90%를 채운다. 제한이 없으면 원래 지침의 말하기 분량을 따른다.
+- 학생 답변이 매우 짧거나(50자 미만, 또는 글자수 제한의 절반 미만) 비어 있으면, improve 첫 문장에 지금 답변 길이를 알려 주고 「문장이 어려우면 키워드만이라도 말해 보세요」라고 안내한 뒤, 이 질문에 넣으면 좋은 키워드 3~5개(장소·활동 이름, 맡은 역할, 숫자로 된 결과, 배운 점, 직무 연결 단어)를 짧게 예시로 든다.
+- 예시 자리가 있으면 improve에 「형광펜으로 표시된 예시 자리를 내 실제 경험으로 바꿔야 면접에서 흔들리지 않는다」는 점을 한 번 짚는다.`;
+
+// ───────────────────────────────────────────
 // 3. 서버 함수 본체
 // ───────────────────────────────────────────
 export default async function handler(req, res) {
@@ -200,13 +217,14 @@ export default async function handler(req, res) {
 
 [면접 방식: 일반 면접 — 고유명사로 신뢰도 높이기]
 - 과목명·프로젝트명·기관명·매장명·부서명·회사의 실제 사업명처럼 답변에 있는 고유명사는 rewritten에서 반드시 살린다.
-- 경험을 묻는 질문인데 고유명사가 하나도 없으면 improve에 어느 부분에 어떤 이름(예: 과목명, 기관명)을 넣으면 신뢰도가 올라가는지 한 줄로 안내하고, rewritten에는 [여기에 프로젝트 이름]처럼 빈칸으로 표시한다.
+- 경험을 묻는 질문인데 고유명사가 하나도 없으면 improve에 어느 부분에 어떤 이름(예: 과목명, 기관명)을 넣으면 신뢰도가 올라가는지 한 줄로 안내하고, rewritten에는 {{ }} 예시 이름(일반적인 활동명)으로 채운다.
 - 답변에 없는 고유명사를 지어내지 않는다.`;
   const fullSystem =
     COMMON_RULES +
     (majorRules ? `\n\n[전공별 기준]\n${majorRules}` : '') +
     RED_FLAG_RULES +
     hiringRules +
+    EXAMPLE_RULES +
     DIVERSITY_RULES +
     variety +
     DIRECTION_STEPS_RULE +
@@ -224,7 +242,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 3000, // 결격 신호 추가로 여유 있게 (실제 쓴 만큼만 비용 발생)
+        max_tokens: 4500, // 결격 신호·예시 보기 추가로 여유 있게 (실제 쓴 만큼만 비용 발생)
         system: fullSystem,
         messages: [
           { role: 'user', content: `[질문]\n${question}\n\n[답변]\n${answer || ''}` }
@@ -251,6 +269,10 @@ export default async function handler(req, res) {
     }
 
     if (!Array.isArray(feedback.red_flags)) feedback.red_flags = [];
+    feedback.exampleSlots = (Array.isArray(feedback.exampleSlots) ? feedback.exampleSlots : [])
+      .filter((s) => s && s.example)
+      .map((s) => ({ example: String(s.example), hint: String(s.hint || ''), options: (Array.isArray(s.options) ? s.options : []).map(String).filter(Boolean).slice(0, 3) }))
+      .slice(0, 8);
     feedback.direction_steps = Array.isArray(feedback.direction_steps)
       ? feedback.direction_steps.map(x => String(x || '').trim().slice(0, 24)).filter(Boolean).slice(0, 4)
       : [];

@@ -80,6 +80,7 @@ export default async function handler(req, res) {
   try {
     if (body.mode === 'outline') return await outline(body, res);
     if (body.mode === 'defend') return await defend(body, res);
+    if (body.mode === 'finish') return await finish(body, res);
     return res.status(400).json({ error: '지원하지 않는 요청입니다.' });
   } catch (err) {
     console.error('서버 오류:', err);
@@ -162,4 +163,24 @@ ${JSON_RULE}
   if (!parsed) return res.status(500).json({ error: 'AI 응답 형식이 올바르지 않습니다. 다시 눌러주세요.' });
   const verdict = ['ok', 'caution', 'weak'].includes(parsed.verdict) ? parsed.verdict : 'caution';
   return res.status(200).json({ verdict, comment: String(parsed.comment).trim() });
+}
+
+// ---------- 내 답변으로 완성하기 (mode: 'finish', 2026-10-02 · 자소서 앱과 세트) ----------
+// 학생이 결과 화면에서 예시 답변의 형광펜 자리를 자기 경험으로 바꾼 뒤, 말하기 좋게 자연스럽게 이어 줌
+async function finish(body, res) {
+  const text = clip(body.text, 4000);
+  const charLimit = parseInt(body.charLimit, 10) || null;
+  if (!text || !/⟪[^⟫]+⟫/.test(text)) {
+    return res.status(400).json({ error: '내 경험으로 바꾼 곳이 한 곳 이상 있어야 해요.' });
+  }
+  const systemPrompt = `당신은 면접 답변 코치입니다. 학생이 예시 답변의 예시 자리 일부를 자기 실제 경험으로 바꿨습니다.
+- ⟪ ⟫ 안은 학생이 직접 넣은 자기 경험입니다. 그 내용(단어·숫자·이름)을 빠짐없이 살리고 ⟪ ⟫ 기호만 지웁니다. 단어만 적었으면 앞뒤와 이어지는 자연스러운 구절로 풀어 씁니다.
+- {{ }} 안은 아직 바꾸지 않은 예시입니다. 내용과 {{ }} 기호를 그대로 둡니다(문장 연결을 위해 조사만 바꿀 수 있음).
+- 학생이 넣은 내용과 예시가 어긋나 어색해지면 그 주변 문장만 학생 내용에 맞게 고칩니다. 새로운 사실·숫자·이름은 만들지 않습니다.
+- 면접에서 말로 하기 좋은 1인칭 답변 본문만 씁니다.${charLimit ? ` 기호를 뺀 분량은 공백 포함 ${charLimit}자의 80~90%(${Math.round(charLimit * 0.8)}~${Math.round(charLimit * 0.9)}자)로 맞춥니다.` : ''}
+${JSON_RULE}
+{"text": "완성된 답변 본문"}`;
+  const parsed = await askAI(systemPrompt, text, Math.min(8000, 1500 + Math.round((charLimit || 600) * 1.6)), (p) => p && p.text);
+  if (!parsed) return res.status(500).json({ error: 'AI 응답 형식이 올바르지 않습니다. 다시 눌러주세요.' });
+  return res.status(200).json({ text: String(parsed.text).replace(/[⟪⟫]/g, '').trim() });
 }
