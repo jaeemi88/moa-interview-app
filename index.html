@@ -598,6 +598,38 @@
   .rr-sample .body{margin-top:10px;padding:16px 18px;border-radius:12px;background:var(--rr-bg);border:1px dashed var(--rr-line2);}
   .rr-sample .body p{margin:0;font-family:'Noto Serif KR',serif;font-size:15px;line-height:1.85;color:var(--rr-ink2);white-space:pre-wrap;}
   .rr-retry{display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px 0;}
+
+  /* ===== 결과 화면 2026-10-03 B+C+D 통합안: 남색+라임, 맨 위 요약 카드, 하단 고정 버튼 ===== */
+  body.moa-ui #screen-result.rr{--rr-blue:#141A2E;--rr-blue-ink:#141A2E;--rr-blue-soft:#F4F5F7;--rr-blue-line:#E6E8EE;--rr-blue-focus:#C0D904;--rr-green:#C0D904;--rr-green-ink:#3D4500;--rr-bg:#FFFFFF;--rr-bg2:#F4F5F7;--rr-ink:#141A2E;--rr-ink2:#2B3040;--rr-muted:#5F6678;padding-bottom:0}
+  body.moa-ui #screen-result.rr .result-header h2{font-family:'Noto Sans KR',sans-serif;font-size:24px;font-weight:900;letter-spacing:-0.025em}
+  body.moa-ui #screen-result.rr .r-brand{display:none}
+  body.moa-ui .rr-steps .done::before{color:#3D4500}
+  body.moa-ui #screen-result.rr{overflow:visible}
+  body.moa-ui .ex-wrap{background:#F4F5F7 !important;border-radius:14px !important}
+  body.moa-ui .ex-bar i{background:#141A2E !important}
+  body.moa-ui .ex-editor{border-color:#141A2E !important}
+  body.moa-ui .ex-opt{background:#FFFFFF !important;border-radius:12px !important;min-height:44px}
+  body.moa-ui .ex-opt:hover,body.moa-ui .ex-opt.on{border-color:#141A2E !important}
+  body.moa-ui .ex-guide{color:#3B4256 !important}
+  body.moa-ui .ex-btn.ex-finish,body.moa-ui .ex-btn.ex-copy-final{background:#141A2E !important;color:#FFFFFF !important;border-color:#141A2E !important}
+  body.moa-ui .ex-btn.ex-finish:disabled{background:#B9BDC8 !important;border-color:#B9BDC8 !important}
+  body.moa-ui .rr-sample .body{background:#FFFFFF !important;border-color:#E6E8EE !important}
+  body.moa-ui .rr-card{padding:20px !important;gap:16px !important;border-color:#E6E8EE !important}
+  .rr-hero{background:#141A2E;color:#FFFFFF;border-radius:20px;padding:18px 18px 16px}
+  .rr-hero-top{display:flex;justify-content:space-between;gap:10px;font-size:12px;font-weight:700;color:#C0D904}
+  .rr-hero-top span:last-child{color:#AEB4C6;font-weight:500}
+  .rr-hero-q{margin:8px 0 0;font-size:14px;line-height:1.6;color:#C8CEE0}
+  .rr-hero-head{margin:10px 0 0;font-size:20px;line-height:1.45;font-weight:900;letter-spacing:-0.02em}
+  .rr-hero-bar{height:6px;border-radius:3px;background:rgba(255,255,255,.14);overflow:hidden;margin-top:14px}
+  .rr-hero-bar i{display:block;height:100%;background:#C0D904;border-radius:3px;transition:width .3s}
+  .rr-hero-sub{margin:7px 0 0;font-size:12px;color:#AEB4C6;font-variant-numeric:tabular-nums}
+  .rr-mine-d{border:1px solid #E6E8EE;border-radius:14px !important;padding:0 14px}
+  .rr-mine-d .rr-mine{margin:0 0 14px;border:0;background:#F4F5F7}
+  .rr-dock{position:sticky;bottom:0;display:grid;grid-template-columns:56px 56px minmax(0,1fr);gap:8px;padding:14px 0 calc(16px + env(safe-area-inset-bottom));background:linear-gradient(rgba(255,255,255,0),#FFFFFF 26%);z-index:20}
+  .rr-dock-btn{min-height:54px;border:1px solid #D7DAE2 !important;border-radius:14px !important;background:#FFFFFF !important;color:#141A2E !important;display:flex !important;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px !important;font-weight:700;padding:0 !important;font-family:inherit;cursor:pointer}
+  .rr-dock-main{min-height:54px;display:flex;align-items:center;justify-content:center;border:0;border-radius:14px;background:#141A2E;color:#FFFFFF !important;font:700 16px 'Noto Sans KR',sans-serif;text-decoration:none;cursor:pointer}
+  .rr-dock-main:focus-visible,.rr-dock-btn:focus-visible{outline:3px solid #C0D904;outline-offset:2px}
+  @media print{ .rr-dock{display:none !important} }
   .rr-retry a{display:inline-flex;align-items:center;gap:10px;min-height:52px;padding:0 32px;border-radius:12px;background:var(--rr-blue);color:#fff;font-size:16px;font-weight:700;text-decoration:none;}
   .rr-retry span{font-size:13px;color:var(--rr-muted);text-align:center;}
   .rr-more{border-top:1px solid var(--rr-line);}
@@ -2152,6 +2184,7 @@ function exampleBlockHtml(item) {
 }
 function exRefresh(st) {
   document.querySelectorAll(`.ex-wrap[data-exkey="${st.key}"]`).forEach(w => { w.innerHTML = exInnerHtml(st); });
+  if (typeof rrRefreshHero === 'function') rrRefreshHero(st.key);
 }
 // 예시가 남은 채로 복사·저장할 때 경고 (⑨)
 function exLeftWarn(count) {
@@ -3132,6 +3165,36 @@ copyLinkBtn.onclick = () => {
 modalCloseBtn.onclick = () => { linkModal.style.display = 'none'; };
 
 /* ---- Result (student) view ---- */
+// ---------- 결과 화면 맨 위 요약 카드 (2026-10-03 B+C+D 통합안 · 자소서 앱과 세트) ----------
+// 실제 피드백 정보(멈칫할 표현 수·남은 형광펜 수)로만 한 줄 평을 만들고, 점수는 지어내지 않음
+const RR_LIST = [];
+function rrHeroInner(item, i, total, record){
+  RR_LIST[i] = { item, i, total, record };
+  const fb = item.feedback || {};
+  const flags = Array.isArray(fb.red_flags) ? fb.red_flags.filter(f => f && (f.quote || f.why)).length : 0;
+  const has = exHasSlots(fb);
+  const st = has ? exInit(exFbItem(fb, item.question)) : null;
+  const n = st ? st.slots.length : 0;
+  const left = st ? exLeft(st) : 0;
+  const pct = n ? Math.round((n - left) / n * 100) : 0;
+  let head;
+  if (flags) head = `면접관이 멈칫할 표현 ${flags}곳을<br>먼저 고쳐 보세요`;
+  else if (left) head = `예시 ${left}곳을 내 경험으로 바꾸면<br>답변이 완성돼요`;
+  else if (fb.improve) head = `좋은 점은 살리고,<br>보완할 점 하나만 고쳐 보세요`;
+  else head = `좋은 답변이에요.<br>소리 내어 다시 말해 보세요`;
+  const cat = item.categoryTitle || (record && record.category) || '';
+  return `
+    <div class="rr-hero-top"><span>Q${i + 1}${cat ? ' · ' + escapeHtml(cat) : ''}</span><span>${i + 1} / ${total}</span></div>
+    <p class="rr-hero-q">${escapeHtml(item.question)}</p>
+    <p class="rr-hero-head">${head}</p>
+    ${n ? `<div class="rr-hero-bar" role="img" aria-label="답변 완성도 ${pct}%"><i style="width:${pct}%"></i></div><p class="rr-hero-sub">내 경험으로 바꾼 곳 ${n - left} / ${n} · 완성도 ${pct}%</p>` : ''}`;
+}
+function rrRefreshHero(key){
+  document.querySelectorAll(`.rr-hero[data-exkey="${key}"]`).forEach(h => {
+    const r = RR_LIST[+h.dataset.rridx]; if (r) h.innerHTML = rrHeroInner(r.item, r.i, r.total, r.record);
+  });
+}
+
 async function renderResultView(id){
   document.querySelector('header .brand').style.display = 'none';
   headerTitle.textContent = '면접 연습 결과';
@@ -3195,26 +3258,22 @@ async function renderResultView(id){
         : (fb.sample_direction ? `<p class="desc">${escapeHtml(fb.sample_direction)}</p>` : '');
       html += `
       <article class="rr-card${i === 0 ? ' on' : ''}" data-rr-card="${i}">
-        <div>
-          <div class="rr-qlabel">Q${i + 1}${catName ? ' · ' + escapeHtml(catName) : ''}</div>
-          <h3 class="rr-q">${escapeHtml(item.question)}</h3>
-        </div>
-        <div class="rr-mine"><div class="rr-lbl">내가 한 답변</div><p>${escapeHtml(item.answer)}</p></div>
-        <div class="rr-arrow rr-noexport">${arrowSvg}</div>
+        <div class="rr-hero" data-rridx="${i}"${exHasSlots(fb) ? ` data-exkey="${exInit(exFbItem(fb, item.question)).key}"` : ''}>${rrHeroInner(item, i, items.length, record)}</div>
+        ${(dirBody || fb.rewritten) ? `
+        <section class="rr-dir" aria-label="AI가 제안하는 답변 방향">
+          <h4>한 번 더 말해 볼 답변</h4>
+          ${dirBody}
+          <p class="rr-hint">정답을 외우기보다, 내 경험에 맞게 바꿔 말해 보세요.</p>
+          ${fb.rewritten ? `<details class="rr-sample"${exHasSlots(fb) ? ' open' : ''}><summary><span class="t1">예시 답변 보기</span><span class="t2">예시 답변 접기</span></summary>
+            <div class="body"><div class="rr-lbl">${exHasSlots(fb) ? '예시 답변 — 형광펜 자리를 내 경험으로 바꿔 내 답변을 완성해 보세요' : '예시 답변 — 참고만 하세요'}</div>${exHasSlots(fb) ? exampleBlockHtml(exFbItem(fb, item.question)) : `<p>${escapeHtml(fb.rewritten)}</p>`}</div></details>` : ''}
+        </section>` : ''}
         <section class="rr-ai" aria-label="AI 피드백">
           <div class="rr-ai-h">${sparkSvg}AI 피드백</div>
           ${fb.good ? `<div class="rr-row good"><span class="rr-num">1</span><div><h4>잘한 점</h4><p>${escapeHtml(fb.good)}</p></div></div>` : ''}
           ${fb.improve ? `<div class="rr-row fix"><span class="rr-num">2</span><div><h4>보완할 점</h4><p>${escapeHtml(fb.improve)}</p></div></div>` : ''}
           ${flagsBlock}
         </section>
-        ${(dirBody || fb.rewritten) ? `
-        <section class="rr-dir" aria-label="AI가 제안하는 답변 방향">
-          <h4>AI가 제안하는 답변 방향</h4>
-          ${dirBody}
-          <p class="rr-hint">정답을 외우기보다, 내 경험에 맞게 바꿔 말해 보세요.</p>
-          ${fb.rewritten ? `<details class="rr-sample"${exHasSlots(fb) ? ' open' : ''}><summary><span class="t1">예시 답변 보기</span><span class="t2">예시 답변 접기</span></summary>
-            <div class="body"><div class="rr-lbl">${exHasSlots(fb) ? '예시 답변 — 형광펜 자리를 내 경험으로 바꿔 내 답변을 완성해 보세요' : '예시 답변 — 참고만 하세요'}</div>${exHasSlots(fb) ? exampleBlockHtml(exFbItem(fb, item.question)) : `<p>${escapeHtml(fb.rewritten)}</p>`}</div></details>` : ''}
-        </section>` : ''}
+        <details class="rr-mine-d"><summary>내가 한 답변 보기</summary><div class="rr-mine"><div class="rr-lbl">내가 한 답변</div><p>${escapeHtml(item.answer)}</p></div></details>
         ${showRetry ? `<div class="rr-retry rr-noexport"><a href="${retryHref}">${micSvg}다시 말해보기</a><span>연습 화면에서 같은 유형을 골라, 방향을 참고해 내 경험으로 한 번 더 답해 보세요</span></div>` : ''}
         ${(fb.interviewer_inference || fu.reason || fu.alternative || fu.quantify) ? `<div class="rr-more">
           ${fb.interviewer_inference ? `<details><summary>면접관 시점 — 이 답변으로 보이는 평소 모습</summary><p class="rr-infer">${escapeHtml(fb.interviewer_inference)}</p></details>` : ''}
@@ -3250,10 +3309,34 @@ async function renderResultView(id){
       } else {
         nextBtn.style.display = 'none';
       }
-      if(scroll) screenResult.scrollTo({ top: 0, behavior: 'smooth' });
+      if(scroll){ screenResult.scrollTo({ top: 0, behavior: 'smooth' }); window.scrollTo({ top: 0, behavior: 'smooth' }); }
     };
     navBtns.forEach((b, k) => b.addEventListener('click', () => show(k, true)));
     if(items.length) show(0, false); else nextBtn.style.display = 'none';
+    // 하단 고정 버튼 줄: 워드 · PDF · 다시 말해보기 (2026-10-03)
+    let dock = document.getElementById('rr-dock');
+    if(!dock){
+      dock = document.createElement('div');
+      dock.id = 'rr-dock';
+      dock.className = 'rr-dock rr-noexport';
+      screenResult.appendChild(dock);
+    }
+    dock.innerHTML = '';
+    [resultDownloadBtn, document.getElementById('result-pdf-btn')].forEach((b, k) => {
+      if(!b) return;
+      b.className = 'rr-dock-btn';
+      b.style.marginTop = '0';
+      b.innerHTML = (k === 0
+        ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5M9 13l1.5 5 1.5-4 1.5 4 1.5-5"></path></svg>워드'
+        : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6M6 17H4v-6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6h-2"></path><rect x="6" y="14" width="12" height="7" rx="1"></rect></svg>PDF');
+      b.setAttribute('aria-label', k === 0 ? '워드로 저장' : 'PDF로 저장');
+      dock.appendChild(b);
+    });
+    const main = document.createElement(showRetry ? 'a' : 'button');
+    main.className = 'rr-dock-main';
+    if(showRetry){ main.href = retryHref; main.textContent = '다시 말해보기'; }
+    else { main.type = 'button'; main.textContent = '맨 위로'; main.onclick = () => { screenResult.scrollTo({ top: 0, behavior: 'smooth' }); window.scrollTo({ top: 0, behavior: 'smooth' }); }; }
+    dock.appendChild(main);
   }catch(err){
     resultItems.innerHTML = '<p style="color:var(--muted);font-size:13px;">결과를 불러오는 중 문제가 발생했어요.</p><p style="color:var(--muted);font-size:12px;">(오류 내용: ' + escapeHtml(err && err.message ? err.message : String(err)) + ')</p>';
     console.error(err);

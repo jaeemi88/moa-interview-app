@@ -10,6 +10,38 @@
   var TARGET_SEC = 60;
   var RING = 2 * Math.PI * 78;
 
+  /* ── 허브 '이어서 하기'용 진행 상황 보고 (2026-10-03) ──
+     허브가 주소 끝에 붙여 준 #moa-s={이름, 숫자4자리}를 이 창(세션)에만 보관하고,
+     (강사코드|이름|숫자4자리)를 SHA-256으로 뒤섞은 열쇠만 서버에 보냄 — 이름·숫자는 보내지 않음 */
+  var PROGRESS_API = 'https://resume-feedback-app-phi.vercel.app/api/progress';
+  function moaStudent() {
+    var m = location.hash.match(/^#moa-s=(.+)$/);
+    if (m) {
+      try {
+        var o = JSON.parse(decodeURIComponent(m[1]));
+        if (o && o.n && /^\d{4}$/.test(o.p4)) sessionStorage.setItem('moa_s', JSON.stringify({ n: String(o.n).slice(0, 20), p4: o.p4 }));
+      } catch (e) {}
+      try { history.replaceState(history.state, '', location.pathname + location.search); } catch (e) {}
+    }
+    try { return JSON.parse(sessionStorage.getItem('moa_s') || 'null'); } catch (e) { return null; }
+  }
+  var MOA_S = moaStudent();
+  function moaTeacherId() { try { return typeof TEACHER_ID !== 'undefined' ? TEACHER_ID : ''; } catch (e) { return ''; } }
+  function moaKey() {
+    var t = moaTeacherId();
+    if (!MOA_S || !t || !(window.crypto && crypto.subtle)) return Promise.resolve('');
+    var data = new TextEncoder().encode(t + '|' + MOA_S.n.trim() + '|' + MOA_S.p4);
+    return crypto.subtle.digest('SHA-256', data).then(function (buf) {
+      return Array.prototype.map.call(new Uint8Array(buf), function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+    }).catch(function () { return ''; });
+  }
+  function moaReport(app, data) {
+    moaKey().then(function (k) {
+      if (!k) return;
+      fetch(PROGRESS_API, { method: 'POST', keepalive: true, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'put', k: k, app: app, data: data }) }).catch(function () {});
+    });
+  }
+
   function isStudent() {
     var b = document.body;
     return b.classList.contains('role-student') && !b.classList.contains('role-teacher');
@@ -203,7 +235,55 @@
     applyShell();
   }
 
+  // 답변 피드백을 받을 때마다(/api/feedback POST 성공) 허브에 '어디까지 했는지' 저장
+  function interviewState() {
+    try {
+      if (typeof currentCategory === 'undefined' || !currentCategory) return null;
+      var total = currentCategory.questions.length;
+      var answered = Object.keys(answersByIdx || {}).map(Number);
+      var next = 0; while (answered.indexOf(next) >= 0 && next < total) next++;
+      return { cat: currentCategory.title, catId: currentCategory.id, done: answered.length, total: total, next: Math.min(next, total) };
+    } catch (e) { return null; }
+  }
+  (function watchFeedback() {
+    if (!window.fetch || !MOA_S) return;
+    var orig = window.fetch;
+    window.fetch = function (input, init) {
+      var url = typeof input === 'string' ? input : (input && input.url) || '';
+      var p = orig.apply(this, arguments);
+      if (/\/api\/feedback/.test(url) && init && String(init.method || '').toUpperCase() === 'POST') {
+        p.then(function (r) {
+          if (!r.ok) return;
+          setTimeout(function () { var st = interviewState(); if (st) moaReport('interview', st); }, 400);
+        }).catch(function () {});
+      }
+      return p;
+    };
+  })();
+
+  // 허브 '이어서 하기'로 들어오면 (?cat=유형&q=번호) 그 유형·질문으로 바로 이동
+  function openFromHub() {
+    var p = new URLSearchParams(location.search);
+    var cat = p.get('cat');
+    if (!cat || !isStudent()) return;
+    var tries = 0;
+    (function wait() {
+      var ready = false;
+      try { ready = typeof CATEGORIES !== 'undefined' && CATEGORIES.length && !!document.querySelector('#cat-list .cat-card .num'); } catch (e) {} // 전공 고르기 화면이면 학생이 고른 뒤에 이동
+      if (!ready) { if (tries++ < 600) setTimeout(wait, 100); return; }
+      try {
+        var c = CATEGORIES.find(function (x) { return x.id === cat; });
+        if (!c) return;
+        startCategory(c);
+        var q = parseInt(p.get('q') || '0', 10);
+        if (q > 0 && q < c.questions.length) goToQuestion(q);
+      } catch (e) {}
+      try { p.delete('cat'); p.delete('q'); history.replaceState(history.state, '', location.pathname + '?' + p.toString()); } catch (e) {}
+    })();
+  }
+
   function start() {
+    openFromHub();
     scan();
     var pending = false;
     var mo = new MutationObserver(function () {
