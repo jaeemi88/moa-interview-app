@@ -223,6 +223,82 @@
     input.placeholder = '말하듯이 적거나, 마이크를 눌러 말로 답하세요';
   }
 
+  /* ── 질문 위치 표시: "질문 2 / 6 · 남은 질문 4개" (2026-10-03) ── */
+  function updateQpos() {
+    var track = document.getElementById('progress-track');
+    var screen = document.getElementById('screen-chat');
+    var node = document.getElementById('moa-qpos');
+    var cat = null, idx = 0;
+    try { cat = typeof currentCategory !== 'undefined' ? currentCategory : null; idx = typeof currentQuestionIdx !== 'undefined' ? currentQuestionIdx : 0; } catch (e) {}
+    var show = track && cat && cat.questions && screen && getComputedStyle(screen).display !== 'none' && isStudent();
+    if (!show) { if (node) node.style.display = 'none'; return; }
+    if (!node) {
+      node = el('div', { id: 'moa-qpos', class: 'moa-qpos', 'aria-live': 'polite' });
+      track.parentNode.insertBefore(node, track.nextSibling);
+    }
+    var n = cat.questions.length, done = 0;
+    try { done = Object.keys(answersByIdx || {}).length; } catch (e) {}
+    var left = n - done;
+    var right = left <= 0 ? '<span class="last">모두 답했어요!</span>' : (idx === n - 1 || left === 1 ? '<span class="last">마지막 질문이에요!</span>' : '남은 질문 ' + left + '개');
+    var html = '<span>질문 <b>' + (idx + 1) + '</b> / ' + n + '</span>' + right;
+    if (node.innerHTML !== html) node.innerHTML = html;
+    if (node.style.display === 'none') node.style.display = '';
+  }
+
+  /* ── 시작 전 '오늘의 연습' 안내 (2026-10-03): 몇 문항·몇 분인지 먼저 보여 주고 시작 ── */
+  var INTRO_OFF = 'moa_intro_iv_off';
+  var skipIntroOnce = false;
+  function introOff() { try { return localStorage.getItem(INTRO_OFF) === '1'; } catch (e) { return false; } }
+  function showIntro(cat, go) {
+    var n = (cat.questions || []).length || 6;
+    var mins = Math.max(5, Math.round(n * 1.6));
+    var review = false, client = false;
+    try { review = typeof REVIEW_MODE !== 'undefined' && !!REVIEW_MODE; } catch (e) {}
+    try { client = typeof CLIENT !== 'undefined' && !!CLIENT; } catch (e) {}
+    var later = review || client;
+    var title = String(cat.title || '면접').replace(EMOJI, '');
+    var dots = ''; for (var i = 0; i < n; i++) dots += '<i' + (i < 2 ? ' class="on"' : '') + '></i>';
+    var wrap = el('div', { class: 'moa-intro-wrap', role: 'dialog', 'aria-modal': 'true', 'aria-label': '오늘의 연습 안내' });
+    wrap.innerHTML =
+      '<div class="moa-intro-top"><div class="moa-wordmark" aria-label="MOA FORMULA"><i></i>MOA FORMULA</div></div>' +
+      '<div class="moa-intro">' +
+      '<span class="k">시작 전 1분 · ' + esc(title) + '</span>' +
+      '<h2>질문 ' + n + '개 · 약 ' + mins + '분<br>면접 한 번을 끝까지 해 봐요</h2>' +
+      '<p class="s">' + (later ? '질문마다 60초 안에 답하고, 다 끝나면 한 번에 제출해요.' : '질문마다 60초 안에 답하면 바로 피드백이 와요.') + ' 몇 번째 질문인지 위에 계속 보여 드려요.</p>' +
+      '<ol>' +
+      '<li><b>1</b><div><h3>면접실에서 답하기</h3><p>질문 하나씩 · 말로 답하거나 적기</p></div><em>질문당 1분</em></li>' +
+      (later
+        ? '<li><b>2</b><div><h3>답변 모아 두기</h3><p>답한 내용은 저장돼요 · 다른 질문으로 옮겨도 그대로</p></div><em>자동 저장</em></li>' +
+          '<li><b>3</b><div><h3>제출 → 결과 받기</h3><p>' + (client ? '선생님 검토 후 이메일로 결과가 와요' : '선생님 검토 후 결과 링크가 와요') + '</p></div><em>마지막에</em></li>'
+        : '<li><b>2</b><div><h3>바로 피드백 받기</h3><p>잘한 점 · 보완할 점 · 꼬리질문</p></div><em>30초</em></li>' +
+          '<li><b>3</b><div><h3>결과 링크 남기기</h3><p>다 끝나면 리허설 리포트로 저장</p></div><em>마지막에</em></li>') +
+      '</ol>' +
+      '<div class="pv" aria-label="연습 화면 예시"><p class="pv-l"><span>이런 화면에서 연습해요</span><span>예시</span></p>' +
+      '<div class="pv-room"><span class="pv-ring">0:42</span><p>' + esc((cat.questions && cat.questions[0]) || '질문이 여기에 나와요') + '<small>권장 60초 · 말로 답하기</small></p></div>' +
+      '<div class="pv-dots">' + dots + '</div><p class="pv-m">질문 2 / ' + n + ' — 이 막대가 다 차면 끝!</p>' +
+      '<div class="pv-c">' + (later ? '<span>선생님 피드백</span><span>다시 말해 볼 답변</span><span>꼬리질문</span>' : '<span>잘한 점</span><span>다시 말해 볼 답변</span><span>꼬리질문</span><span>워드·PDF</span>') + '</div></div>' +
+      '<div class="go-row"><button type="button" class="go">면접 시작하기 →</button><button type="button" class="skip">다음부터 바로 시작하기</button></div>' +
+      '</div>';
+    document.body.appendChild(wrap);
+    var prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    function close() { document.body.style.overflow = prevOverflow; if (wrap.parentNode) wrap.parentNode.removeChild(wrap); }
+    wrap.querySelector('.go').addEventListener('click', function () { close(); go(); });
+    wrap.querySelector('.skip').addEventListener('click', function () { try { localStorage.setItem(INTRO_OFF, '1'); } catch (e) {} close(); go(); });
+    setTimeout(function () { var g = wrap.querySelector('.go'); if (g) g.focus({ preventScroll: true }); }, 30);
+  }
+  function wrapStart() {
+    if (typeof window.startCategory !== 'function' || window.startCategory.__moaIntro) return;
+    var orig = window.startCategory;
+    var wrapped = function (cat, skipHistory) {
+      var self = this, args = arguments;
+      if (skipHistory || skipIntroOnce || !isStudent() || introOff() || !cat) { skipIntroOnce = false; return orig.apply(self, args); }
+      showIntro(cat, function () { orig.apply(self, args); });
+    };
+    wrapped.__moaIntro = true;
+    window.startCategory = wrapped;
+  }
+
   function scan() {
     if (!applyShell()) return;
     enhanceSelect();
@@ -232,6 +308,7 @@
     wireInput();
     wireMic();
     updateStage();
+    updateQpos();
     applyShell();
   }
 
@@ -274,6 +351,7 @@
       try {
         var c = CATEGORIES.find(function (x) { return x.id === cat; });
         if (!c) return;
+        skipIntroOnce = true; // 허브에서 이어서 하기는 안내 없이 바로
         startCategory(c);
         var q = parseInt(p.get('q') || '0', 10);
         if (q > 0 && q < c.questions.length) goToQuestion(q);
@@ -283,6 +361,7 @@
   }
 
   function start() {
+    wrapStart();
     openFromHub();
     scan();
     var pending = false;
