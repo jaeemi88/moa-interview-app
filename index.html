@@ -1585,6 +1585,7 @@ function renderJobSelectScreen(){
       STUDENT_INSTITUTION_OVERRIDE = set.institutionName || '';
       STUDENT_PROMPT_OVERRIDE = buildPackagePrompt(set);
       renderCategories();
+      history.pushState({ screen: 'select', view: 'cats' }, ''); // 뒤로가기 = 전공 다시 고르기
     };
     catList.appendChild(card);
   });
@@ -1599,6 +1600,7 @@ function renderJobSelectScreen(){
     applyRedflagQuestions(null);
     STUDENT_PROMPT_OVERRIDE = '';
     renderCategories();
+    history.pushState({ screen: 'select', view: 'cats' }, '');
   };
   catList.appendChild(skipBtn);
 }
@@ -2370,7 +2372,9 @@ function showSelectScreen(){
   headerTitle.textContent = '모의면접 시뮬레이터';
 }
 
+let BACK_TO_LIST = false; // 위쪽 ← 버튼은 질문 순서와 상관없이 바로 유형 목록으로
 backBtn.onclick = () => {
+  BACK_TO_LIST = true;
   history.back();
 };
 
@@ -3344,9 +3348,45 @@ async function renderResultView(id){
 }
 
 /* ---- Browser back/forward navigation ---- */
+/* 2026-10-03 학생 휴대폰 뒤로가기:
+   면접 중 → 이전 질문 (첫 질문이면 유형 목록) → 전공 고르기 → 나가기 (연습한 답변이 있으면 확인 창) */
+function studentHasUnsaved(){
+  if(answerInput && answerInput.value.trim()) return true;
+  return !CLIENT && Object.keys(ALL_ANSWERS).length > 0; // 개인 고객은 서버에 저장됨
+}
+function setupStudentBackGuard(view){
+  history.replaceState({ moaBase: 1 }, '');
+  history.pushState({ screen: 'select', view: view }, '');
+}
+function studentSelectView(){
+  return document.querySelector('#cat-list .cat-card .num') ? 'cats' : 'jobs';
+}
+function studentLeaveGuard(){
+  if(screenChat.style.display === 'flex'){ // 혹시 면접 화면이면 먼저 목록으로
+    showSelectScreen();
+    history.pushState({ screen: 'select', view: 'cats' }, '');
+    return;
+  }
+  const view = studentSelectView();
+  if(!studentHasUnsaved()){ history.back(); return; }
+  const ask = window.moaConfirm
+    ? window.moaConfirm({ title: '지금 나가면 연습한 답변이 사라져요', body: '이 화면에 계속 있으면 답변이 그대로 남아 있어요. 다 끝나면 결과 링크로 저장할 수 있어요.', stay: '계속 연습하기', leave: '나가기' })
+    : Promise.resolve(confirm('지금 나가면 연습한 답변이 사라져요. 나갈까요?'));
+  ask.then(leave => { if(leave) history.back(); else history.pushState({ screen: 'select', view: view }, ''); });
+}
 window.addEventListener('popstate', (e) => {
   if(IS_BLOCKED) return;
+  if(document.querySelector('.moa-confirm-wrap')) return;
   const state = e.state || { screen: 'select' };
+  const isStudentNow = !document.body.classList.contains('role-teacher');
+  // 면접 중 뒤로가기 = 이전 질문
+  const toList = BACK_TO_LIST; BACK_TO_LIST = false;
+  if(!toList && isStudentNow && screenChat.style.display === 'flex' && currentCategory && state.screen !== 'chat' && currentQuestionIdx > 0){
+    goPrev();
+    history.pushState({ screen: 'chat', catId: currentCategory.id }, '');
+    return;
+  }
+  if(state.moaBase){ studentLeaveGuard(); return; }
   if(state.screen === 'chat' && state.catId){
     const cat = CATEGORIES.find(c => c.id === state.catId) || CATEGORIES[0];
     if(cat) startCategory(cat, true);
@@ -3354,7 +3394,11 @@ window.addEventListener('popstate', (e) => {
     openSettings(true);
   } else {
     showSelectScreen();
-    if(CLIENT && !(CLIENT.used && CLIENT.used.interview)) renderCategories(); // 저장된 답변 수·최종 제출 버튼 갱신
+    if(isStudentNow && state.view === 'jobs' && visibleJobSets().length > 0 && !CLIENT){
+      renderJobSelectScreen();
+    } else if((CLIENT && !(CLIENT.used && CLIENT.used.interview)) || (state.view === 'cats' && studentSelectView() === 'jobs')){
+      renderCategories(); // 저장된 답변 수·최종 제출 버튼 갱신
+    }
   }
 });
 
@@ -4230,7 +4274,7 @@ async function initClientMode(rawCode){
     });
   }
   bundleAllBtn.onclick = clientFinalSubmit;
-  history.replaceState({ screen: 'select' }, '');
+  setupStudentBackGuard('cats');
   renderCategories();
 }
 
@@ -4363,9 +4407,13 @@ async function clientFinalSubmit(){
   await loadConfig();
   if(!isAdmin && visibleJobSets().length > 0){
     renderJobSelectScreen();
+    setupStudentBackGuard('jobs');
   } else {
     renderCategories();
+    if(!isAdmin) setupStudentBackGuard('cats');
   }
+  // 학생이 연습한 답변이 있는데 창을 닫거나 새로고침하면 확인
+  window.addEventListener('beforeunload', ev => { if(!isAdmin && studentHasUnsaved()){ ev.preventDefault(); ev.returnValue = ''; } });
 })();
 </script>
 

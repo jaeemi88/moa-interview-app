@@ -303,6 +303,34 @@
     if (node.style.display === 'none') node.style.display = '';
   }
 
+  /* ── 나가기 확인 창 (2026-10-03) — index.html의 뒤로가기 처리에서 window.moaConfirm으로 부름 ── */
+  var NAV_CSS = [
+    '.moa-confirm-wrap{position:fixed;inset:0;z-index:10000;background:rgba(20,26,46,.48);display:flex;align-items:flex-end;justify-content:center;padding:16px;font-family:"Noto Sans KR",sans-serif}',
+    '@media(min-width:560px){.moa-confirm-wrap{align-items:center}}',
+    '.moa-confirm{background:#fff;border-radius:var(--moa-r-lg,18px);width:100%;max-width:380px;padding:24px 20px 16px;box-shadow:0 18px 50px rgba(20,26,46,.25)}',
+    '.moa-confirm h3{margin:0 0 8px;font-size:18px;font-weight:700;color:var(--moa-ink,#141A2E);line-height:1.4}',
+    '.moa-confirm p{margin:0 0 20px;font-size:14px;color:var(--moa-muted,#5F6678);line-height:1.6}',
+    '.moa-confirm button{display:block;width:100%;border:0;font:inherit;font-size:15px;font-weight:700;border-radius:var(--moa-r-md,14px);padding:14px;cursor:pointer}',
+    '.moa-confirm .stay{background:var(--moa-ink,#141A2E);color:#fff}',
+    '.moa-confirm .leave{background:none;color:var(--moa-muted,#5F6678);font-weight:500;margin-top:6px}'
+  ].join('\n');
+  function moaConfirm(o) {
+    if (!document.getElementById('moa-nav-css')) { var st = document.createElement('style'); st.id = 'moa-nav-css'; st.textContent = NAV_CSS; document.head.appendChild(st); }
+    return new Promise(function (resolve) {
+      var wrap = el('div', { class: 'moa-confirm-wrap', role: 'dialog', 'aria-modal': 'true' },
+        '<div class="moa-confirm"><h3>' + esc(o.title) + '</h3><p>' + esc(o.body) + '</p>' +
+        '<button type="button" class="stay">' + esc(o.stay || '계속하기') + '</button>' +
+        '<button type="button" class="leave">' + esc(o.leave || '나가기') + '</button></div>');
+      function close(v) { if (wrap.parentNode) wrap.parentNode.removeChild(wrap); resolve(v); }
+      wrap.querySelector('.stay').addEventListener('click', function () { close(false); });
+      wrap.querySelector('.leave').addEventListener('click', function () { close(true); });
+      wrap.addEventListener('click', function (e) { if (e.target === wrap) close(false); });
+      document.body.appendChild(wrap);
+      setTimeout(function () { var b = wrap.querySelector('.stay'); if (b) b.focus({ preventScroll: true }); }, 30);
+    });
+  }
+  window.moaConfirm = moaConfirm;
+
   /* ── 시작 전 '오늘의 연습' 안내 (2026-10-03): 몇 문항·몇 분인지 먼저 보여 주고 시작 ── */
   var INTRO_OFF = 'moa_intro_iv_off';
   var skipIntroOnce = false;
@@ -340,7 +368,11 @@
     document.body.appendChild(wrap);
     var prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    function close() { document.body.style.overflow = prevOverflow; if (wrap.parentNode) wrap.parentNode.removeChild(wrap); }
+    function close() { document.body.style.overflow = prevOverflow; if (wrap.parentNode) wrap.parentNode.removeChild(wrap); window.removeEventListener('popstate', onPop); }
+    // 휴대폰 뒤로가기 = 안내만 닫고 유형 목록으로 (앱 밖으로 나가지 않음)
+    function onPop() { close(); }
+    try { history.pushState({ screen: 'intro' }, ''); } catch (e) {}
+    window.addEventListener('popstate', onPop);
     wrap.querySelector('.go').addEventListener('click', function () { close(); go(); });
     wrap.querySelector('.skip').addEventListener('click', function () { try { localStorage.setItem(INTRO_OFF, '1'); } catch (e) {} close(); go(); });
     setTimeout(function () { var g = wrap.querySelector('.go'); if (g) g.focus({ preventScroll: true }); }, 30);
@@ -351,7 +383,10 @@
     var wrapped = function (cat, skipHistory) {
       var self = this, args = arguments;
       if (skipHistory || skipIntroOnce || !isStudent() || introOff() || !cat) { skipIntroOnce = false; return orig.apply(self, args); }
-      showIntro(cat, function () { orig.apply(self, args); });
+      showIntro(cat, function () {
+        orig.call(self, cat, true); // 안내 화면 기록을 면접 화면 기록으로 바꿔 끼움 (뒤로가기 한 번에 목록으로)
+        try { history.replaceState({ screen: 'chat', catId: cat.id }, ''); } catch (e) {}
+      });
     };
     wrapped.__moaIntro = true;
     window.startCategory = wrapped;
