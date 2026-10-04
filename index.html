@@ -1656,6 +1656,7 @@ function renderJobSelectScreen(){
 
 function renderCategories(){
   catList.innerHTML = '';
+  { const lead = document.querySelector('#screen-select > p.lead'); if(lead) lead.style.display = ''; }
   if(CLIENT) catList.insertAdjacentHTML('beforeend', clientBannerHtml());
   // 지원 기업명 입력칸 (선택) — 입사 후 포부 피드백을 회사 맞춤으로
   const companyBox = document.createElement('div');
@@ -1723,6 +1724,19 @@ function renderCategories(){
     }
     return;
   }
+  if(catIds.length > 0 && !REVIEW_MODE){
+    // 📋 내 피드백 모아보기 (2026-10-05) — '바로 AI 피드백 보여주기' 설정일 때만
+    const nAns = stuCountAnswers(ALL_ANSWERS);
+    const sumBtn = document.createElement('button');
+    sumBtn.className = 'cat-card';
+    sumBtn.style.marginTop = '14px';
+    sumBtn.style.setProperty('background', '#FFFFFF', 'important');
+    sumBtn.style.setProperty('border', '2px solid #141A2E', 'important');
+    sumBtn.style.setProperty('color', '#141A2E', 'important');
+    sumBtn.innerHTML = `<span class="cat-text"><span><div class="cat-title" style="color:#141A2E !important">📋 내 피드백 모아보기</div><div class="cat-desc" style="color:#5B6275 !important;opacity:1 !important">${catIds.length}개 유형 · 답변 ${nAns}개 · 바로 확인</div></span></span><span class="arrow" style="color:#141A2E !important">›</span>`;
+    sumBtn.onclick = () => { renderMyFeedbackSummary(); history.pushState({ screen: 'select', view: 'summary' }, ''); };
+    catList.appendChild(sumBtn);
+  }
   if(catIds.length > 0){
     const totalQuestions = catIds.reduce((sum, id) => sum + Object.keys(ALL_ANSWERS[id].items).length, 0);
     const bundleBtn = document.createElement('button');
@@ -1742,6 +1756,57 @@ function renderCategories(){
     bundleBtn.onclick = sendAllCategoriesBundle;
     catList.appendChild(bundleBtn);
   }
+}
+
+// ---------- 📋 내 피드백 모아보기 화면 (2026-10-05) ----------
+// 지금까지 답한 질문의 AI 피드백을 한 화면에 — 잘한 점·보완할 점 먼저, 예시 답변·꼬리질문은 펼쳐서
+function renderMyFeedbackSummary(){
+  showSelectScreen();
+  const lead = document.querySelector('#screen-select > p.lead'); if(lead) lead.style.display = 'none'; // 목록 제목 잠시 숨김
+  window.scrollTo(0, 0);
+  const catIds = Object.keys(ALL_ANSWERS);
+  const total = stuCountAnswers(ALL_ANSWERS);
+  const esc = escapeHtml;
+  let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin:2px 0 14px">
+      <button type="button" id="fs-back" style="background:none;border:none;color:#295BF2;font-size:14px;font-weight:600;cursor:pointer;padding:6px 0;font-family:inherit">← 유형 목록</button>
+      <span style="font-size:13px;color:var(--muted)">답변 ${total}개</span></div>
+    <div style="font-size:19px;font-weight:700;margin-bottom:4px">내 피드백 모아보기</div>
+    <p style="margin:0 0 16px;font-size:13px;color:var(--muted);line-height:1.6">질문을 눌러 펼치면 예시 답변과 꼬리질문이 보여요. 다시 연습하면 새 피드백으로 바뀌어요.</p>`;
+  catIds.forEach(id => {
+    const b = ALL_ANSWERS[id];
+    const idxs = Object.keys(b.items).map(k => parseInt(k, 10)).sort((x, y) => x - y);
+    html += `<div style="font-size:13px;font-weight:700;color:#295BF2;margin:18px 0 8px">${esc(b.catTitle || '')} · ${idxs.length}개</div>`;
+    idxs.forEach(idx => {
+      const it = b.items[idx] || {}; const fb = it.feedback || {};
+      const steps = Array.isArray(fb.direction_steps) ? fb.direction_steps.filter(Boolean) : [];
+      const fu = fb.follow_up || {};
+      const fus = [['이유형', fu.reason], ['대안형', fu.alternative], ['수치형', fu.quantify]].filter(x => x[1]);
+      const more = [
+        steps.length ? `<div style="font-weight:700;margin:10px 0 4px">🧭 답변 방향</div><ol style="margin:0;padding-left:18px">${steps.map(t => `<li>${esc(t)}</li>`).join('')}</ol>` : (fb.sample_direction ? `<div style="font-weight:700;margin:10px 0 4px">🧭 답변 방향</div><p style="margin:0">${esc(fb.sample_direction)}</p>` : ''),
+        fb.rewritten ? `<div style="font-weight:700;margin:10px 0 4px">✨ 예시 답변</div><div style="background:#F4F7FF;border-radius:6px;padding:10px 12px;white-space:pre-wrap">${esc(exPlain(fb.rewritten))}</div>` : '',
+        fus.length ? `<div style="font-weight:700;margin:10px 0 4px">🎤 예상 꼬리질문</div><ul style="margin:0;padding-left:18px">${fus.map(x => `<li><b style="color:var(--muted);font-weight:600">${x[0]}</b> ${esc(x[1])}</li>`).join('')}</ul>` : ''
+      ].join('');
+      html += `<div style="background:var(--white);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:10px;font-size:13.5px;line-height:1.65">
+        <div style="font-weight:700;font-size:14.5px">Q${idx + 1}. ${esc(it.question || '')}</div>
+        <details style="margin:6px 0 0"><summary style="cursor:pointer;color:var(--muted);font-size:13px">🗣️ 내 답변 보기</summary><div style="white-space:pre-wrap;margin-top:6px;color:#374151">${esc(it.answer || '')}</div></details>
+        ${fb.good ? `<div style="margin-top:8px"><b style="color:#1F8A5B">잘한 점</b> ${esc(fb.good)}</div>` : ''}
+        ${fb.improve ? `<div style="margin-top:4px"><b style="color:#B7791F">보완할 점</b> ${esc(fb.improve)}</div>` : ''}
+        ${more ? `<details style="margin-top:8px"><summary style="cursor:pointer;color:#295BF2;font-weight:600;font-size:13px">예시 답변·꼬리질문 펼치기</summary>${more}</details>` : ''}
+        <button type="button" class="fs-redo" data-cat="${esc(id)}" data-idx="${idx}" style="margin-top:10px;background:var(--white);border:1px solid #295BF2;color:#295BF2;border-radius:999px;font-size:12.5px;font-weight:700;padding:5px 12px;cursor:pointer;font-family:inherit">이 질문 다시 연습하기 →</button>
+      </div>`;
+    });
+  });
+  html += `<button type="button" id="fs-link" class="cat-card" style="margin-top:16px;background:#295BF2;color:#fff;border-color:#295BF2"><span class="cat-text"><span><div class="cat-title">📎 결과 링크 만들기</div><div class="cat-desc" style="color:#fff;opacity:0.9">워드·PDF로 저장하고 선생님께 보낼 수 있어요</div></span></span><span class="arrow">›</span></button>`;
+  catList.innerHTML = html;
+  catList.querySelector('#fs-back').onclick = () => history.back();
+  catList.querySelector('#fs-link').onclick = sendAllCategoriesBundle;
+  catList.querySelectorAll('.fs-redo').forEach(btn => btn.onclick = () => {
+    const cat = CATEGORIES.find(c => c.id === btn.dataset.cat);
+    if(!cat){ alert('이 질문 유형을 찾을 수 없어요. 유형 목록에서 다시 골라 주세요.'); return; }
+    startCategory(cat, true);
+    history.pushState({ screen: 'chat', catId: cat.id }, '');
+    goToQuestion(parseInt(btn.dataset.idx, 10) || 0);
+  });
 }
 
 async function sendAllCategoriesBundle(){
@@ -3501,7 +3566,7 @@ window.addEventListener('popstate', (e) => {
     showSelectScreen();
     if(isStudentNow && state.view === 'jobs' && visibleJobSets().length > 0 && !CLIENT){
       renderJobSelectScreen();
-    } else if((CLIENT && !(CLIENT.used && CLIENT.used.interview)) || (state.view === 'cats' && studentSelectView() === 'jobs')){
+    } else if((CLIENT && !(CLIENT.used && CLIENT.used.interview)) || (state.view === 'cats' && studentSelectView() === 'jobs') || catList.querySelector('#fs-back')){
       renderCategories(); // 저장된 답변 수·최종 제출 버튼 갱신
     }
   }
