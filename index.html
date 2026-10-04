@@ -796,6 +796,7 @@
       <input type="text" id="link-output" readonly>
       <button class="copy-btn" id="copy-link-btn">복사</button>
     </div>
+    <div id="link-code-row" style="display:none;margin-top:12px;background:#F4F7FF;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.6"></div>
     <button class="modal-close" id="modal-close-btn">닫기</button>
   </div>
 </div>
@@ -1522,6 +1523,132 @@ function stuLoadAnswers(){
   }catch(e){ STU_SAVE_OK = false; return 0; }
 }
 function stuClearAnswers(){ STU_RESTORED_N = 0; try{ localStorage.removeItem(stuSaveKey()); }catch(e){} }
+
+// ---------- 📬 내 결과함 + 🔑 확인코드 (2026-10-05) ----------
+// 연락처 없이 결과 받기: ① 같은 폰이면 제출 기록(코드·날짜·유형만)을 기억해 자동으로 결과함에 표시
+// ② 다른 폰이면 확인코드 6자리로 조회. 이름·연락처는 폰에도 서버 코드표에도 저장하지 않음
+const MY_RESULTS_DAYS = 90;
+function myResultsKey(){ return 'moa_iv_myresults_' + (TEACHER_ID || 'none'); }
+function myResultsList(){
+  try{
+    const arr = JSON.parse(localStorage.getItem(myResultsKey()) || '[]');
+    return (Array.isArray(arr) ? arr : []).filter(r => r && /^[A-Z0-9]{6}$/.test(r.code) && Date.now() - (r.at || 0) < MY_RESULTS_DAYS * 86400000);
+  }catch(e){ return []; }
+}
+function myResultAdd(code, label){
+  if(!code || CLIENT) return;
+  try{
+    const list = myResultsList().filter(r => r.code !== code);
+    list.unshift({ code, at: Date.now(), label: String(label || '모의면접').slice(0, 60) });
+    localStorage.setItem(myResultsKey(), JSON.stringify(list.slice(0, 20)));
+  }catch(e){}
+}
+function myResultRemove(code){
+  try{ localStorage.setItem(myResultsKey(), JSON.stringify(myResultsList().filter(r => r.code !== code))); }catch(e){}
+}
+async function lookupResultCode(code){
+  const r = await fetch(apiUrl('/api/results?code=' + encodeURIComponent(code)));
+  const d = await r.json().catch(() => ({}));
+  if(!r.ok) return { status: 'none', error: d.error || '찾을 수 없어요.' };
+  return d;
+}
+function openResultById(id){
+  location.href = location.pathname + '?t=' + encodeURIComponent(TEACHER_ID) + '#result=' + encodeURIComponent(id);
+  location.reload();
+}
+function showLinkCode(code, who){
+  const row = document.getElementById('link-code-row');
+  if(!row) return;
+  if(!code){ row.style.display = 'none'; return; }
+  row.style.display = 'block';
+  row.innerHTML = who === 'teacher'
+    ? `확인코드 <b style="font-size:16px;letter-spacing:2px">${escapeHtml(code)}</b><br><span style="color:var(--muted)">학생이 같은 폰이면 앱을 다시 열 때 '내 결과함'에 자동으로 떠요. 다른 폰이면 '확인코드로 내 결과 찾기'에 이 코드를 넣으면 돼요.</span>`
+    : `내 확인코드 <b style="font-size:16px;letter-spacing:2px">${escapeHtml(code)}</b> · 📸 캡처해 두세요<br><span style="color:var(--muted)">링크를 잃어버려도 앱 첫 화면 '확인코드로 내 결과 찾기'에서 다시 볼 수 있어요.</span>`;
+}
+function showMyCodeScreen(code){
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(14,21,51,.55);display:flex;align-items:center;justify-content:center;padding:16px';
+  wrap.innerHTML = `<div style="background:#fff;border-radius:14px;max-width:380px;width:100%;padding:22px 20px;text-align:center;font-family:inherit">
+    <div style="font-size:28px">📬</div>
+    <div style="font-size:18px;font-weight:700;margin:6px 0 4px;color:#141A2E">제출 완료!</div>
+    <p style="margin:0 0 14px;font-size:13.5px;color:#5B6275;line-height:1.6">강사님이 검토한 뒤 결과가 도착해요.</p>
+    ${code ? `<div style="background:#F4F7FF;border:1px dashed #295BF2;border-radius:10px;padding:14px 10px;margin-bottom:12px">
+      <div style="font-size:12px;color:#5B6275">내 확인코드</div>
+      <div style="font-size:30px;font-weight:800;letter-spacing:6px;color:#141A2E;margin-top:2px">${escapeHtml(code)}</div>
+      <div style="font-size:12.5px;color:#295BF2;font-weight:700;margin-top:4px">📸 지금 이 화면을 캡처해 두세요</div></div>` : ''}
+    <div style="text-align:left;font-size:13px;color:#374151;line-height:1.7;background:#FAFAFB;border-radius:8px;padding:10px 12px;margin-bottom:14px">
+      ✅ <b>이 폰</b>: 같은 QR로 다시 들어오면 맨 위 <b>'내 결과함'</b>에 자동으로 떠요<br>
+      🔑 <b>다른 폰</b>: 첫 화면 <b>'확인코드로 내 결과 찾기'</b>에 코드를 넣으세요
+    </div>
+    <button type="button" class="ok" style="width:100%;background:#141A2E;color:#fff;border:none;border-radius:10px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">확인했어요</button>
+  </div>`;
+  document.body.appendChild(wrap);
+  wrap.querySelector('.ok').onclick = () => { wrap.remove(); if(screenSelect.style.display === 'block') renderCategories(); };
+}
+const MR_BADGE = {
+  pending: '<span style="background:#FFF4DC;color:#9A6200;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700">🕓 검토 중</span>',
+  done: '<span style="background:#E3F6EC;color:#16794A;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700">✅ 결과 도착</span>',
+  expired: '<span style="background:#F1F2F4;color:#6B7280;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700">⌛ 기간 끝남</span>',
+  none: '<span style="background:#F1F2F4;color:#6B7280;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700">찾을 수 없음</span>'
+};
+function myResultsBoxHtml(list){
+  return `<div id="my-results-box" style="background:#fff;border:2px solid #141A2E;border-radius:12px;padding:14px 14px 6px;margin-bottom:14px">
+    <div style="font-size:15px;font-weight:700;color:#141A2E;margin-bottom:8px">📬 내 결과함</div>
+    ${list.map(r => `<div class="mr-row" data-code="${escapeHtml(r.code)}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-top:1px solid #EEF0F3">
+      <div style="min-width:0"><div style="font-size:13.5px;font-weight:600;color:#141A2E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(r.label)}</div>
+      <div style="font-size:12px;color:#6B7280">${moaDate(r.at, 'short')} 제출 · 코드 ${escapeHtml(r.code)}</div></div>
+      <div class="mr-st" style="flex-shrink:0;color:#9CA3AF;font-size:12px">확인 중…</div></div>`).join('')}
+  </div>`;
+}
+async function fillMyResultsBox(){
+  const box = document.getElementById('my-results-box');
+  if(!box) return;
+  for(const row of box.querySelectorAll('.mr-row')){
+    const code = row.dataset.code;
+    const st = row.querySelector('.mr-st');
+    let d; try{ d = await lookupResultCode(code); }catch(e){ st.textContent = '연결 오류'; continue; }
+    st.innerHTML = MR_BADGE[d.status] || MR_BADGE.none;
+    if(d.status === 'done'){
+      row.style.cursor = 'pointer';
+      st.innerHTML += ' <span style="color:#141A2E;font-weight:700">›</span>';
+      row.onclick = () => openResultById(d.id);
+    } else if(d.status === 'none' || d.status === 'expired'){
+      const x = document.createElement('button');
+      x.type = 'button'; x.textContent = '지우기';
+      x.style.cssText = 'margin-left:6px;background:none;border:none;color:#9CA3AF;font-size:12px;text-decoration:underline;cursor:pointer;padding:0';
+      x.onclick = (e) => { e.stopPropagation(); myResultRemove(code); row.remove(); if(!box.querySelector('.mr-row')) box.remove(); };
+      st.appendChild(x);
+    }
+  }
+}
+function openCodeLookup(){
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(14,21,51,.55);display:flex;align-items:center;justify-content:center;padding:16px';
+  wrap.innerHTML = `<div style="background:#fff;border-radius:14px;max-width:380px;width:100%;padding:20px;font-family:inherit">
+    <div style="font-size:17px;font-weight:700;color:#141A2E;margin-bottom:4px">🔑 확인코드로 내 결과 찾기</div>
+    <p style="margin:0 0 12px;font-size:13px;color:#5B6275;line-height:1.6">제출할 때 받은 영문·숫자 6자리를 넣어 주세요.</p>
+    <input type="text" class="cl-in" maxlength="8" autocomplete="off" autocapitalize="characters" placeholder="예: K7M2QX" style="width:100%;box-sizing:border-box;font-size:20px;letter-spacing:4px;text-align:center;text-transform:uppercase;padding:12px;border:1.5px solid #D1D5DB;border-radius:10px;font-family:inherit">
+    <div class="cl-msg" style="min-height:20px;font-size:13px;margin:8px 0;line-height:1.6"></div>
+    <div style="display:flex;gap:8px"><button type="button" class="cl-x" style="flex:1;background:#fff;border:1px solid #D1D5DB;border-radius:10px;padding:11px;font-size:14px;cursor:pointer;font-family:inherit">닫기</button>
+    <button type="button" class="cl-go" style="flex:2;background:#141A2E;color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">결과 찾기</button></div></div>`;
+  document.body.appendChild(wrap);
+  const inp = wrap.querySelector('.cl-in'), msg = wrap.querySelector('.cl-msg'), go = wrap.querySelector('.cl-go');
+  setTimeout(() => inp.focus(), 50);
+  inp.addEventListener('input', () => { msg.textContent = ''; });
+  inp.addEventListener('keydown', e => { if(e.key === 'Enter') go.click(); });
+  wrap.querySelector('.cl-x').onclick = () => wrap.remove();
+  go.onclick = async () => {
+    const code = inp.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if(code.length !== 6){ msg.style.color = '#B42318'; msg.textContent = '영문·숫자 6자리를 넣어 주세요.'; return; }
+    go.disabled = true; go.textContent = '찾는 중…';
+    let d; try{ d = await lookupResultCode(code); }catch(e){ d = { status: 'none', error: '연결이 불안정해요. 잠시 후 다시 해 주세요.' }; }
+    go.disabled = false; go.textContent = '결과 찾기';
+    if(d.status === 'done'){ myResultAdd(code, '모의면접 결과'); openResultById(d.id); return; }
+    if(d.status === 'pending'){ myResultAdd(code, '모의면접 (검토 중)'); msg.style.color = '#9A6200'; msg.textContent = '🕓 아직 강사님이 검토 중이에요. 결과가 도착하면 이 폰의 내 결과함에도 떠요.'; return; }
+    if(d.status === 'expired'){ msg.style.color = '#6B7280'; msg.textContent = '⌛ 조회 기간이 지났어요. 필요하면 강사님께 문의해 주세요.'; return; }
+    msg.style.color = '#B42318'; msg.textContent = d.error || '이 코드로 찾은 결과가 없어요.';
+  };
+}
 const settingsQuestions = document.getElementById('settings-questions');
 const settingsPrompt = document.getElementById('settings-prompt');
 
@@ -1657,6 +1784,7 @@ function renderJobSelectScreen(){
 function renderCategories(){
   catList.innerHTML = '';
   { const lead = document.querySelector('#screen-select > p.lead'); if(lead) lead.style.display = ''; }
+  if(!CLIENT){ const mine = myResultsList(); if(mine.length){ catList.insertAdjacentHTML('beforeend', myResultsBoxHtml(mine)); setTimeout(fillMyResultsBox, 0); } }
   if(CLIENT) catList.insertAdjacentHTML('beforeend', clientBannerHtml());
   // 지원 기업명 입력칸 (선택) — 입사 후 포부 피드백을 회사 맞춤으로
   const companyBox = document.createElement('div');
@@ -1756,6 +1884,14 @@ function renderCategories(){
     bundleBtn.onclick = sendAllCategoriesBundle;
     catList.appendChild(bundleBtn);
   }
+  // 🔑 다른 폰에서 제출한 학생용 — 확인코드로 결과 찾기
+  const lk = document.createElement('button');
+  lk.type = 'button';
+  lk.id = 'code-lookup-link';
+  lk.textContent = '🔑 확인코드로 내 결과 찾기';
+  lk.style.cssText = 'display:block;margin:18px auto 6px;background:none;border:none;color:#295BF2;font-size:14px;font-weight:700;text-decoration:underline;cursor:pointer;font-family:inherit;padding:8px';
+  lk.onclick = openCodeLookup;
+  catList.appendChild(lk);
 }
 
 // ---------- 📋 내 피드백 모아보기 화면 (2026-10-05) ----------
@@ -1820,7 +1956,7 @@ async function sendAllCategoriesBundle(){
     });
   });
 
-  const studentName = window.prompt('학생 이름을 입력해주세요 (링크 제목에 표시됩니다)', '');
+  const studentName = window.prompt('이름 또는 별명을 입력해주세요 (강사님이 누구 답변인지 알아보는 용도예요)', '');
   if(studentName === null) return;
   const studentEmail = window.prompt('이메일 주소를 입력해주세요 (선택 — 강사님이 검토를 완료하면 결과 링크를 자동으로 보내드려요. 안 써도 제출됩니다)', '') || '';
 
@@ -1845,7 +1981,8 @@ async function sendAllCategoriesBundle(){
       const data = await response.json();
       if(data.error) throw new Error(data.error);
       stuClearAnswers(); // 서버에 안전하게 들어갔으니 폰 보관본 삭제
-      alert('제출 완료! 강사님이 확인한 후 결과 링크를 보내드릴 거예요.');
+      myResultAdd(data.code, record.category);
+      showMyCodeScreen(data.code);
     } else {
       const response = await fetch(apiUrl('/api/results'), {
         method: 'POST',
@@ -1855,8 +1992,10 @@ async function sendAllCategoriesBundle(){
       const data = await response.json();
       if(data.error) throw new Error(data.error);
       stuClearAnswers();
+      myResultAdd(data.code, record.category);
       const link = location.origin + location.pathname + '?t=' + encodeURIComponent(TEACHER_ID) + '#result=' + data.id;
       linkOutput.value = link;
+      showLinkCode(data.code, 'student');
       linkModal.style.display = 'flex';
     }
   }catch(err){
@@ -3063,7 +3202,7 @@ async function renderAdminList(){
       div.innerHTML = `
         <div>
           <div class="s-name">${escapeHtml(item.studentName)} · ${escapeHtml(item.category)}${expiredBadge}</div>
-          <div class="s-meta">${dateStr}</div>
+          <div class="s-meta">${dateStr}${item.code ? ' · 확인코드 <b style="letter-spacing:1px">' + escapeHtml(item.code) + '</b>' : ''}</div>
         </div>
         <div class="s-actions">
           <button class="view-btn">결과 보기</button>
@@ -3109,7 +3248,7 @@ async function renderReviewList(){
       div.innerHTML = `
         <div>
           <div class="s-name">${item.clientCode ? '<span style="background:#FFF4DC;color:#9A6200;border-radius:999px;padding:1px 8px;font-size:12px;margin-right:4px">👤 개인 고객</span>' : ''}${escapeHtml(item.studentName)} · ${escapeHtml(item.category)}</div>
-          <div class="s-meta">${dateStr}</div>
+          <div class="s-meta">${dateStr}${item.code ? ' · 확인코드 <b style="letter-spacing:1px">' + escapeHtml(item.code) + '</b>' : ''}</div>
         </div>
         <div class="s-arrow">›</div>
       `;
@@ -3234,6 +3373,7 @@ reviewApproveBtn.onclick = async () => {
       studentInstitution: currentReviewRecord.studentInstitution || '',
       studentTargetField: currentReviewRecord.studentTargetField || '',
       clientCode: currentReviewRecord.clientCode || '',
+      code: currentReviewRecord.code || '', // 학생이 받은 확인코드 그대로 → '결과 도착'으로 바뀜
       createdAt: new Date().toISOString()
     };
     const response = await fetch(apiUrl('/api/results'), {
@@ -3248,6 +3388,7 @@ reviewApproveBtn.onclick = async () => {
 
     const link = location.origin + location.pathname + '?t=' + encodeURIComponent(TEACHER_ID) + '#result=' + data.id;
     linkOutput.value = link;
+    showLinkCode(data.code, 'teacher');
     linkModal.style.display = 'flex';
 
     screenReviewDetail.style.display = 'none';
@@ -3275,7 +3416,7 @@ makeLinkBtn.onclick = async () => {
     .sort((a, b) => a - b)
     .map(idx => answersByIdx[idx]);
   if(orderedItems.length === 0) return;
-  const studentName = window.prompt('학생 이름을 입력해주세요 (링크 제목에 표시됩니다)', '');
+  const studentName = window.prompt('이름 또는 별명을 입력해주세요 (강사님이 누구 답변인지 알아보는 용도예요)', '');
   if(studentName === null) return;
   const studentEmail = window.prompt('이메일 주소를 입력해주세요 (선택 — 강사님이 검토를 완료하면 결과 링크를 자동으로 보내드려요. 안 써도 제출됩니다)', '') || '';
   const originalLabel = makeLinkBtn.textContent;
@@ -3301,7 +3442,8 @@ makeLinkBtn.onclick = async () => {
       });
       const data = await response.json();
       if(data.error) throw new Error(data.error);
-      alert('제출 완료! 강사님이 확인한 후 결과 링크를 보내드릴 거예요.');
+      myResultAdd(data.code, record.category);
+      showMyCodeScreen(data.code);
     } else {
       const response = await fetch(apiUrl('/api/results'), {
         method: 'POST',
@@ -3310,8 +3452,10 @@ makeLinkBtn.onclick = async () => {
       });
       const data = await response.json();
       if(data.error) throw new Error(data.error);
+      myResultAdd(data.code, record.category);
       const link = location.origin + location.pathname + '?t=' + encodeURIComponent(TEACHER_ID) + '#result=' + data.id;
       linkOutput.value = link;
+      showLinkCode(data.code, 'student');
       linkModal.style.display = 'flex';
     }
   }catch(err){

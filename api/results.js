@@ -8,6 +8,7 @@
 
 import Redis from 'ioredis';
 import { isStaff } from './_staff.js';
+import { newCode, setCode, readCode, normalizeCode } from './_code.js';
 
 let redis;
 function getRedis() {
@@ -180,13 +181,20 @@ export default async function handler(req, res) {
         const d0 = new Date();
         record.expiresAt = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + 30).getTime();
       }
+      // 확인코드 (2026-10-05): 강사 승인이면 학생이 받은 코드를 그대로 '결과 도착'으로 바꾸고, 아니면 새로 발급
+      try {
+        const keep = staff ? normalizeCode(record.code) : '';
+        if (keep) { await setCode(client, t, keep, { s: 'done', id }); record.code = keep; }
+        else record.code = await newCode(client, t, { s: 'done', id });
+      } catch (e) { console.error('확인코드 처리 실패:', e); record.code = record.code || ''; }
       await client.set(itemKey(id), JSON.stringify(record));
       const meta = JSON.stringify({
         id,
         studentName: record.studentName,
         category: record.category,
         createdAt: record.createdAt,
-        expiresAt: record.expiresAt || null
+        expiresAt: record.expiresAt || null,
+        code: record.code || ''
       });
       await client.lpush(indexKey, meta);
       await client.ltrim(indexKey, 0, 499); // 최근 500건까지만 보관
@@ -196,7 +204,7 @@ export default async function handler(req, res) {
         upsertTrackerStat(client, t, institutionNameForSurvey, targetFieldForSurvey);
       }
 
-      return res.status(200).json({ id });
+      return res.status(200).json({ id, code: record.code || '' });
     } catch (err) {
       console.error(err);
       return res.status(500).json({ error: '결과 저장 중 오류가 발생했습니다.' });
@@ -205,6 +213,25 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     const { id, list } = req.query;
+
+    // 학생: 확인코드로 상태 조회 (공개) — 결과 id만 돌려주고 이름 등은 보내지 않음
+    if (req.query.code !== undefined) {
+      const code = normalizeCode(req.query.code);
+      if (!code) return res.status(400).json({ error: '확인코드는 영문·숫자 6자리예요.' });
+      try {
+        const info = await readCode(client, t, code);
+        if (!info) return res.status(404).json({ error: '이 코드로 찾은 결과가 없어요. 코드를 다시 확인해 주세요.' });
+        if (info.s === 'pending') return res.status(200).json({ status: 'pending' });
+        const raw = await client.get(itemKey(info.id));
+        if (!raw) return res.status(404).json({ error: '결과를 찾을 수 없어요. 강사님께 문의해 주세요.' });
+        const rec = JSON.parse(raw);
+        if (rec.expiresAt && Date.now() > rec.expiresAt) return res.status(200).json({ status: 'expired' });
+        return res.status(200).json({ status: 'done', id: info.id, expiresAt: rec.expiresAt || null });
+      } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: '조회 중 오류가 발생했습니다.' });
+      }
+    }
 
     if (list === '1') {
       if (!staff) return res.status(401).json({ error: '강사용 암호가 필요합니다.' });

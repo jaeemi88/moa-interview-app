@@ -6,6 +6,7 @@
 import Redis from 'ioredis';
 import { isStaff } from './_staff.js';
 import { CLIENT_T, getClient, useClientPart, releaseClientPart, isPartUsed } from './client-code.js';
+import { newCode } from './_code.js';
 
 let redis;
 function getRedis() {
@@ -85,6 +86,8 @@ export default async function handler(req, res) {
     }
     try {
       const id = generateId();
+      // 확인코드 (2026-10-05): 학생이 연락처 없이 '내 결과 확인'에서 스스로 찾아가는 용도
+      try { record.code = await newCode(client, t, { s: 'pending', id }); } catch (e) { console.error('확인코드 생성 실패:', e); record.code = ''; }
       try {
         await client.set(itemKey(id), JSON.stringify(record));
       } catch (e) {
@@ -96,11 +99,12 @@ export default async function handler(req, res) {
         studentName: record.studentName,
         category: record.category,
         createdAt: record.createdAt,
-        clientCode: record.clientCode || ''
+        clientCode: record.clientCode || '',
+        code: record.code || ''
       });
       await client.hset(indexKey, id, meta);
       await notifyByEmail(client, t, record); // 서버리스 환경에서는 응답 전에 완료를 기다려야 중간에 끊기지 않음
-      return res.status(200).json({ id });
+      return res.status(200).json({ id, code: record.code || '' });
     } catch (err) {
       console.error(err);
       return res.status(500).json({ error: '검토 요청 저장 중 오류가 발생했습니다.' });
