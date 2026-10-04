@@ -35,6 +35,14 @@ const OPENERS = [
   '장면 묘사형', '숫자 제시형', '질문형', '결론 먼저형', '가치관 한 문장형'
 ];
 
+const TONE_RULES = `
+[담백하게 — 신파 금지 (2026-10-04)]
+- 요즘 면접관은 고생담·감동 코드에 점수를 주지 않는다. 감정을 꾸미지 말고 행동과 결과로 말하게 한다.
+- 상황 묘사는 첫 한 문장까지만. 바로 무엇을 했고 어떤 결과가 났는지로 넘어간다.
+- 쓰지 않는 표현: 가난·고생·눈물·희생을 강조하는 서사, "처음으로 실감했습니다", "가슴이 뭉클" 같은 감정 과장, 비장한 자기 주문.
+- 절약·인내·성실 같은 덕목은 '참고 아끼는 사람'이 아니라 '계획하고 관리하고 실행하는 사람'으로 연결한다.
+- 마무리는 다짐만으로 끝내지 않고, 같은 태도가 드러난 다른 사례 한 줄이나 직무 연결로 맺는다.`;
+
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 // ───────────────────────────────────────────
@@ -226,6 +234,7 @@ export default async function handler(req, res) {
     RED_FLAG_RULES +
     hiringRules +
     EXAMPLE_RULES +
+    TONE_RULES +
     DIVERSITY_RULES +
     variety +
     DIRECTION_STEPS_RULE +
