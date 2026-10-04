@@ -1486,6 +1486,42 @@ const qrDownloadBtn = document.getElementById('qr-download-btn');
 let sessionAnswers = []; // {question, answer, feedback}
 let answersByIdx = {}; // question index -> {question, answer, feedback}
 let ALL_ANSWERS = {}; // categoryId -> { catTitle, items: { idx: {question, answer, feedback} } } — 카테고리 전환해도 유지됨
+
+// ---------- 💾 일반 수강생 답변 자동 저장 (2026-10-05) ----------
+// 답할 때마다 학생 폰(브라우저) 안에만 저장 → 새로고침·창 닫힘·카톡 갔다 와도 그대로
+// 서버·AI 호출 없음, 강사별로 따로 보관, 3일 지나면 자동 삭제, '전체 모아서 보내기' 성공 시 삭제
+const STU_SAVE_DAYS = 3;
+let STU_SAVE_OK = false;     // 이 폰에서 저장이 되는지
+let STU_RESTORED_N = 0;      // 다시 열었을 때 불러온 답변 수(안내용)
+function stuSaveKey(){ return 'moa_iv_answers_' + (TEACHER_ID || 'none'); }
+function stuCountAnswers(all){ return Object.keys(all || {}).reduce((n, id) => n + Object.keys((all[id] && all[id].items) || {}).length, 0); }
+function stuSaveAnswers(){
+  if(CLIENT) return; // 개인 고객은 서버에 저장됨
+  try{
+    if(!Object.keys(ALL_ANSWERS).length){ localStorage.removeItem(stuSaveKey()); return; }
+    localStorage.setItem(stuSaveKey(), JSON.stringify({ at: Date.now(), all: ALL_ANSWERS }));
+    STU_SAVE_OK = true;
+  }catch(e){ STU_SAVE_OK = false; }
+}
+function stuLoadAnswers(){
+  try{
+    const raw = localStorage.getItem(stuSaveKey());
+    STU_SAVE_OK = true;
+    if(!raw) return 0;
+    const d = JSON.parse(raw);
+    if(!d || !d.all || typeof d.all !== 'object' || Date.now() - (d.at || 0) > STU_SAVE_DAYS * 86400000){ localStorage.removeItem(stuSaveKey()); return 0; }
+    const clean = {};
+    Object.keys(d.all).forEach(id => {
+      const b = d.all[id]; if(!b || !b.items) return;
+      const items = {};
+      Object.keys(b.items).forEach(k => { const it = b.items[k]; if(it && it.question && it.answer) items[k] = it; });
+      if(Object.keys(items).length) clean[id] = { catTitle: b.catTitle || '', items };
+    });
+    ALL_ANSWERS = clean;
+    return stuCountAnswers(clean);
+  }catch(e){ STU_SAVE_OK = false; return 0; }
+}
+function stuClearAnswers(){ STU_RESTORED_N = 0; try{ localStorage.removeItem(stuSaveKey()); }catch(e){} }
 const settingsQuestions = document.getElementById('settings-questions');
 const settingsPrompt = document.getElementById('settings-prompt');
 
@@ -1645,6 +1681,17 @@ function renderCategories(){
   `;
   hiringBox.querySelectorAll('input[name="hiring-type"]').forEach(r => r.addEventListener('change', e => { HIRING_TYPE = e.target.value; if(CLIENT) clientSaveDraft(); }));
   catList.appendChild(hiringBox);
+  if(!CLIENT && STU_RESTORED_N > 0 && Object.keys(ALL_ANSWERS).length){
+    const note = document.createElement('div');
+    note.style.cssText = 'background:#EEF3FF;border:1px solid #C9D7FD;border-radius:6px;padding:12px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.6;color:#1B3A8C';
+    note.innerHTML = `💾 지난번에 쓴 답변 <b>${stuCountAnswers(ALL_ANSWERS)}개</b>를 불러왔어요. 이어서 연습하면 돼요.<br><span style="color:#5A6B95;font-size:12.5px">이 폰에만 ${STU_SAVE_DAYS}일간 보관되고, 보내기를 마치면 지워져요.</span> <button type="button" id="stu-reset-btn" style="margin-left:4px;background:none;border:none;color:#295BF2;text-decoration:underline;font-size:12.5px;cursor:pointer;padding:0">처음부터 새로 하기</button>`;
+    note.querySelector('#stu-reset-btn').onclick = () => {
+      const ok = window.confirm('저장된 답변을 모두 지우고 처음부터 할까요?');
+      if(!ok) return;
+      ALL_ANSWERS = {}; answersByIdx = {}; stuClearAnswers(); renderCategories();
+    };
+    catList.appendChild(note);
+  }
   CATEGORIES.forEach((cat, i) => {
     const card = document.createElement('button');
     card.className = 'cat-card';
@@ -1654,7 +1701,7 @@ function renderCategories(){
         <span>
           <div class="cat-title">${escapeHtml(cat.title)}</div>
           <div class="cat-desc">${escapeHtml(cat.desc)}</div>
-          <div class="cat-count">질문 ${cat.questions.length}개${CLIENT && ALL_ANSWERS[cat.id] ? ' · <b style="color:var(--blue,#295BF2)">답변 ' + Object.keys(ALL_ANSWERS[cat.id].items).length + '개 저장됨</b>' : ''}</div>
+          <div class="cat-count">질문 ${cat.questions.length}개${ALL_ANSWERS[cat.id] ? ' · <b style="color:var(--blue,#295BF2)">답변 ' + Object.keys(ALL_ANSWERS[cat.id].items).length + '개 저장됨</b>' : ''}</div>
         </span>
       </span>
       <span class="arrow">›</span>
@@ -1732,6 +1779,7 @@ async function sendAllCategoriesBundle(){
       });
       const data = await response.json();
       if(data.error) throw new Error(data.error);
+      stuClearAnswers(); // 서버에 안전하게 들어갔으니 폰 보관본 삭제
       alert('제출 완료! 강사님이 확인한 후 결과 링크를 보내드릴 거예요.');
     } else {
       const response = await fetch(apiUrl('/api/results'), {
@@ -1741,6 +1789,7 @@ async function sendAllCategoriesBundle(){
       });
       const data = await response.json();
       if(data.error) throw new Error(data.error);
+      stuClearAnswers();
       const link = location.origin + location.pathname + '?t=' + encodeURIComponent(TEACHER_ID) + '#result=' + data.id;
       linkOutput.value = link;
       linkModal.style.display = 'flex';
@@ -1768,7 +1817,7 @@ function startCategory(cat, skipHistory){
   currentCategory = cat;
   currentQuestionIdx = 0;
   answersByIdx = {};
-  if(CLIENT && ALL_ANSWERS[cat.id]) Object.assign(answersByIdx, ALL_ANSWERS[cat.id].items);
+  if(ALL_ANSWERS[cat.id]) Object.assign(answersByIdx, ALL_ANSWERS[cat.id].items); // 저장된 답변 다시 보여주기
   screenSelect.style.display = 'none';
   screenChat.style.display = 'flex';
   headerTitle.textContent = cat.title + ' 연습';
@@ -1778,6 +1827,7 @@ function startCategory(cat, skipHistory){
   swipeHint.style.display = 'block';
   renderQuestionCard();
   if(CLIENT) clientUpdateButtons();
+  else if(Object.keys(answersByIdx).length) makeLinkBtn.style.display = 'block';
   if(!skipHistory){
     history.pushState({ screen: 'chat', catId: cat.id }, '');
   }
@@ -2376,6 +2426,7 @@ async function submitAnswer(){
     answersByIdx[currentQuestionIdx] = { question, answer: text, feedback: fb };
     if(!ALL_ANSWERS[currentCategory.id]) ALL_ANSWERS[currentCategory.id] = { catTitle: currentCategory.title, items: {} };
     ALL_ANSWERS[currentCategory.id].items[currentQuestionIdx] = { question, answer: text, feedback: fb };
+    stuSaveAnswers(); // 💾 폰에 바로 저장
     renderQuestionCard();
     makeLinkBtn.style.display = 'block';
     bundleAllBtn.style.display = Object.keys(ALL_ANSWERS).length > 1 ? 'block' : 'none';
@@ -3405,6 +3456,7 @@ async function renderResultView(id){
    면접 중 → 이전 질문 (첫 질문이면 유형 목록) → 전공 고르기 → 나가기 (연습한 답변이 있으면 확인 창) */
 function studentHasUnsaved(){
   if(answerInput && answerInput.value.trim()) return true;
+  if(STU_SAVE_OK) return false; // 폰에 자동 저장되므로 나가도 안전
   return !CLIENT && Object.keys(ALL_ANSWERS).length > 0; // 개인 고객은 서버에 저장됨
 }
 function setupStudentBackGuard(view){
@@ -4458,6 +4510,7 @@ async function clientFinalSubmit(){
 
   history.replaceState({ screen: 'select' }, '');
   await loadConfig();
+  if(!isAdmin) STU_RESTORED_N = stuLoadAnswers(); // 💾 지난번 답변 불러오기
   if(!isAdmin && visibleJobSets().length > 0){
     renderJobSelectScreen();
     setupStudentBackGuard('jobs');
