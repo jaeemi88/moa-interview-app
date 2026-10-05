@@ -159,7 +159,8 @@ export default async function handler(req, res) {
         const configRaw = await client.get(`interview_app_config:${t}`);
         const config = configRaw ? JSON.parse(configRaw) : null;
         const orgName = (record.studentInstitution && record.studentInstitution.trim()) || (config && config.institutionName) || null;
-        const field = (record.studentTargetField && record.studentTargetField.trim()) || (config && config.targetField) || null;
+        // ✏️ 학생이 직접 입력한 전공·직무·기업은 키워드마다 흩어지지 않게 '직접 입력' 한 묶음으로 (2026-10-05)
+        const field = record.freeInput ? '직접 입력' : ((record.studentTargetField && record.studentTargetField.trim()) || (config && config.targetField) || null);
         if (orgName) {
           institutionNameForSurvey = orgName;
           targetFieldForSurvey = field;

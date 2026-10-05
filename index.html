@@ -174,6 +174,17 @@
   .cat-card .cat-desc{font-size:12px;color:var(--muted);margin-top:2px;}
   .cat-card .cat-count{font-size:11px;color:var(--sage);margin-top:3px;}
   .cat-card .arrow{color:var(--muted);font-size:16px;}
+  .free-card{background:var(--white);border:2px dashed var(--moa-app,var(--navy));border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;flex-direction:column;gap:8px}
+  .free-card .free-title{font-size:15px;font-weight:600;color:var(--ink)}
+  .free-card .free-chips{display:flex;gap:6px;flex-wrap:wrap}
+  .free-card .free-chip{font:inherit;font-size:13px;padding:6px 14px;border-radius:999px;border:1px solid #C9CED8;background:#fff;color:var(--ink);cursor:pointer}
+  .free-card .free-chip.on{background:#141A2E;border-color:#141A2E;color:#fff}
+  .free-card .free-inp{width:100%;font-size:16px}
+  .free-card .free-notice{margin:0;font-size:12.5px;line-height:1.5;color:#8A5A00;background:#FFF6E0;border-radius:8px;padding:7px 10px}
+  .free-card .free-err{margin:0;font-size:13px;color:#E5484D;min-height:0}
+  .free-card .free-err:empty{display:none}
+  .free-card .free-go{font:inherit;font-size:15px;font-weight:600;border:0;border-radius:10px;padding:12px;min-height:50px;background:var(--moa-ink,var(--navy));color:#fff;cursor:pointer}
+  .free-card .free-go:disabled{opacity:.7;cursor:wait}
   .setup-card{
     background:var(--white);
     border:1px solid var(--line);
@@ -939,6 +950,23 @@
       <p class="st-sub" style="margin-bottom:6px">체크한 전공만 학생 첫 화면에 나와요. 하나도 체크하지 않으면 전공 선택 없이 바로 질문 유형이 나와요.</p>
       <div id="today-visible-list"></div>
     </div>
+    <div class="st-card" style="gap:6px">
+      <h3 style="margin-bottom:2px">🔒 전공·직무 선택 방식</h3>
+      <p class="st-sub" style="margin-bottom:4px">교육 전에 정해 주세요. 직접 입력을 켜면 목록에 없는 전공·직무·기업도 학생이 적어서 맞춤 질문과 피드백을 받을 수 있어요.</p>
+      <label class="st-chk"><input type="radio" name="free-mode" value="off">프리셋만 <span class="st-sub" style="margin-left:4px">체크한 전공 카드만 (지금과 같음)</span></label>
+      <label class="st-chk"><input type="radio" name="free-mode" value="mixed">프리셋 + 직접 입력 <span class="st-sub" style="margin-left:4px">카드 아래 직접 입력 칸 추가</span></label>
+      <label class="st-chk"><input type="radio" name="free-mode" value="only">직접 입력만 <span class="st-sub" style="margin-left:4px">지원처가 제각각인 캠프·개인 코칭용</span></label>
+      <div id="free-sub" style="display:none;border-top:1px solid var(--line);margin-top:6px;padding-top:10px">
+        <span class="st-lbl" style="display:block;margin-bottom:4px">직접 입력 허용 종류</span>
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          <label class="st-chk"><input type="checkbox" class="free-kind" value="major">전공</label>
+          <label class="st-chk"><input type="checkbox" class="free-kind" value="job">직무</label>
+          <label class="st-chk"><input type="checkbox" class="free-kind" value="company">기업</label>
+        </div>
+        <label class="st-chk" style="margin-top:6px"><input type="checkbox" id="free-notice-chk">기업 입력 시 안내 문구 보이기 <span class="st-sub" style="margin-left:4px">"최신 채용공고는 직접 확인하세요"</span></label>
+        <p class="st-sub" style="margin-top:6px">같은 키워드는 저장해 두고 다시 써서 두 번째 학생부터는 바로 떠요. 직접 입력한 학생 결과에는 "✏️ 직접 입력" 표시가 붙고, 통계는 "직접 입력" 한 묶음으로 모여요.</p>
+      </div>
+    </div>
     <div class="st-card">
       <h3>운영 방식</h3>
       <div style="display:flex;flex-direction:column;gap:2px">
@@ -1511,6 +1539,13 @@ const ASPIRATION_GUIDE = `
 4) 사실 확인 원칙(가장 중요): 학생 답변에 나오지 않은 지원사의 자격제도명·직급명·특허명·해외지사명·수치를 절대 지어내지 않는다. 지원 기업명이 주어진 경우에도 마찬가지다. sample_direction과 rewritten에는 {{신입 직무교육 과정}}처럼 실제 이름으로 단정하지 않는 일반 표현의 {{ }} 예시로 채우고, improve에서 "채용공고·회사 홈페이지·DART 사업보고서·최근 보도자료에서 확인해 채우세요"라고 조사할 곳을 안내한다. 학생이 이미 쓴 회사 정보는 살려서 다듬는다.
 5) 과한 포부 경계: 근거 없이 "임원이 되겠다"는 식의 표현이나 이직·창업을 떠올리게 하는 표현("경력을 쌓아 독립")은 결격 신호가 될 수 있으므로 부드럽게 짚는다.`;
 let STUDENT_PROMPT_OVERRIDE = ''; // 학생이 고른 세트에 평가 기준 프리셋이 연결돼 있으면 그 기준으로 평가
+// ✏️ 학생 직접 입력 (2026-10-05) — 강사가 "오늘 수업" 탭에서 교육 전에 정함
+let FREE_INPUT_MODE = 'off';            // 'off'=프리셋만 | 'mixed'=프리셋+직접 입력 | 'only'=직접 입력만
+let FREE_INPUT_KINDS = ['major', 'job', 'company'];
+let FREE_INPUT_NOTICE = true;           // 기업 입력 안내 문구
+let STUDENT_FREE_INPUT = null;          // 학생이 직접 입력한 내용 {kind, keyword, label}
+const FREE_KIND_LABEL = { major: '전공', job: '직무', company: '기업' };
+const FREE_KIND_PH = { major: '예) 간호학과, 유아교육과', job: '예) 은행 창구, 생산관리', company: '예) 한국전력공사, ○○병원' };
 
 let currentCategory = null;
 let currentQuestionIdx = 0;
@@ -1913,6 +1948,9 @@ async function loadConfig(){
       if(parsed.groupCodeExpiryDays) GROUP_CODE_EXPIRY_DAYS = parseInt(parsed.groupCodeExpiryDays, 10) || 5;
       if(typeof parsed.targetField === 'string') TARGET_FIELD = parsed.targetField;
       if(Array.isArray(parsed.jobQuestionSets)) JOB_QUESTION_SETS = parsed.jobQuestionSets;
+      if(['off','mixed','only'].includes(parsed.freeInputMode)) FREE_INPUT_MODE = parsed.freeInputMode;
+      if(Array.isArray(parsed.freeInputKinds) && parsed.freeInputKinds.length) FREE_INPUT_KINDS = parsed.freeInputKinds.filter(k => FREE_KIND_LABEL[k]);
+      if(typeof parsed.freeInputNotice === 'boolean') FREE_INPUT_NOTICE = parsed.freeInputNotice;
     }
   }catch(err){
     // 저장된 설정이 아직 없거나 네트워크 오류 - 기본값 유지
@@ -1924,7 +1962,7 @@ async function saveConfig(){
     const response = await fetch(apiUrl('/api/config'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ categories: CATEGORIES.filter(c => !c.transient), systemPrompt: SYSTEM_PROMPT, presets: PRESETS, reviewMode: REVIEW_MODE, retryLimit: RETRY_LIMIT, notifyEmail: NOTIFY_EMAIL, institutionName: INSTITUTION_NAME, groupCodeExpiryDays: GROUP_CODE_EXPIRY_DAYS, targetField: TARGET_FIELD, jobQuestionSets: JOB_QUESTION_SETS })
+      body: JSON.stringify({ categories: CATEGORIES.filter(c => !c.transient), systemPrompt: SYSTEM_PROMPT, presets: PRESETS, reviewMode: REVIEW_MODE, retryLimit: RETRY_LIMIT, notifyEmail: NOTIFY_EMAIL, institutionName: INSTITUTION_NAME, groupCodeExpiryDays: GROUP_CODE_EXPIRY_DAYS, targetField: TARGET_FIELD, jobQuestionSets: JOB_QUESTION_SETS, freeInputMode: FREE_INPUT_MODE, freeInputKinds: FREE_INPUT_KINDS, freeInputNotice: FREE_INPUT_NOTICE })
     });
     const data = await response.json();
     return !!(data && data.ok);
@@ -1958,6 +1996,17 @@ function visibleJobSets(){
   return JOB_QUESTION_SETS.filter(s => s.visible !== false);
 }
 
+// 학생에게 전공 선택 화면이 필요한지 (체크한 패키지가 있거나, 직접 입력이 켜져 있으면)
+function freeInputOn(){ return FREE_INPUT_MODE === 'mixed' || FREE_INPUT_MODE === 'only'; }
+function jobScreenNeeded(){
+  if(FREE_INPUT_MODE === 'only') return true;
+  return visibleJobSets().length > 0 || freeInputOn();
+}
+// 제출 기록에 붙는 표시 (강사 목록·결과함에서 직접 입력한 학생을 알아보기 쉽게)
+function freeInputTag(){
+  return STUDENT_FREE_INPUT ? ` · ✏️ 직접 입력(${FREE_KIND_LABEL[STUDENT_FREE_INPUT.kind] || ''}): ${STUDENT_FREE_INPUT.label || STUDENT_FREE_INPUT.keyword}` : '';
+}
+
 // 학생이 고른 전공 패키지에 결격 검증 질문이 있으면 그 질문으로, 없으면 기본 질문으로
 function applyRedflagQuestions(set){
   const rfCat = CATEGORIES.find(c => c.id === 'redflag');
@@ -1968,32 +2017,38 @@ function applyRedflagQuestions(set){
 }
 
 function renderJobSelectScreen(){
-  catList.innerHTML = `
-    <p class="lead" style="margin-bottom:16px">본인 전공·지원직무를 선택해주세요. 질문과 피드백 기준이 그 전공에 맞게 바뀌어요.</p>
-  `;
-  visibleJobSets().forEach(set => {
-    const card = document.createElement('button');
-    card.className = 'cat-card';
-    card.innerHTML = `
-      <span class="cat-text">
-        <span>
-          <div class="cat-title">${escapeHtml(set.name)}</div>
+  const mode = FREE_INPUT_MODE;
+  const lead = mode === 'only' ? '지원하는 전공·직무·기업을 적어주세요. 질문과 피드백 기준이 거기에 맞게 바뀌어요.'
+    : (mode === 'mixed' ? '본인 전공·지원직무를 선택해주세요. 목록에 없으면 아래에 직접 적어도 돼요.'
+    : '본인 전공·지원직무를 선택해주세요. 질문과 피드백 기준이 그 전공에 맞게 바뀌어요.');
+  catList.innerHTML = `<p class="lead" style="margin-bottom:16px">${lead}</p>`;
+  if(mode !== 'only'){
+    visibleJobSets().forEach(set => {
+      const card = document.createElement('button');
+      card.className = 'cat-card';
+      card.innerHTML = `
+        <span class="cat-text">
+          <span>
+            <div class="cat-title">${escapeHtml(set.name)}</div>
+          </span>
         </span>
-      </span>
-      <span class="arrow">›</span>
-    `;
-    card.onclick = () => {
-      const jobCat = CATEGORIES.find(c => c.id === 'job-specific');
-      if(jobCat) jobCat.questions = set.questions.slice();
-      applyRedflagQuestions(set);
-      STUDENT_TARGET_FIELD_OVERRIDE = set.targetField || set.name;
-      STUDENT_INSTITUTION_OVERRIDE = set.institutionName || '';
-      STUDENT_PROMPT_OVERRIDE = buildPackagePrompt(set);
-      renderCategories();
-      history.pushState({ screen: 'select', view: 'cats' }, ''); // 뒤로가기 = 전공 다시 고르기
-    };
-    catList.appendChild(card);
-  });
+        <span class="arrow">›</span>
+      `;
+      card.onclick = () => {
+        STUDENT_FREE_INPUT = null;
+        const jobCat = CATEGORIES.find(c => c.id === 'job-specific');
+        if(jobCat) jobCat.questions = set.questions.slice();
+        applyRedflagQuestions(set);
+        STUDENT_TARGET_FIELD_OVERRIDE = set.targetField || set.name;
+        STUDENT_INSTITUTION_OVERRIDE = set.institutionName || '';
+        STUDENT_PROMPT_OVERRIDE = buildPackagePrompt(set);
+        renderCategories();
+        history.pushState({ screen: 'select', view: 'cats' }, ''); // 뒤로가기 = 전공 다시 고르기
+      };
+      catList.appendChild(card);
+    });
+  }
+  if(freeInputOn()) catList.appendChild(buildFreeInputCard());
   const skipBtn = document.createElement('button');
   skipBtn.className = 'cat-card';
   skipBtn.style.opacity = '0.7';
@@ -2002,12 +2057,89 @@ function renderJobSelectScreen(){
     <span class="arrow">›</span>
   `;
   skipBtn.onclick = () => {
+    STUDENT_FREE_INPUT = null;
     applyRedflagQuestions(null);
     STUDENT_PROMPT_OVERRIDE = '';
     renderCategories();
     history.pushState({ screen: 'select', view: 'cats' }, '');
   };
   catList.appendChild(skipBtn);
+}
+
+// ✏️ 직접 입력 카드 (2026-10-05)
+function buildFreeInputCard(){
+  const kinds = (FREE_INPUT_KINDS && FREE_INPUT_KINDS.length ? FREE_INPUT_KINDS : ['major', 'job', 'company']).filter(k => FREE_KIND_LABEL[k]);
+  let kind = (STUDENT_FREE_INPUT && kinds.includes(STUDENT_FREE_INPUT.kind)) ? STUDENT_FREE_INPUT.kind : kinds[0];
+  const box = document.createElement('div');
+  box.className = 'free-card';
+  box.innerHTML = `
+    <div class="free-title">✏️ 직접 입력하기</div>
+    <div class="free-chips" ${kinds.length < 2 ? 'style="display:none"' : ''}>
+      ${kinds.map(k => `<button type="button" class="free-chip" data-k="${k}">${FREE_KIND_LABEL[k]}</button>`).join('')}
+    </div>
+    <input class="st-inp free-inp" type="text" maxlength="30" autocomplete="off">
+    <p class="free-notice">기업 정보는 일반적으로 알려진 내용 기준이에요. 최신 채용공고는 꼭 직접 확인하세요.</p>
+    <p class="free-err" role="alert"></p>
+    <button type="button" class="free-go">이 기준으로 시작하기</button>
+  `;
+  const inp = box.querySelector('.free-inp');
+  const notice = box.querySelector('.free-notice');
+  const err = box.querySelector('.free-err');
+  const go = box.querySelector('.free-go');
+  if(STUDENT_FREE_INPUT) inp.value = STUDENT_FREE_INPUT.keyword || '';
+  function paint(){
+    box.querySelectorAll('.free-chip').forEach(c => c.classList.toggle('on', c.dataset.k === kind));
+    inp.placeholder = (kinds.length < 2 ? FREE_KIND_LABEL[kind] + ' — ' : '') + FREE_KIND_PH[kind];
+    notice.style.display = (kind === 'company' && FREE_INPUT_NOTICE) ? 'block' : 'none';
+  }
+  box.querySelectorAll('.free-chip').forEach(c => c.onclick = () => { kind = c.dataset.k; err.textContent = ''; paint(); inp.focus(); });
+  inp.addEventListener('input', () => { err.textContent = ''; });
+  inp.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); go.click(); } });
+  paint();
+  go.onclick = async () => {
+    const keyword = inp.value.replace(/\s+/g, ' ').trim();
+    if(keyword.length < 2){ err.textContent = FREE_KIND_LABEL[kind] + ' 이름을 두 글자 이상 적어 주세요.'; inp.focus(); return; }
+    go.disabled = true; inp.disabled = true;
+    go.textContent = '맞춤 질문을 만드는 중... (10초 정도)';
+    try{
+      const r = await fetch('/api/generate-questions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'student', t: TEACHER_ID, kind, keyword })
+      });
+      const data = await r.json().catch(() => ({}));
+      if(!r.ok || !Array.isArray(data.questions)){
+        err.textContent = (data && data.error) || '맞춤 질문을 만들지 못했어요. 잠시 후 다시 눌러 주세요.';
+        go.disabled = false; inp.disabled = false; go.textContent = '이 기준으로 시작하기';
+        return;
+      }
+      applyFreeInputPack(data);
+      renderCategories();
+      history.pushState({ screen: 'select', view: 'cats' }, '');
+    }catch(e){
+      err.textContent = '인터넷 연결을 확인하고 다시 눌러 주세요.';
+      go.disabled = false; inp.disabled = false; go.textContent = '이 기준으로 시작하기';
+    }
+  };
+  return box;
+}
+
+// 직접 입력으로 받은 질문·기준을 학생 화면에 적용
+function applyFreeInputPack(pack){
+  const label = pack.label || pack.keyword;
+  STUDENT_FREE_INPUT = { kind: pack.kind, keyword: pack.keyword, label };
+  const jobCat = CATEGORIES.find(c => c.id === 'job-specific');
+  if(jobCat && pack.questions.length) jobCat.questions = pack.questions.slice();
+  applyRedflagQuestions(null);
+  if(pack.kind === 'company'){
+    STUDENT_COMPANY = label;            // 다음 화면 '지원 기업명' 칸에 자동으로 들어감
+    STUDENT_TARGET_FIELD_OVERRIDE = label + ' 지원';
+  } else {
+    STUDENT_TARGET_FIELD_OVERRIDE = label;
+  }
+  const kindName = FREE_KIND_LABEL[pack.kind] || '전공·직무';
+  STUDENT_PROMPT_OVERRIDE = SYSTEM_PROMPT
+    + (pack.criteria ? `\n\n[학생이 직접 입력한 ${kindName} '${label}' 특화 기준 — AI가 만든 기준이므로 참고로 반영]\n${pack.criteria}` : '')
+    + (pack.kind === 'company' ? `\n- 이 기업의 구체적인 제도명·사업명·수치·최근 이슈는 지어내지 말고, 필요하면 {{ }} 예시와 함께 "채용공고·홈페이지에서 확인하세요"라고 안내한다.` : '');
 }
 
 function renderCategories(){
@@ -2201,10 +2333,11 @@ async function sendAllCategoriesBundle(){
   const record = {
     studentName: studentName.trim() || '수강생',
     studentEmail: studentEmail.trim(),
-    category: '통합 (' + catTitles.join(', ') + ')',
+    category: '통합 (' + catTitles.join(', ') + ')' + freeInputTag(),
     items: orderedItems,
     studentInstitution: STUDENT_INSTITUTION_OVERRIDE || '',
     studentTargetField: STUDENT_TARGET_FIELD_OVERRIDE || '',
+    freeInput: !!STUDENT_FREE_INPUT,
     createdAt: new Date().toISOString()
   };
 
@@ -3419,6 +3552,7 @@ function renderTodayTab(){
   document.getElementById('notify-email-input').value = NOTIFY_EMAIL || '';
   document.getElementById('today-status').textContent = '';
 
+  renderFreeInputSetting();
   const box = document.getElementById('today-visible-list');
   box.innerHTML = '';
   if(!JOB_QUESTION_SETS.length){
@@ -3436,6 +3570,23 @@ function renderTodayTab(){
     box.appendChild(lab);
   });
 }
+
+// ✏️ 전공·직무 선택 방식 설정 (2026-10-05)
+function renderFreeInputSetting(){
+  document.querySelectorAll('input[name="free-mode"]').forEach(r => { r.checked = r.value === FREE_INPUT_MODE; });
+  document.querySelectorAll('.free-kind').forEach(c => { c.checked = FREE_INPUT_KINDS.includes(c.value); });
+  document.getElementById('free-notice-chk').checked = !!FREE_INPUT_NOTICE;
+  document.getElementById('free-sub').style.display = FREE_INPUT_MODE === 'off' ? 'none' : 'block';
+}
+document.querySelectorAll('input[name="free-mode"]').forEach(r => r.addEventListener('change', () => {
+  FREE_INPUT_MODE = r.value; renderFreeInputSetting(); autoSaveToday();
+}));
+document.querySelectorAll('.free-kind').forEach(c => c.addEventListener('change', () => {
+  const picked = [...document.querySelectorAll('.free-kind')].filter(x => x.checked).map(x => x.value);
+  if(!picked.length){ c.checked = true; setStatus(document.getElementById('today-status'), '하나 이상은 체크해 주세요', true); return; }
+  FREE_INPUT_KINDS = picked; autoSaveToday();
+}));
+document.getElementById('free-notice-chk').addEventListener('change', e => { FREE_INPUT_NOTICE = e.target.checked; autoSaveToday(); });
 
 let todaySaveTimer = null;
 async function autoSaveToday(){
@@ -3687,6 +3838,7 @@ reviewApproveBtn.onclick = async () => {
       items: currentReviewRecord.items,
       studentInstitution: currentReviewRecord.studentInstitution || '',
       studentTargetField: currentReviewRecord.studentTargetField || '',
+      freeInput: !!currentReviewRecord.freeInput,
       clientCode: currentReviewRecord.clientCode || '',
       code: currentReviewRecord.code || '', // 학생이 받은 확인코드 그대로 → '결과 도착'으로 바뀜
       createdAt: new Date().toISOString()
@@ -3741,10 +3893,11 @@ makeLinkBtn.onclick = async () => {
   const record = {
     studentName: studentName.trim() || '수강생',
     studentEmail: studentEmail.trim(),
-    category: currentCategory.title,
+    category: currentCategory.title + freeInputTag(),
     items: orderedItems,
     studentInstitution: STUDENT_INSTITUTION_OVERRIDE || '',
     studentTargetField: STUDENT_TARGET_FIELD_OVERRIDE || '',
+    freeInput: !!STUDENT_FREE_INPUT,
     createdAt: new Date().toISOString()
   };
 
@@ -4024,7 +4177,7 @@ window.addEventListener('popstate', (e) => {
     openSettings(true);
   } else {
     showSelectScreen();
-    if(isStudentNow && state.view === 'jobs' && visibleJobSets().length > 0 && !CLIENT){
+    if(isStudentNow && state.view === 'jobs' && jobScreenNeeded() && !CLIENT){
       renderJobSelectScreen();
     } else if((CLIENT && !(CLIENT.used && CLIENT.used.interview)) || (state.view === 'cats' && studentSelectView() === 'jobs') || catList.querySelector('#fs-back')){
       renderCategories(); // 저장된 답변 수·최종 제출 버튼 갱신
@@ -5037,7 +5190,7 @@ async function clientFinalSubmit(){
   await loadConfig();
   if(!isAdmin) applyResumeHandoff(); // 📝 자소서 앱에서 넘어온 꼬리질문 (2026-10-05)
   if(!isAdmin) STU_RESTORED_N = stuLoadAnswers(); // 💾 지난번 답변 불러오기
-  if(!isAdmin && visibleJobSets().length > 0){
+  if(!isAdmin && jobScreenNeeded()){
     renderJobSelectScreen();
     setupStudentBackGuard('jobs');
   } else {
