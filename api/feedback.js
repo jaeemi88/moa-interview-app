@@ -276,18 +276,25 @@ export default async function handler(req, res) {
 - 과목명·프로젝트명·기관명·매장명·부서명·회사의 실제 사업명처럼 답변에 있는 고유명사는 rewritten에서 반드시 살린다.
 - 경험을 묻는 질문인데 고유명사가 하나도 없으면 improve에 어느 부분에 어떤 이름(예: 과목명, 기관명)을 넣으면 신뢰도가 올라가는지 한 줄로 안내하고, rewritten에는 {{ }} 예시 이름(일반적인 활동명)으로 채운다.
 - 답변에 없는 고유명사를 지어내지 않는다.`;
-  const fullSystem =
+  // 프롬프트 캐싱 (2026-10-05): 모든 학생에게 똑같은 긴 지침(고정 부분)을 앞에 두고 캐시 표시 →
+  // 5분 안에 다시 쓰이면 그 부분은 원래 가격의 10%만 냄. 강사 기준·답변 시간·오늘의 재료처럼 바뀌는 부분은 뒤에.
+  const staticSystem =
     COMMON_RULES +
-    (majorRules ? `\n\n[전공별 기준]\n${majorRules}` : '') +
     RED_FLAG_RULES +
     hiringRules +
     EXAMPLE_RULES +
     TONE_RULES +
     DIVERSITY_RULES +
-    variety +
     DIRECTION_STEPS_RULE +
-    trendRules({ answerSec, targetSec, resumeSentences, resumeOverlap }) +
     JSON_SAFETY_RULE;
+  const dynamicSystem =
+    (majorRules ? `[강사 평가 기준 · 응답 형식 — 아래 JSON 필드를 모두 채우고, 위 규칙의 추가 필드(red_flags, exampleSlots, direction_steps)와 아래 criteria·memorized·speech도 함께 넣는다]\n${majorRules}` : '') +
+    trendRules({ answerSec, targetSec, resumeSentences, resumeOverlap }) +
+    variety;
+  const systemBlocks = [
+    { type: 'text', text: staticSystem, cache_control: { type: 'ephemeral' } },
+    { type: 'text', text: dynamicSystem }
+  ];
 
   try {
     let feedback = null;
@@ -302,7 +309,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 5200, // 결격 신호·예시 보기 추가로 여유 있게 (실제 쓴 만큼만 비용 발생)
-        system: fullSystem,
+        system: systemBlocks,
         messages: [
           { role: 'user', content: `[질문]\n${question}\n\n[답변]\n${answer || ''}` }
         ]
@@ -316,8 +323,10 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: aiErrorText(response.status, data) });
     }
 
+    if (data.usage) console.log('면접 피드백 토큰', JSON.stringify(data.usage)); // cache_read_input_tokens로 캐시 효과 확인
     const raw = (data.content || []).map((c) => c.text || '').join('').trim();
     feedback = parseAIJson(raw);
+    if (feedback && data.usage) feedback._usage = { in: data.usage.input_tokens, cached: data.usage.cache_read_input_tokens || 0, cacheWrite: data.usage.cache_creation_input_tokens || 0, out: data.usage.output_tokens };
     if (!feedback) {
       console.error(`JSON 변환 실패 (${attempt}번째 시도, 중단 이유: ${data.stop_reason}):`, raw.slice(0, 800));
     }
