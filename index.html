@@ -5211,7 +5211,23 @@ async function initClientMode(rawCode){
     return;
   }
   if(CLIENT.used && CLIENT.used.interview){
-    clientMessage('이미 제출을 마치셨어요', '강사가 AI 피드백을 직접 검토하고 코멘트를 더한 뒤 결과를 보내드려요. 결과가 준비되면 이메일로 알려드릴게요.');
+    // 2026-10-05 점검: 승인 후 고객이 자기 링크를 다시 열면 결과를 바로 볼 수 있게 (자소서 앱과 같게)
+    const rc = CLIENT.used.interview.reviewCode || '';
+    const codeBox = rc ? `<div style="margin-top:10px;padding:12px;border:2px dashed #295BF2;border-radius:8px;text-align:center"><div style="font-size:12px">내 확인 코드</div><div style="font-size:22px;font-weight:800;color:#295BF2;letter-spacing:2px">${escapeHtml(rc)}</div></div>` : '';
+    clientMessage('이미 제출을 마치셨어요', '강사가 AI 피드백을 직접 검토하고 코멘트를 더한 뒤 결과를 보내드려요. 결과가 준비되면 이메일로 알려드리고, 이 링크를 다시 열어도 확인할 수 있어요.' + codeBox + '<div id="client-result-area" style="margin-top:12px"></div>');
+    if(rc){
+      const area = document.getElementById('client-result-area');
+      area.textContent = '결과 확인 중...';
+      let d; try{ d = await lookupResultCode(rc); }catch(e){ d = { status: 'none' }; }
+      if(d.status === 'done' && d.id){
+        area.innerHTML = `<button type="button" class="link-cta" style="border:0;cursor:pointer">📬 결과 보기 →</button>`;
+        area.querySelector('button').onclick = () => openResultById(d.id);
+      } else if(d.status === 'expired'){
+        area.textContent = '⏰ 결과 조회 기간이 지났어요. 진로모아로 문의해 주세요.';
+      } else {
+        area.textContent = '⏳ 아직 강사가 검토 중이에요. 조금만 기다려 주세요.';
+      }
+    }
     return;
   }
   if(CLIENT.product === 'set' && !(CLIENT.used && CLIENT.used.resume)){

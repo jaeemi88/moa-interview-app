@@ -5,7 +5,7 @@
 
 import Redis from 'ioredis';
 import { isStaff } from './_staff.js';
-import { CLIENT_T, getClient, useClientPart, releaseClientPart, isPartUsed } from './client-code.js';
+import { CLIENT_T, getClient, useClientPart, releaseClientPart, isPartUsed, attachReviewCode, getAdminEmail } from './client-code.js';
 import { newCode } from './_code.js';
 
 let redis;
@@ -30,7 +30,9 @@ async function notifyByEmail(client, t, record) {
     if (!process.env.RESEND_API_KEY) { console.error('알림 건너뜀: RESEND_API_KEY 없음'); return; }
     const configRaw = await client.get(`interview_app_config:${t}`);
     const config = configRaw ? JSON.parse(configRaw) : null;
-    const to = config && config.notifyEmail;
+    // 유료 개인 고객 제출은 알림 이메일이 비어 있어도 원장님께 꼭 보냄 (2026-10-05 점검 — 결과 2일 내 전달 약속)
+    const isClient = !!(record && record.clientCode);
+    const to = (config && config.notifyEmail) || (isClient ? await getAdminEmail(client) : '');
     if (!to) { console.error('알림 건너뜀: notifyEmail 미설정'); return; }
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -41,7 +43,7 @@ async function notifyByEmail(client, t, record) {
       body: JSON.stringify({
         from: 'MOA FORMULA <moaformula@jinromoa.co.kr>',
         to: [to],
-        subject: `[모의면접] ${record.studentName || '학생'}님의 검수 요청이 도착했어요`,
+        subject: `${isClient ? '💳 [유료 고객 · 2일 안에 결과] ' : ''}[모의면접] ${record.studentName || '학생'}님의 검수 요청이 도착했어요`,
         text: `${record.studentName || '학생'}님이 모의면접 검토를 요청했어요.\n\n강사용 화면의 "검토 대기함"에서 확인해 주세요.`
       })
     });
@@ -88,6 +90,8 @@ export default async function handler(req, res) {
       const id = generateId();
       // 확인코드 (2026-10-05): 학생이 연락처 없이 '내 결과 확인'에서 스스로 찾아가는 용도
       try { record.code = await newCode(client, t, { s: 'pending', id }); } catch (e) { console.error('확인코드 생성 실패:', e); record.code = ''; }
+      // 개인 고객: 확인코드를 고객 기록에도 붙여 둠 → 고객이 자기 링크를 다시 열면 결과를 바로 볼 수 있음 (2026-10-05 점검)
+      if (clientCode && record.code) { try { await attachReviewCode(client, clientCode, 'interview', record.code); } catch (e) { console.error(e); } }
       try {
         await client.set(itemKey(id), JSON.stringify(record));
       } catch (e) {
