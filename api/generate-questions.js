@@ -71,6 +71,11 @@ export default async function handler(req, res) {
   }
 
   const { targetField, mode } = req.body || {};
+
+  // 📊 많이 입력된 키워드 TOP / 목록에서 지우기 (2026-10-05, 강사·원장 전용)
+  if (mode === 'topKeywords' || mode === 'dismissKeyword') {
+    return handleTopKeywords(req, res, mode);
+  }
   if (!targetField || !String(targetField).trim()) {
     return res.status(400).json({ error: '전공·직무 정보가 필요합니다.' });
   }
@@ -420,5 +425,42 @@ ${companyRule}
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: '맞춤 질문을 만드는 중 오류가 났어요.' });
+  }
+}
+
+// ---------- 📊 많이 입력된 키워드 TOP (mode: 'topKeywords' / 'dismissKeyword', 2026-10-05) ----------
+// 학생이 직접 입력한 키워드를 많이 입력된 순으로 돌려주고, 저장된 맞춤 질문·기준(pack)도 함께 보냄
+// → 강사 화면에서 "전공 패키지로 추가" 한 번이면 정식 목록에 들어감 (AI 다시 안 부름)
+async function handleTopKeywords(req, res, mode) {
+  const client = getRedis();
+  const t = safeCodeT(req.query.t || (req.body || {}).t);
+  if (!t) return res.status(400).json({ error: '강사 코드가 없어요.' });
+  const zkey = `interview_free_kw:${t}`;
+  try {
+    if (mode === 'dismissKeyword') {
+      const member = String((req.body || {}).member || '');
+      if (member) await client.zrem(zkey, member);
+      return res.status(200).json({ ok: true });
+    }
+    const flat = await client.zrevrange(zkey, 0, 19, 'WITHSCORES');
+    const items = [];
+    for (let i = 0; i < flat.length; i += 2) {
+      const member = flat[i];
+      const count = parseInt(flat[i + 1], 10) || 0;
+      const sep = member.indexOf(':');
+      const kind = member.slice(0, sep);
+      const keyword = member.slice(sep + 1);
+      if (!FREE_KINDS[kind] || !keyword) continue;
+      let pack = null;
+      try {
+        const raw = await client.get(`interview_free_pack:${kind}:${keyword.toLowerCase().replace(/\s+/g, '')}`);
+        pack = raw ? JSON.parse(raw) : null;
+      } catch (e) {}
+      items.push({ member, kind, kindName: FREE_KINDS[kind], keyword, count, pack });
+    }
+    return res.status(200).json({ items });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: '키워드 목록을 불러오지 못했어요.' });
   }
 }
