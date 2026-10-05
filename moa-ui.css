@@ -155,6 +155,12 @@ body.moa-ui.moa-stage .link-cta{display:none !important}
 .moa-timer .t b{font-size:40px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
 .moa-timer .t span{font-size:12px;color:var(--moa-stage-text)}
 .moa-timer.over .t b{color:#FFB4A8}
+/* 목표 시간 고르기 (2026-10-05) */
+.moa-tpick{align-self:center;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;margin:0 0 8px;color:var(--moa-stage-text);font-size:12px}
+.moa-tpick button{min-height:32px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,255,255,.22);background:transparent;color:#FFFFFF;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+.moa-tpick button[aria-pressed="true"]{background:var(--moa-lime);border-color:var(--moa-lime);color:var(--moa-ink)}
+.moa-tpick button:focus-visible{outline:2px solid var(--moa-lime);outline-offset:2px}
+.moa-tpick p{flex-basis:100%;text-align:center;margin:2px 0 0;font-size:12px;color:var(--moa-stage-text)}
 .moa-mic{flex-shrink:0;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;cursor:pointer}
 body.moa-ui:not(.moa-stage) .moa-mic{background:var(--moa-surface)}
 .moa-mic svg{stroke:#FFFFFF}
@@ -273,3 +279,7 @@ body.moa-ui #st-live-btn{width:calc(100% - 40px) !important;margin:4px 20px 0 !i
 body.moa-stage .moa-qpos{color:var(--moa-stage-text)}body.moa-stage .moa-qpos b{color:#fff}body.moa-stage .moa-qpos .last{color:var(--moa-stage);background:var(--moa-lime)}
 .moa-coach-pos{font-size:12px;font-weight:700;color:var(--moa-muted);margin-left:8px;white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.moa-intro{animation:none}}
+/* 질문 의도 보기 — 면접실 모드(어두운 화면)용 (2026-10-05) */
+body.moa-ui.moa-stage .iv-intent{align-self:center}
+body.moa-ui.moa-stage .iv-intent-btn{background:transparent !important;color:#FFFFFF !important;border-color:rgba(255,255,255,.22) !important}
+body.moa-ui.moa-stage .iv-intent-txt{background:rgba(255,255,255,.08) !important;color:var(--moa-stage-text) !important}

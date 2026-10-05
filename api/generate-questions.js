@@ -48,6 +48,13 @@ function sanitizeJsonString(raw) {
   return result;
 }
 
+// 🔒 질문은행 금지 필터 (2026-10-05) — 결혼·출산·가족·외모·학벌 비하 등 면접에서 묻지 않는 질문은 만들지도, 돌려주지도 않음
+const BANNED_RULE = `
+[절대 금지 질문 — 채용절차법·면접 윤리]
+결혼·연애·출산·자녀 계획, 부모·가족의 직업·학력·재산, 외모·키·몸무게 등 신체 조건, 출신 학교 수준·학벌, 출신 지역, 종교·정치 성향, 나이 비하를 묻는 질문은 절대 만들지 않는다. (환자·고객의 가족을 응대한 경험처럼 업무 상황을 묻는 것은 괜찮다)`;
+const BANNED_RE = [/결혼|기혼|미혼|혼인|애인|남자\s?친구|여자\s?친구|연애/, /출산|임신|아이를?\s?(낳|가질)|자녀\s?계획|육아\s?계획/, /부모님?(의|께서)?\s?(직업|직장|학력|재산)|가족\s?(관계|구성|사항|학력|직업)|집안|재산/, /외모|얼굴|키가|키는|몸무게|체중|성형|예쁘|잘생|체형/, /학벌|명문대|지방대|출신\s?(학교|대학|지역)|어느\s?학교|고향|어디\s?출신/, /종교|지지\s?(정당|후보)|정치\s?성향|나이가\s?(많|적)/];
+const isBanned = (q) => BANNED_RE.some((re) => re.test(String(q || '')));
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'POST 요청만 허용됩니다.' });
@@ -75,6 +82,8 @@ export default async function handler(req, res) {
   const systemPrompt = `당신은 15년 경력의 취업면접 코치입니다. 아래 전공·지원직무에 특화된 모의면접 질문 6개를 만들어주세요.
 
 [전공·지원직무] ${targetField}
+
+${BANNED_RULE}
 
 [질문 작성 원칙]
 - 이 직무의 실제 업무 상황, 필요 역량, 자주 겪는 어려움을 반영한 구체적인 질문일 것
@@ -124,7 +133,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'AI가 올바른 형식의 질문을 만들지 못했습니다. 다시 시도해 주세요.' });
     }
 
-    return res.status(200).json({ questions: parsed.questions });
+    return res.status(200).json({ questions: (parsed.questions || []).filter((q) => !isBanned(q)) });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: '질문 생성 중 오류가 발생했습니다.' });
@@ -205,6 +214,7 @@ async function generateRedflag(targetField, res) {
 아래 전공·직무의 면접관이 "이 사람은 걸러야겠다"고 판단하는 태도를 확인하기 위한 "결격 검증 질문" 6개를 만들어주세요.
 
 [전공·지원직무] ${targetField}
+${BANNED_RULE}
 
 [먼저 판단할 것] 이 직무의 업종이 아래 중 어디에 가까운지 판단하고, 그 업종의 치명타를 중심으로 질문을 만드세요.
 - 보건의료: 경유지 태도(짧은 근속), 환자보다 내 편의
@@ -271,7 +281,7 @@ async function generateRedflag(targetField, res) {
       return res.status(500).json({ error: 'AI가 올바른 형식의 질문을 만들지 못했습니다. 다시 시도해 주세요.' });
     }
 
-    return res.status(200).json({ items });
+    return res.status(200).json({ items: items.filter((x) => x && !isBanned(x.q)) });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: '결격 검증 질문 생성 중 오류가 발생했습니다.' });

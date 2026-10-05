@@ -192,6 +192,38 @@ const EXAMPLE_RULES = `
 - 예시 자리가 있으면 improve에 「형광펜으로 표시된 예시 자리를 내 실제 경험으로 바꿔야 면접에서 흔들리지 않는다」는 점을 한 번 짚는다.`;
 
 // ───────────────────────────────────────────
+// ★ 2026 채용 트렌드 (2026-10-05 본부 인계 · 모든 요청에 자동 적용)
+//   피드백 기준: 일관성·논리·진정성 + "외운 답변" 신호 + 서론-본론-결론 구조(AI면접 대비)
+// ───────────────────────────────────────────
+function trendRules({ answerSec, targetSec, resumeSentences, resumeOverlap }) {
+  const sents = (Array.isArray(resumeSentences) ? resumeSentences : []).map((x) => String(x || '').slice(0, 160)).filter(Boolean).slice(0, 3);
+  const sec = parseInt(answerSec, 10) || 0;
+  const tgt = parseInt(targetSec, 10) || 0;
+  return `
+
+[2026 면접관 기준 — criteria 필드, 반드시 채움]
+요즘 면접관은 화려한 말솜씨보다 일관성·논리·진정성을 본다. 답변을 이 세 기준으로 판정한다.
+- consistency(일관성): 답변 안에서 앞뒤 말이 맞는지, 주장과 근거 경험이 서로 이어지는지${sents.length ? ', 아래 [자소서 핵심 문장]과 사실이 어긋나지 않는지' : ''}
+- logic(논리): 결론→근거→사례 순서가 보이는지, 질문에 바로 답했는지
+- sincerity(진정성): 본인이 실제로 겪은 장면·행동·느낀 점이 있는지, 누구나 할 수 있는 모범 답안 문장으로만 채워졌는지
+- 각 기준: {"ok": true/false, "note": "학생 답변의 단어를 넣은 한 문장. ok면 잘된 점, 아니면 어떻게 고칠지"}
+형식: "criteria": {"consistency": {"ok": true, "note": ""}, "logic": {"ok": true, "note": ""}, "sincerity": {"ok": true, "note": ""}}
+
+[외운 답변 신호 — memorized 필드]
+- 면접관은 외워 온 답변을 금방 알아챈다. 지나치게 매끄럽고 문어체이며(「~함으로써」, 「~하고자 합니다」 연속), 구체적인 장면 없이 모범 답안 문장만 이어지면 외운 답변 신호로 본다.${sents.length ? `
+- 학생이 쓴 [자소서 핵심 문장]과 거의 같은 문장을 그대로 말했으면 외운 답변 신호다.${resumeOverlap ? ' (화면에서 자소서 문장과 많이 겹친다고 확인됨)' : ''}
+[자소서 핵심 문장]
+${sents.map((x) => '- ' + x).join('\n')}` : ''}
+- 형식: "memorized": {"flag": true/false, "reason": "flag가 true일 때만, 어떤 점이 외운 것처럼 들리는지와 말하듯 바꾸는 방법 한 문장. false면 빈 문자열"}
+- 의심만으로 단정하지 않는다. 학생이 위축되지 않게 「~처럼 들릴 수 있어요」로 부드럽게 쓴다.
+
+[말하기 구조 — speech 필드 (AI면접·실전 대비)]
+- 서론(질문에 대한 결론 한 문장) → 본론(근거가 되는 경험·행동) → 결론(직무 연결 또는 마무리 한 문장)이 있는지 본다.
+- 형식: "speech": {"intro": true/false, "body": true/false, "conclusion": true/false, "note": "빠진 부분을 어디에 무엇으로 채울지 한 문장"}${sec ? `
+- 학생은 이 답변을 약 ${sec}초 동안 했다${tgt ? `(목표 ${tgt}초)` : ''}. 목표보다 많이 길거나 짧으면 note 끝에 한마디 덧붙인다.` : ''}`;
+}
+
+// ───────────────────────────────────────────
 // 3. 서버 함수 본체
 // ───────────────────────────────────────────
 export default async function handler(req, res) {
@@ -199,7 +231,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'POST 요청만 가능합니다.' });
   }
 
-  const { question, answer, systemPrompt, hiringType } = req.body || {};
+  const { question, answer, systemPrompt, hiringType, answerSec, targetSec, resumeSentences, resumeOverlap } = req.body || {};
 
   if (!question) {
     return res.status(400).json({ error: '질문(문항) 내용이 없습니다.' });
@@ -238,6 +270,7 @@ export default async function handler(req, res) {
     DIVERSITY_RULES +
     variety +
     DIRECTION_STEPS_RULE +
+    trendRules({ answerSec, targetSec, resumeSentences, resumeOverlap }) +
     JSON_SAFETY_RULE;
 
   try {
@@ -252,7 +285,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 4500, // 결격 신호·예시 보기 추가로 여유 있게 (실제 쓴 만큼만 비용 발생)
+        max_tokens: 5200, // 결격 신호·예시 보기 추가로 여유 있게 (실제 쓴 만큼만 비용 발생)
         system: fullSystem,
         messages: [
           { role: 'user', content: `[질문]\n${question}\n\n[답변]\n${answer || ''}` }
@@ -283,6 +316,17 @@ export default async function handler(req, res) {
       .filter((s) => s && s.example)
       .map((s) => ({ example: String(s.example), hint: String(s.hint || ''), options: (Array.isArray(s.options) ? s.options : []).map(String).filter(Boolean).slice(0, 3) }))
       .slice(0, 8);
+    // 2026 트렌드 필드 정리 (2026-10-05)
+    const crit = (feedback.criteria && typeof feedback.criteria === 'object') ? feedback.criteria : null;
+    feedback.criteria = crit ? ['consistency', 'logic', 'sincerity'].reduce((o, k) => {
+      const c = crit[k] || {}; o[k] = { ok: !!c.ok, note: String(c.note || '').slice(0, 200) }; return o;
+    }, {}) : null;
+    const mem = feedback.memorized || {};
+    feedback.memorized = { flag: !!mem.flag, reason: mem.flag ? String(mem.reason || '').slice(0, 200) : '' };
+    const sp = feedback.speech;
+    feedback.speech = sp && typeof sp === 'object' ? { intro: !!sp.intro, body: !!sp.body, conclusion: !!sp.conclusion, note: String(sp.note || '').slice(0, 200) } : null;
+    if (parseInt(answerSec, 10) > 0) feedback.answer_sec = Math.min(600, parseInt(answerSec, 10));
+    if (parseInt(targetSec, 10) > 0) feedback.target_sec = Math.min(120, parseInt(targetSec, 10));
     feedback.direction_steps = Array.isArray(feedback.direction_steps)
       ? feedback.direction_steps.map(x => String(x || '').trim().slice(0, 24)).filter(Boolean).slice(0, 4)
       : [];

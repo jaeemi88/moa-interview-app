@@ -7,7 +7,8 @@
 (function () {
   'use strict';
   var APP_COLOR = '#295BF2';
-  var TARGET_SEC = 60;
+  // 목표 시간: AI면접·실전 대비 30/45/60초 중 학생이 고름 (2026-10-05) — 이 폰에 기억
+  var TARGET_SEC = (function () { try { var v = +localStorage.getItem('moa_iv_target'); return [30, 45, 60].indexOf(v) >= 0 ? v : 60; } catch (e) { return 60; } })();
   var RING = 2 * Math.PI * 78;
 
   /* ── 허브 '이어서 하기'용 진행 상황 보고 (2026-10-03) ──
@@ -196,8 +197,8 @@
     timer.node.querySelector('b').textContent = fmt(s);
     var p = Math.min(1, s / TARGET_SEC);
     timer.node.querySelector('.arc').setAttribute('stroke-dashoffset', String(RING * (1 - p)));
-    timer.node.classList.toggle('over', s > TARGET_SEC + 30);
-    timer.node.querySelector('span').textContent = !timer.start ? '답을 시작하면 시간이 흘러요' : (s <= TARGET_SEC ? '권장 60초' : (s <= 90 ? '조금 길어지고 있어요' : '핵심만 남겨 보세요'));
+    timer.node.classList.toggle('over', s > Math.round(TARGET_SEC * 1.5));
+    timer.node.querySelector('span').textContent = !timer.start ? '답을 시작하면 시간이 흘러요' : (s <= TARGET_SEC ? '목표 ' + TARGET_SEC + '초' : (s <= Math.round(TARGET_SEC * 1.5) ? '조금 길어지고 있어요' : '핵심만 남겨 보세요'));
   }
   function startTimer() {
     if (!timer.node || timer.start) return;
@@ -209,12 +210,30 @@
   function placeTimer(qBubble) {
     if (timer.q === qBubble) return;
     stopTick();
+    if (timer.pick && timer.pick.parentNode) timer.pick.parentNode.removeChild(timer.pick);
     timer.q = qBubble; timer.start = 0;
     timer.node = el('div', { class: 'moa-timer', role: 'timer', 'aria-live': 'off' },
       '<svg width="168" height="168" viewBox="0 0 168 168" aria-hidden="true"><circle cx="84" cy="84" r="78" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="4"/><circle class="arc" cx="84" cy="84" r="78" fill="none" stroke="#C0D904" stroke-width="4" stroke-linecap="round" stroke-dasharray="' + RING + '" stroke-dashoffset="' + RING + '" transform="rotate(-90 84 84)"/></svg><div class="t"><b>0:00</b><span></span></div>');
     qBubble.parentNode.insertBefore(timer.node, qBubble.nextSibling);
+    // 목표 시간 고르기 + 서론-본론-결론 안내 (AI면접 대비, 2026-10-05)
+    var pick = el('div', { class: 'moa-tpick', role: 'group', 'aria-label': '목표 답변 시간' },
+      '<span>목표</span>' + [30, 45, 60].map(function (v) { return '<button type="button" data-sec="' + v + '" aria-pressed="' + (v === TARGET_SEC) + '">' + v + '초</button>'; }).join('') +
+      '<p>결론 한 문장 → 근거 경험 → 직무 연결로 마무리</p>');
+    pick.addEventListener('click', function (e) {
+      var b = e.target.closest && e.target.closest('button[data-sec]'); if (!b) return;
+      TARGET_SEC = +b.dataset.sec;
+      try { localStorage.setItem('moa_iv_target', String(TARGET_SEC)); } catch (x) {}
+      pick.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+      drawTimer();
+    });
+    timer.node.parentNode.insertBefore(pick, timer.node.nextSibling);
+    timer.pick = pick;
     drawTimer();
   }
+  // 답변에 걸린 시간(초) — 피드백 요청 때 index.html이 읽어 감
+  window.moaAnswerTiming = function () {
+    return { sec: timer.start ? Math.round((Date.now() - timer.start) / 1000) : 0, target: TARGET_SEC };
+  };
 
   function updateStage() {
     var screen = document.getElementById('screen-chat');
@@ -232,7 +251,8 @@
       stopTick();
       if (timer.node && timer.node.parentNode && !document.body.classList.contains('moa-stage')) { /* 이미 꺼짐 */ }
       if (timer.node && timer.node.parentNode) timer.node.parentNode.removeChild(timer.node);
-      timer.node = null; timer.q = null; timer.start = 0;
+      if (timer.pick && timer.pick.parentNode) timer.pick.parentNode.removeChild(timer.pick);
+      timer.node = null; timer.pick = null; timer.q = null; timer.start = 0;
     }
     document.body.classList.toggle('moa-stage', on);
   }
@@ -350,7 +370,7 @@
       '<div class="moa-intro">' +
       '<span class="k">시작 전 1분 · ' + esc(title) + '</span>' +
       '<h2>질문 ' + n + '개 · 약 ' + mins + '분<br>면접 한 번을 끝까지 해 봐요</h2>' +
-      '<p class="s">' + (later ? '질문마다 60초 안에 답하고, 다 끝나면 한 번에 제출해요.' : '질문마다 60초 안에 답하면 바로 피드백이 와요.') + ' 몇 번째 질문인지 위에 계속 보여 드려요.</p>' +
+      '<p class="s">' + (later ? '질문마다 30~60초 안에 답하고, 다 끝나면 한 번에 제출해요.' : '질문마다 30~60초 안에 답하면 바로 피드백이 와요.') + ' 몇 번째 질문인지 위에 계속 보여 드려요.</p>' +
       '<ol>' +
       '<li><b>1</b><div><h3>면접실에서 답하기</h3><p>질문 하나씩 · 말로 답하거나 적기</p></div><em>질문당 1분</em></li>' +
       (later
@@ -360,7 +380,7 @@
           '<li><b>3</b><div><h3>결과 링크 남기기</h3><p>다 끝나면 리허설 리포트로 저장</p></div><em>마지막에</em></li>') +
       '</ol>' +
       '<div class="pv" aria-label="연습 화면 예시"><p class="pv-l"><span>이런 화면에서 연습해요</span><span>예시</span></p>' +
-      '<div class="pv-room"><span class="pv-ring">0:42</span><p>' + esc((cat.questions && cat.questions[0]) || '질문이 여기에 나와요') + '<small>권장 60초 · 말로 답하기</small></p></div>' +
+      '<div class="pv-room"><span class="pv-ring">0:42</span><p>' + esc((cat.questions && cat.questions[0]) || '질문이 여기에 나와요') + '<small>목표 30~60초 · 말로 답하기</small></p></div>' +
       '<div class="pv-dots">' + dots + '</div><p class="pv-m">질문 2 / ' + n + ' — 이 막대가 다 차면 끝!</p>' +
       '<div class="pv-c">' + (later ? '<span>선생님 피드백</span><span>다시 말해 볼 답변</span><span>꼬리질문</span>' : '<span>잘한 점</span><span>다시 말해 볼 답변</span><span>꼬리질문</span><span>워드·PDF</span>') + '</div></div>' +
       '<div class="go-row"><button type="button" class="go">면접 시작하기 →</button><button type="button" class="skip">다음부터 바로 시작하기</button></div>' +

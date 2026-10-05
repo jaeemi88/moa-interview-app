@@ -727,6 +727,38 @@
   .ex-count{font-size:12px;color:#6B756B}
   .ex-final{background:#fff;border:2px solid #1F7A4D;border-radius:10px;padding:12px;margin-top:12px}
   .ex-final h4{margin:0 0 6px;color:#1F7A4D;font-size:14px}
+
+  /* ── 2026 채용 트렌드 (2026-10-05) ── */
+  .iv-intent{align-self:flex-start;max-width:100%;margin:-2px 0 6px}
+  .iv-intent-btn{min-height:32px;border:1px solid var(--line);background:var(--white);color:var(--ink);border-radius:999px;padding:0 12px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+  .iv-intent-btn:focus-visible{outline:2px solid #295BF2;outline-offset:2px}
+  .iv-intent-txt{margin:8px 0 0;padding:10px 12px;border-radius:10px;background:#EEF3FF;color:#1E3A8A;font-size:13.5px;line-height:1.6}
+  .tr-box{border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin:0 0 12px;background:#FFFFFF;white-space:normal;line-height:1.6}
+  .tr-h{font-weight:700;font-size:13.5px;color:#0F172A;margin-bottom:6px}
+  .tr-chips{display:flex;gap:6px;flex-wrap:wrap}
+  .tr-chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:3px 10px;font-size:12.5px;font-weight:700}
+  .tr-chip.ok{background:#EAF7EF;color:#1E6B41}
+  .tr-chip.fix{background:#FFF7E8;color:#8A5A00}
+  .tr-list{margin:8px 0 0;padding-left:18px;font-size:13px;color:#334155}
+  .tr-list li{margin:2px 0}
+  .tr-list b{color:#0F172A;margin-right:4px}
+  .tr-mem{margin-top:8px;padding:8px 10px;border-radius:8px;background:#FFF7E8;color:#5B3A00;font-size:13px}
+  .tr-sp{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px}
+  .tr-sp span{border-radius:6px;padding:2px 8px;background:#F1F5F9;color:#64748B;font-weight:700}
+  .tr-sp span.ok{background:#EAF7EF;color:#1E6B41}
+  .tr-sp i{font-style:normal;color:#94A3B8}
+  .tr-sp em{font-style:normal;margin-left:auto;color:#64748B}
+  .tr-note{margin:6px 0 0;font-size:13px;color:#334155}
+  .iv-tip{background:var(--white);border:1px solid var(--line);border-radius:6px;padding:12px 16px;margin-bottom:6px}
+  .iv-tip summary{cursor:pointer;font-weight:700;font-size:14px}
+  .iv-tip p{margin:8px 0 0;font-size:13px;line-height:1.65;color:var(--muted)}
+  .iv-tip .bar{display:flex;height:10px;border-radius:999px;overflow:hidden;margin-top:10px;background:#E2E8F0}
+  .iv-tip .bar i{display:block;height:100%}
+  .iv-tip .lg{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;font-size:12.5px;color:var(--ink)}
+  .iv-tip .lg b::before{content:"";display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:0;background:currentColor}
+  .sc-check{display:flex;flex-direction:column;gap:8px}
+  .sc-check label{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.55;cursor:pointer}
+  .sc-check input{width:20px;height:20px;margin-top:1px;flex-shrink:0;accent-color:#295BF2}
 </style>
 <link rel="stylesheet" href="/moa-ui.css"><!-- 2026-10-03 MOA 디자인 키트 (학생 화면) -->
 </head>
@@ -883,6 +915,7 @@
   <!-- ② 오늘 수업 탭 -->
   <div class="st-body" id="st-pane-today" style="display:none">
     <div class="st-banner"><span>이 탭은 바꾸는 즉시 자동 저장돼요. 저장 버튼이 없어요.</span><span id="today-status" class="st-ok"></span></div>
+    <div class="st-card" id="iv-selfcheck"></div>
     <div class="st-card">
       <h3>수업 정보</h3>
       <div style="display:flex;flex-direction:column;gap:6px">
@@ -1097,8 +1130,60 @@ const DEFAULT_CATEGORIES = [
       "입사하면 가장 먼저 해보고 싶은 일을 구체적으로 말씀해 주세요.",
       "입사 후 더 좋은 조건의 회사에서 연락이 오면 어떻게 하시겠어요?"
     ]
+  },
+  // ── 2026-10-05 채용 트렌드 반영 (본부 인계): AI 활용 역량 · 팀핏 · 직무 경험 심층 · 마무리 역질문 ──
+  {
+    id: "ai-skill",
+    title: "AI 활용 역량",
+    desc: "AI를 어떻게 쓰고 검증하는지",
+    questions: [
+      "학업이나 아르바이트·실습에서 AI 도구를 활용해 본 경험이 있다면, 어떤 일에 어떻게 썼는지 말씀해 주세요.",
+      "AI가 만든 결과를 그대로 쓰지 않고 직접 확인하거나 고친 경험이 있나요?",
+      "지원한 직무에서 AI를 쓰면 가장 도움이 될 업무는 무엇이라고 생각하나요?",
+      "AI를 쓸 때 개인정보나 보안 면에서 특히 조심해야 할 점은 무엇이라고 생각하나요?",
+      "자기소개서를 쓸 때 AI를 사용했나요? 사용했다면 어느 부분에, 어떻게 썼나요?",
+      "AI가 대신하기 어려운 본인만의 강점은 무엇인가요?"
+    ]
+  },
+  {
+    id: "teamfit",
+    title: "팀핏 (함께 일하는 방식)",
+    desc: "우리 팀과 잘 맞는 사람인가",
+    questions: [
+      "함께 일하기 편한 동료는 어떤 사람이고, 반대로 어려운 동료는 어떤 사람인가요?",
+      "팀에서 의견이 갈렸을 때 본인은 주로 어떤 역할을 하나요?",
+      "선배나 상사에게 지적을 받았을 때 어떻게 받아들이고 반영했는지 말씀해 주세요.",
+      "일이 한꺼번에 몰렸을 때 동료에게 도움을 요청하거나 도와준 경험이 있나요?",
+      "팀에 맞추기 위해 본인의 일하는 방식을 바꿔 본 적이 있나요?",
+      "처음 만난 사람들과 짧은 시간 안에 함께 결과를 내야 했던 경험을 말씀해 주세요."
+    ]
+  },
+  {
+    id: "job-deep",
+    title: "직무 경험 심층",
+    desc: "경험 하나를 끝까지 파고드는 꼬리질문",
+    questions: [
+      "지원 직무와 가장 관련 있는 경험 하나를 골라, 본인이 맡은 역할부터 말씀해 주세요.",
+      "그 경험에서 본인이 직접 한 일과 팀이 함께 한 일을 나눠서 설명해 주세요.",
+      "그 일의 결과를 숫자나 전후 변화로 말해 본다면 어떻게 말할 수 있을까요?",
+      "그 과정에서 가장 막혔던 순간은 언제였고, 어떻게 넘어갔나요?",
+      "그때로 돌아간다면 무엇을 다르게 하시겠어요?",
+      "그 경험에서 익힌 것을 입사 후 어떤 업무에 바로 쓸 수 있을까요?"
+    ]
+  },
+  {
+    id: "closing",
+    title: "마무리 · 역질문",
+    desc: "마지막 한마디와 면접관에게 하는 질문",
+    questions: [
+      "마지막으로 하고 싶은 말이 있으면 해 주세요.",
+      "저희 회사나 직무에 대해 궁금한 점이 있나요? (역질문)",
+      "오늘 면접에서 충분히 보여 드리지 못했다고 생각하는 점이 있나요?",
+      "입사한다면 첫 달에 꼭 알고 싶은 것은 무엇인가요? (역질문)"
+    ]
   }
 ];
+
 
 // 결격 검증 기본 질문이 걸러내려는 포인트 (학생에게는 안 보이고, AI 피드백과 강사 검토 화면에만 쓰임)
 const DEFAULT_REDFLAG_NOTES = {
@@ -1138,6 +1223,141 @@ function redFlagsHtml(flags){
         ${f.why ? `<div>→ ${escapeHtml(f.why)}</div>` : ''}
         ${f.fix ? `<div style="margin-top:2px">✏️ 이렇게: ${escapeHtml(f.fix)}</div>` : ''}
       </div>`).join('')}
+  </div>`;
+}
+
+
+// ---------- 🎯 질문 의도 보기 (2026-10-05 · 학습용) ----------
+// 학생이 "이 질문은 무엇을 보려는 걸까?"를 알고 답하도록. 강사가 새로 넣은 질문은 유형 설명으로 대신 보여 줌.
+// ※ 결격 검증 질문은 걸러내는 포인트를 학생에게 알려 주지 않는 원칙이라 유형 설명만 보여 줘요.
+const CATEGORY_INTENTS = {
+  'self-intro': '첫 1분 동안 "어떤 사람인지"와 "이 일과 어떻게 이어지는지"를 짧고 분명하게 말하는지 봅니다.',
+  'motivation': '어느 회사에나 하는 말이 아니라, 이 회사·이 직무를 고른 나만의 이유와 준비 과정이 있는지 봅니다.',
+  'experience': '경험의 크기보다, 그때 내가 한 행동과 그 뒤로 달라진 점(성찰)을 말하는지 봅니다.',
+  'pressure': '당황스러운 질문에도 방어하거나 흔들리지 않고, 인정할 건 인정하며 차분하게 답하는지 봅니다.',
+  'aspiration': '막연한 다짐이 아니라, 회사 방향과 맞춘 단계별 계획과 오래 일할 마음이 있는지 봅니다.',
+  'job-specific': '전공·실습에서 익힌 것을 실제 현장 업무와 연결해 말할 수 있는지 봅니다.',
+  'redflag': '면접관이 "함께 일해도 괜찮은 사람인지" 확인하는 질문이에요. 꾸미지 말고, 내가 한 몫을 중심으로 솔직하게 답해 보세요.',
+  'ai-skill': '인사담당자 10명 중 7명이 AI 활용 역량을 봐요. AI를 썼는지보다, 결과를 직접 확인·수정하고 책임지는 태도를 봅니다.',
+  'teamfit': '실력만큼 "우리 팀과 함께 잘 일할 사람인지"를 봅니다. 갈등·피드백 상황에서 실제로 어떻게 행동했는지가 핵심이에요.',
+  'job-deep': '기업이 가장 중요하게 보는 건 직무 관련 경험이에요. 경험 하나를 역할·행동·숫자·배운 점까지 끝까지 말할 수 있는지 봅니다.',
+  'closing': '마지막까지 회사에 대한 관심과 준비를 보여 주는지 봅니다. 연봉·휴가보다 직무·적응·팀 문화를 묻는 질문이 좋아요.',
+  'resume-fu': '자기소개서 문장을 면접관이 그대로 짚어 묻는 꼬리질문이에요. 외운 문장이 아니라 내 말로, 자소서와 같은 사실을 말하는지 봅니다.'
+};
+const QUESTION_INTENTS = {
+  "1분 동안 자기소개를 해주세요.": "첫인상과 핵심 강점 한 가지, 그리고 지원 직무와의 연결을 1분 안에 정리하는지 봅니다.",
+  "본인을 한 단어로 표현한다면 무엇이고, 이유는 무엇인가요?": "한 단어를 뒷받침할 실제 장면이 있는지, 그 성향이 직무에 어떻게 쓰일지 봅니다.",
+  "지금까지 살면서 가장 자랑스러웠던 순간은 언제인가요?": "무엇을 가치 있게 여기는 사람인지, 그 순간에 내가 한 행동이 무엇이었는지 봅니다.",
+  "본인의 강점과 약점을 각각 하나씩 말씀해주세요.": "자기 객관화가 되는지, 약점을 보완하려고 실제로 하고 있는 행동이 있는지 봅니다.",
+  "동료들이 당신을 어떤 사람이라고 이야기하나요?": "남이 본 나를 근거와 함께 말하는지, 팀 안에서의 평소 모습을 봅니다.",
+  "저희 회사에 지원하신 이유를 말씀해주세요.": "이 회사만의 이유(사업·제도·현장)를 알고 있는지, 나의 준비와 연결되는지 봅니다.",
+  "이 직무를 선택한 계기가 무엇인가요?": "직무를 고른 계기가 실제 경험에서 나왔는지, 그 뒤로 어떤 준비를 해 왔는지 봅니다.",
+  "다른 회사가 아니라 왜 저희 회사여야 하는지 설명해주세요.": "같은 업계의 다른 곳과 비교해 이 회사를 구체적으로 이해하고 있는지 봅니다.",
+  "입사 후 우리 팀에 어떻게 기여할 수 있을지 말씀해주세요. (팀핏)": "팀의 일을 이해하고, 내가 맡을 수 있는 몫을 현실적으로 말하는지 봅니다.",
+  "5년 후 이 회사에서 어떤 모습이 되어 있고 싶으신가요?": "오래 다닐 마음이 있는지, 회사 안에서의 성장 경로를 그려 봤는지 봅니다.",
+  "팀으로 일하면서 갈등을 해결했던 경험을 말씀해주세요.": "남 탓 없이 갈등을 다루는 방식과, 관계를 지키면서 일을 끝까지 해내는지 봅니다.",
+  "실패했던 경험과 그로부터 배운 점을 말씀해주세요.": "실패를 인정하는 태도와, 그 뒤로 실제로 바꾼 행동(성찰)이 있는지 봅니다.",
+  "예상치 못한 문제를 해결했던 경험을 STAR 구조로 말씀해주세요.": "상황 판단 → 내 행동 → 결과의 흐름으로 문제 해결 과정을 설명하는지 봅니다.",
+  "리더십을 발휘했던 경험이 있다면 말씀해주세요.": "직책보다, 사람을 움직이고 책임을 진 행동이 있었는지 봅니다.",
+  "다른 회사도 동시에 지원하셨나요? 합격하면 어디로 가실 건가요?": "솔직하면서도 이 회사를 우선하는 기준을 차분하게 말하는지 봅니다.",
+  "방금 답변, 어디서 준비해온 것처럼 들리는데 본인 생각이 맞나요? (AI 티 안 나는 답변 검증)": "외운 답변이 아니라 내 경험·내 말로 다시 설명할 수 있는지 봅니다.",
+  "저희가 왜 당신을 뽑아야 하는지, 30초 안에 설득해보세요.": "짧은 시간 안에 결론 → 근거 → 직무 연결로 나를 정리하는지 봅니다.",
+  "입사 후 첫 1년 동안 이루고 싶은 목표는 무엇인가요?": "현실적인 단기 목표와 그것을 이루기 위한 구체적 행동이 있는지 봅니다.",
+  "이 회사에서 오래 근무하고 싶은 이유를 말씀해주세요.": "조기 이탈 걱정이 없는 사람인지, 회사와 함께 갈 이유가 있는지 봅니다."
+};
+function questionIntent(cat, q){
+  if(cat && cat.id === 'redflag') return CATEGORY_INTENTS.redflag;
+  return QUESTION_INTENTS[q] || (cat && CATEGORY_INTENTS[cat.id]) || '이 질문으로 면접관은 내 경험이 입사 후 어떤 행동으로 이어질지를 예측해요. 결론 → 근거 경험 → 직무 연결 순서로 답해 보세요.';
+}
+
+// ---------- 🔒 질문은행 금지 필터 (2026-10-05) ----------
+// 채용절차법·면접 윤리상 묻지 않는 질문(결혼·출산·가족·외모·학벌 비하 등)은 저장·생성 단계에서 막음.
+// 걸리는 표현이 있으면 어느 줄인지와 이유를 알려 줘요. (필요하면 아래 목록을 고쳐 쓰셔도 돼요)
+const BANNED_QUESTION_RULES = [
+  { re: /결혼|기혼|미혼|혼인|애인|남자\s?친구|여자\s?친구|연애/, why: '결혼·연애 등 사생활 질문' },
+  { re: /출산|임신|아이를?\s?(낳|가질)|자녀\s?계획|육아\s?계획|아기\s?계획/, why: '출산·자녀 계획 질문' },
+  { re: /부모님?(의|께서)?\s?(직업|직장|학력|재산|하시는\s?일)|아버지(의|께서)?\s?(직업|직장|학력)|어머니(의|께서)?\s?(직업|직장|학력)|가족\s?(관계|구성|사항|학력|직업)|형제\s?(관계|자매|는|가)|집안|재산|월세|자가/, why: '가족·재산 관련 질문' },
+  { re: /외모|얼굴|키가|키는|몸무게|체중|살을?\s?빼|성형|예쁘|잘생|체형|인상이\s?(별로|안\s?좋)/, why: '외모·신체 조건 질문' },
+  { re: /학벌|명문대|지방대|출신\s?(학교|대학|고등학교)|어느\s?학교|대학\s?(이|은)\s?어디|학교\s?(수준|급)/, why: '학벌·출신 학교 비하 질문' },
+  { re: /고향|출신\s?(지역|지)|어디\s?출신/, why: '출신 지역 질문' },
+  { re: /종교|교회|절에|성당|지지\s?(정당|후보)|정치\s?성향/, why: '종교·정치 성향 질문' },
+  { re: /나이가\s?(많|적)|노처녀|노총각/, why: '나이 비하 질문' }
+];
+function bannedReason(q){
+  const t = String(q || '');
+  const hit = BANNED_QUESTION_RULES.find(r => r.re.test(t));
+  return hit ? hit.why : '';
+}
+// 걸리는 줄이 있으면 안내 창을 띄우고 false
+function passBannedFilter(lines){
+  const bad = (lines || []).map(q => ({ q, why: bannedReason(q) })).filter(x => x.why);
+  if(!bad.length) return true;
+  alert('🔒 면접에서 묻지 않는 질문이 있어 저장하지 않았어요.\n\n' + bad.slice(0, 6).map(x => `· ${x.q}\n   → ${x.why}`).join('\n') + '\n\n이 질문을 고치거나 지운 뒤 다시 저장해 주세요.');
+  return false;
+}
+
+// 마무리·역질문, AI 활용 역량 질문 피드백 기준 (해당 유형일 때만 붙음)
+const CLOSING_GUIDE = `
+
+[마무리·역질문 특화 기준 — 이 질문에만 적용]
+- 마지막 한마디: 앞 답변을 반복하지 말고, 이 회사에서 할 일 한 가지와 감사 인사를 30초 안에 담백하게 맺는지 본다.
+- 역질문: 연봉·휴가·야근 같은 조건 질문을 첫 질문으로 하면 짚는다. 직무에서 처음 맡을 일, 신입이 적응할 때 중요한 점, 팀이 일하는 방식, 면접관이 본 이 직무의 보람처럼 입사 의지가 보이는 질문을 좋게 본다.
+- 홈페이지만 봐도 알 수 있는 질문, "없습니다"로 끝내는 답은 개선점으로 짚고, rewritten에는 이 직무에 맞는 역질문 예시 2개를 담는다.`;
+const AI_SKILL_GUIDE = `
+
+[AI 활용 역량 특화 기준 — 이 질문에만 적용]
+- AI를 썼다는 사실보다, 어떤 일에 어떻게 썼고 결과를 직접 확인·수정했는지(검증), 개인정보·저작권을 지켰는지(책임)를 본다.
+- 자소서·과제를 AI로 대신 썼다고 말하면 결격 신호로 보지 말고, 초안은 직접 쓰고 AI는 다듬기에 썼다는 방향으로 고치도록 안내한다.
+- AI를 전혀 안 썼다면, 앞으로 이 직무에서 어떻게 배우고 쓸지 구체적인 계획을 말하게 한다.`;
+
+// ---------- 📝 자소서 꼬리질문 넘겨받기 (2026-10-05 · 자소서 앱 결과 화면에서 넘어옴) ----------
+// 주소 # 뒤에 담겨 오므로 서버로 보내지지 않음. 이름·연락처 없이 질문과 핵심 문장만, 이 폰에 3일 보관.
+const RESUME_FU_KEY = 'moa_iv_resume_fu';
+function readResumeHandoff(){
+  try{
+    const m = location.hash.match(/(?:^#|&)fq=([A-Za-z0-9_-]+)/);
+    if(m){
+      const b64 = m[1].replace(/-/g, '+').replace(/_/g, '/');
+      const bin = atob(b64 + '==='.slice((b64.length + 3) % 4));
+      const data = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))));
+      const pack = { q: (data.q || []).map(String).filter(Boolean).slice(0, 5), s: (data.s || []).map(String).filter(Boolean).slice(0, 3), l: String(data.l || '자소서'), at: Date.now() };
+      if(pack.q.length) localStorage.setItem(RESUME_FU_KEY, JSON.stringify(pack));
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+    const saved = JSON.parse(localStorage.getItem(RESUME_FU_KEY) || 'null');
+    if(saved && Date.now() - saved.at > 3 * 864e5){ localStorage.removeItem(RESUME_FU_KEY); return null; }
+    return saved;
+  }catch(e){ return null; }
+}
+const RESUME_FU = readResumeHandoff();
+function applyResumeHandoff(){
+  if(!RESUME_FU || CLIENT || CATEGORIES.some(c => c.id === 'resume-fu')) return;
+  CATEGORIES.unshift({ id: 'resume-fu', title: '내 자소서 꼬리질문', desc: RESUME_FU.l + ' 문항에서 넘어온 질문 ' + RESUME_FU.q.length + '개', questions: RESUME_FU.q.slice(), transient: true });
+}
+// 자소서 핵심 문장과 답변이 얼마나 겹치는지 (2글자 묶음 기준) — 0~1
+function resumeOverlapRatio(answer){
+  if(!RESUME_FU || !RESUME_FU.s || !RESUME_FU.s.length) return 0;
+  const grams = t => { const x = String(t || '').replace(/\s+/g, ''); const g = new Set(); for(let i = 0; i < x.length - 1; i++) g.add(x.slice(i, i + 2)); return g; };
+  const a = grams(answer);
+  if(a.size < 20) return 0;
+  return Math.max(...RESUME_FU.s.map(sn => { const b = grams(sn); if(!b.size) return 0; let hit = 0; b.forEach(x => { if(a.has(x)) hit++; }); return hit / b.size; }));
+}
+
+// ---------- 2026 면접관 기준 표시 (일관성·논리·진정성 · 외운 답변 · 말하기 구조) ----------
+function fbTrendHtml(fb){
+  fb = fb || {};
+  const c = fb.criteria, sp = fb.speech, mem = fb.memorized;
+  if(!c && !sp && !(mem && mem.flag)) return '';
+  const lab = { consistency: '일관성', logic: '논리', sincerity: '진정성' };
+  const chips = c ? Object.keys(lab).map(k => `<span class="tr-chip ${c[k] && c[k].ok ? 'ok' : 'fix'}">${c[k] && c[k].ok ? '✓' : '△'} ${lab[k]}</span>`).join('') : '';
+  const notes = c ? Object.keys(lab).filter(k => c[k] && c[k].note).map(k => `<li><b>${lab[k]}</b> ${escapeHtml(c[k].note)}</li>`).join('') : '';
+  const spRow = sp ? `<div class="tr-sp"><span class="${sp.intro ? 'ok' : ''}">서론</span><i>→</i><span class="${sp.body ? 'ok' : ''}">본론</span><i>→</i><span class="${sp.conclusion ? 'ok' : ''}">결론</span>${fb.answer_sec ? `<em>${fb.answer_sec}초${fb.target_sec ? ' / 목표 ' + fb.target_sec + '초' : ''}</em>` : ''}</div>${sp.note ? `<p class="tr-note">${escapeHtml(sp.note)}</p>` : ''}` : '';
+  return `<div class="tr-box">
+    <div class="tr-h">면접관 기준 3가지</div>
+    ${chips ? `<div class="tr-chips">${chips}</div>` : ''}
+    ${notes ? `<ul class="tr-list">${notes}</ul>` : ''}
+    ${mem && mem.flag ? `<div class="tr-mem"><b>🗣️ 외운 답변처럼 들릴 수 있어요</b>${mem.reason ? ' — ' + escapeHtml(mem.reason) : ''}</div>` : ''}
+    ${spRow ? `<div class="tr-h" style="margin-top:10px">말하기 구조</div>${spRow}` : ''}
   </div>`;
 }
 
@@ -1400,7 +1620,16 @@ function iwItemHtml(item, idx, total, record) {
     (fb.good ? iwBox('잘한 점', iwEsc(fb.good), IW.greenBg, IW.green) : '') +
     (fb.improve ? iwBox('보완할 점', iwEsc(fb.improve), IW.warnBg, IW.warn) : '') +
     (flags.length ? iwBox('면접관이 멈칫할 표현', flags.map(f => `${f.type ? '<b>[' + escapeHtml(f.type) + ']</b> ' : ''}${f.quote ? '“' + escapeHtml(f.quote) + '” — ' : ''}${escapeHtml(f.why || '')}${f.fix ? `<br><span style="color:${IW.green}">✏️ 이렇게: ${escapeHtml(f.fix)}</span>` : ''}`).join('<br><br>'), '#FFF8E6', '#D97706')
-      : (Array.isArray(fb.red_flags) ? `<p style="margin:0 0 8pt;font-size:9.5pt;color:${IW.green};font-family:${IW.font}">✓ 면접관이 멈칫할 표현은 없어요</p>` : ''));
+      : (Array.isArray(fb.red_flags) ? `<p style="margin:0 0 8pt;font-size:9.5pt;color:${IW.green};font-family:${IW.font}">✓ 면접관이 멈칫할 표현은 없어요</p>` : '')) +
+    (() => { // 2026-10-05 면접관 기준 3가지 · 외운 답변 · 말하기 구조
+      const c = fb.criteria, sp = fb.speech, mem = fb.memorized;
+      if(!c && !sp && !(mem && mem.flag)) return '';
+      const lab = { consistency: '일관성', logic: '논리', sincerity: '진정성' };
+      const lines = c ? Object.keys(lab).map(k => `<b style="color:${c[k] && c[k].ok ? IW.green : IW.warn}">${c[k] && c[k].ok ? '✓' : '△'} ${lab[k]}</b> ${escapeHtml((c[k] && c[k].note) || '')}`) : [];
+      if(mem && mem.flag) lines.push(`<b style="color:${IW.warn}">🗣️ 외운 답변 신호</b> ${escapeHtml(mem.reason || '')}`);
+      if(sp) lines.push(`<b>말하기 구조</b> 서론 ${sp.intro ? '✓' : '△'} → 본론 ${sp.body ? '✓' : '△'} → 결론 ${sp.conclusion ? '✓' : '△'}${fb.answer_sec ? ` · ${fb.answer_sec}초` : ''}${sp.note ? ' — ' + escapeHtml(sp.note) : ''}`);
+      return iwBox('면접관 기준 3가지', lines.join('<br>'), IW.light, IW.deep);
+    })();
   const dirBlock = (steps.length || fb.sample_direction) ? iwTitle('🧭 AI가 제안하는 답변 방향') + iwBox('', steps.length ? steps.map((t, i) => `<b style="color:${IW.blue}">${i + 1}</b> ${escapeHtml(t)}`).join('&nbsp;&nbsp;→&nbsp;&nbsp;') : iwEsc(fb.sample_direction), IW.light, IW.blue) : '';
   const moreBlock = (fb.interviewer_inference ? iwTitle('🎯 면접관 시점') + iwBox('이 답변으로 보이는 평소 모습', iwEsc(fb.interviewer_inference), IW.light, IW.deep) : '') +
     (fuRows ? iwTitle('🎤 예상 꼬리질문 (다음 리허설 대비)') + `<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">${fuRows}</table>` : '');
@@ -1695,7 +1924,7 @@ async function saveConfig(){
     const response = await fetch(apiUrl('/api/config'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ categories: CATEGORIES, systemPrompt: SYSTEM_PROMPT, presets: PRESETS, reviewMode: REVIEW_MODE, retryLimit: RETRY_LIMIT, notifyEmail: NOTIFY_EMAIL, institutionName: INSTITUTION_NAME, groupCodeExpiryDays: GROUP_CODE_EXPIRY_DAYS, targetField: TARGET_FIELD, jobQuestionSets: JOB_QUESTION_SETS })
+      body: JSON.stringify({ categories: CATEGORIES.filter(c => !c.transient), systemPrompt: SYSTEM_PROMPT, presets: PRESETS, reviewMode: REVIEW_MODE, retryLimit: RETRY_LIMIT, notifyEmail: NOTIFY_EMAIL, institutionName: INSTITUTION_NAME, groupCodeExpiryDays: GROUP_CODE_EXPIRY_DAYS, targetField: TARGET_FIELD, jobQuestionSets: JOB_QUESTION_SETS })
     });
     const data = await response.json();
     return !!(data && data.ok);
@@ -1810,6 +2039,14 @@ function renderCategories(){
   `;
   hiringBox.querySelectorAll('input[name="hiring-type"]').forEach(r => r.addEventListener('change', e => { HIRING_TYPE = e.target.value; if(CLIENT) clientSaveDraft(); }));
   catList.appendChild(hiringBox);
+  // 👔 면접 복장 안내 (2026-10-05 · 2026 채용 현장 조사 반영)
+  const tipBox = document.createElement('details');
+  tipBox.className = 'iv-tip';
+  tipBox.innerHTML = `<summary>👔 면접 복장, 정장이 꼭 정답일까요?</summary>
+    <div class="bar" role="img" aria-label="면접관 선호 복장: 비즈니스 캐주얼 47%, 정장 43%, 기타 10%"><i style="width:47%;background:#295BF2"></i><i style="width:43%;background:#141A2E"></i></div>
+    <div class="lg"><b style="color:#295BF2">비즈니스 캐주얼 47%</b><b style="color:#141A2E">정장 43%</b></div>
+    <p>요즘 면접관은 비즈니스 캐주얼과 정장을 비슷하게 선호해요. 공고에 복장 안내가 있으면 그대로, 없으면 회사 분위기(홈페이지·SNS 사진)를 확인하고, 그래도 모르겠으면 정장이 안전해요. 핵심은 옷보다 <b>깔끔함과 단정함</b>이에요.</p>`;
+  catList.appendChild(tipBox);
   if(!CLIENT && STU_RESTORED_N > 0 && Object.keys(ALL_ANSWERS).length){
     const note = document.createElement('div');
     note.style.cssText = 'background:#EEF3FF;border:1px solid #C9D7FD;border-radius:6px;padding:12px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.6;color:#1B3A8C';
@@ -2080,6 +2317,26 @@ const INTERVIEW_SCAFFOLDS = {
     { label: '2. 내가 한 일', q: '그때 내가 직접 한 일은?', hint: '' },
     { label: '3. 배운 점', q: '그 경험으로 알게 된 것은?', hint: '' },
     { label: '4. 현장 적용', q: '입사하면 그걸 어떻게 쓸까요?', hint: '' } ],
+  'ai-skill': [
+    { label: '1. 쓴 일', q: 'AI를 어떤 일에 써 봤나요?', hint: '과제·아르바이트·실습 이름 그대로 · 안 써 봤다면 써 보고 싶은 일' },
+    { label: '2. 확인한 것', q: 'AI 결과를 어떻게 확인·수정했나요?', hint: '틀린 점을 찾은 장면이 있으면 좋아요' },
+    { label: '3. 지킨 원칙', q: '개인정보·저작권에서 조심한 점은?', hint: '' },
+    { label: '4. 직무 적용', q: '입사하면 어디에 어떻게 쓸까요?', hint: '' } ],
+  'teamfit': [
+    { label: '1. 상황', q: '함께 일한 팀과 그때 상황은?', hint: '활동·매장·실습 이름 그대로 · 남 탓하는 말은 빼요' },
+    { label: '2. 내 역할', q: '그 팀에서 내가 맡은 몫은?', hint: '' },
+    { label: '3. 맞춘 행동', q: '팀에 맞추려고 바꾼 행동은?', hint: '' },
+    { label: '4. 결과·배운 점', q: '그 뒤로 달라진 점은?', hint: '' } ],
+  'job-deep': [
+    { label: '1. 역할', q: '그 경험에서 내 역할은?', hint: '"우리가" 말고 "내가"' },
+    { label: '2. 내가 한 일', q: '직접 한 행동 하나는?', hint: '' },
+    { label: '3. 숫자·결과', q: '숫자나 전후 변화로 말하면?', hint: '건수·기간·시간·만족도 등' },
+    { label: '4. 다시 한다면', q: '다르게 해 볼 점은?', hint: '' } ],
+  'closing': [
+    { label: '1. 할 일', q: '입사하면 가장 먼저 할 일 한 가지는?', hint: '' },
+    { label: '2. 궁금한 점', q: '면접관에게 꼭 묻고 싶은 것은?', hint: '연봉·휴가보다 직무·적응·팀 문화' },
+    { label: '3. 덧붙일 말', q: '오늘 덜 보여 준 나의 모습은?', hint: '' },
+    { label: '4. 인사', q: '마지막 한 문장은?', hint: '짧고 담백하게' } ],
   'redflag': [
     { label: '1. 사실 그대로', q: '실제로 있었던 일은?', hint: '포장하지 말고 담백하게' },
     { label: '2. 내가 한 행동', q: '그때 내가 한 일은?', hint: '남 탓 말고 내 몫만' },
@@ -2233,6 +2490,7 @@ function renderQuestionCard(){
   chatBody.innerHTML = '';
   const question = currentCategory.questions[currentQuestionIdx];
   addBubble('q', question);
+  addIntentToggle(currentCategory, question);
   currentCharLimit = extractCharLimit(question);
 
   const existing = answersByIdx[currentQuestionIdx];
@@ -2306,6 +2564,16 @@ function renderQuestionCard(){
   makeLinkBtn.textContent = REVIEW_MODE ? '📤 강사 검토 요청 보내기' : '📎 지금까지 결과로 학생 링크 만들기';
 }
 
+// 🎯 질문 의도 보기 토글 (2026-10-05 · 학습용) — 누를 때만 펼쳐짐
+function addIntentToggle(cat, question){
+  const w = document.createElement('div');
+  w.className = 'iv-intent';
+  w.innerHTML = `<button type="button" class="iv-intent-btn" aria-expanded="false">🎯 질문 의도 보기</button><p class="iv-intent-txt" hidden>${escapeHtml(questionIntent(cat, question))}</p>`;
+  const btn = w.querySelector('button'), txt = w.querySelector('p');
+  btn.onclick = () => { const open = txt.hidden; txt.hidden = !open; btn.setAttribute('aria-expanded', String(open)); btn.textContent = open ? '🎯 질문 의도 접기' : '🎯 질문 의도 보기'; };
+  chatBody.appendChild(w);
+}
+
 function addBubble(type, text){
   const b = document.createElement('div');
   b.className = 'bubble ' + type;
@@ -2340,6 +2608,7 @@ function addFeedbackBubble(fb){
     ${fb.good ? `<div class="fb-row good"><span class="fb-num">1</span><div><h5>잘한 점</h5><p>${escapeHtml(fb.good)}</p></div></div>` : ''}
     ${fb.improve ? `<div class="fb-row fix"><span class="fb-num">2</span><div><h5>보완할 점</h5><p>${escapeHtml(fb.improve)}</p></div></div>` : ''}
     ${redFlagsHtml(fb.red_flags)}
+    ${fbTrendHtml(fb)}
     ${dirBlock}
     ${followUpBlock}
     ${inferenceBlock}
@@ -2597,7 +2866,19 @@ function buildFeedbackReq(question, text){
   const redflagContext = rfNote
     ? `\n\n[결격 검증 질문] 이 질문은 '${rfNote}'을(를) 확인하려는 질문입니다. 답변에서 이 부분이 어떻게 읽히는지를 improve와 red_flags에 우선 반영하고, 면접관이 안심할 수 있는 답변 방향을 sample_direction에 제시하세요.`
     : '';
-  return { question, answer: text, hiringType: HIRING_TYPE, systemPrompt: basePrompt + jobContext + ASPIRATION_GUIDE + companyContext + redflagContext };
+  // 2026-10-05: 유형별 특화 기준 · 답변 시간 · 자소서 문장 겹침(외운 답변 신호)
+  const catId = currentCategory && currentCategory.id;
+  const catGuide = catId === 'closing' ? CLOSING_GUIDE : (catId === 'ai-skill' ? AI_SKILL_GUIDE : '');
+  const timing = (typeof window.moaAnswerTiming === 'function') ? window.moaAnswerTiming() : null;
+  const overlap = resumeOverlapRatio(text);
+  return {
+    question, answer: text, hiringType: HIRING_TYPE,
+    systemPrompt: basePrompt + jobContext + ASPIRATION_GUIDE + companyContext + redflagContext + catGuide,
+    answerSec: timing && timing.sec >= 5 ? timing.sec : 0, // 붙여넣기처럼 5초 미만이면 시간 피드백 생략
+    targetSec: timing && timing.sec >= 5 ? timing.target : 0,
+    resumeSentences: RESUME_FU && RESUME_FU.s ? RESUME_FU.s : [],
+    resumeOverlap: overlap >= 0.6
+  };
 }
 
 async function submitAnswer(){
@@ -2918,9 +3199,10 @@ document.getElementById('pk-gen-btn').onclick = async () => {
     if(!Array.isArray(data.questions) || data.questions.length === 0){
       throw new Error('AI가 올바른 형식의 질문을 만들지 못했어요. 다시 눌러주세요.');
     }
-    qBox.value = data.questions.join('\n');
+    const cleanQs = data.questions.filter(q => !bannedReason(q)); // 🔒 금지 필터
+    qBox.value = cleanQs.join('\n');
     statusEl.className = 'st-ok';
-    statusEl.textContent = '질문 6개를 만들었어요. 확인하고 필요하면 고쳐주세요.';
+    statusEl.textContent = `질문 ${cleanQs.length}개를 만들었어요.${cleanQs.length < data.questions.length ? ' (면접에서 묻지 않는 질문 ' + (data.questions.length - cleanQs.length) + '개는 뺐어요)' : ''} 확인하고 필요하면 고쳐주세요.`;
   }catch(err){
     statusEl.className = 'st-err';
     statusEl.textContent = err.message;
@@ -3003,7 +3285,7 @@ document.getElementById('pk-rf-gen-btn').onclick = async () => {
     if(!Array.isArray(data.items) || !data.items.length){
       throw new Error('질문을 받지 못했어요. 서버 파일(api/generate-questions.js)이 새 버전인지 확인해 주세요.');
     }
-    box.value = redflagToText(data.items);
+    box.value = redflagToText(data.items.filter(x => x && !bannedReason(x.q))); // 🔒 금지 필터
     statusEl.className = 'st-ok';
     statusEl.textContent = '결격 검증 질문을 만들었어요. "//" 뒤 설명은 학생에게 안 보여요. 확인 후 저장해 주세요.';
   }catch(err){
@@ -3020,6 +3302,7 @@ document.getElementById('pk-save-btn').onclick = async () => {
   const criteria = document.getElementById('pk-criteria').value.trim();
   if(!name){ setStatus(statusEl, '1번 칸에 전공 이름을 적어주세요.', true); return; }
   if(!questions.length){ setStatus(statusEl, '2번 칸에 질문을 한 개 이상 적어주세요.', true); return; }
+  if(!passBannedFilter(questions.concat(textToRedflag(document.getElementById('pk-redflag').value).map(x => x && x.q)))){ setStatus(statusEl, '면접에서 묻지 않는 질문이 있어 저장하지 않았어요.', true); return; }
 
   const isEdit = PK_EDIT_IDX >= 0 && JOB_QUESTION_SETS[PK_EDIT_IDX];
   const sameNameIdx = JOB_QUESTION_SETS.findIndex(x => x.name === name);
@@ -3054,6 +3337,7 @@ document.getElementById('pk-save-btn').onclick = async () => {
 function renderCommonQuestions(){
   settingsQuestions.innerHTML = '';
   CATEGORIES.forEach((cat, idx) => {
+    if(cat.transient) return;
     const block = document.createElement('div');
     const label = cat.id === 'job-specific' ? `${idx+1}. ${cat.title} (전공을 고르지 않은 학생용)`
       : cat.id === 'redflag' ? `${idx+1}. ${cat.title} (전공 패키지에 결격 검증 질문이 없을 때 나오는 기본 질문)`
@@ -3068,6 +3352,8 @@ function renderCommonQuestions(){
 
 document.getElementById('common-q-save-btn').onclick = async () => {
   const statusEl = document.getElementById('common-q-status');
+  const allLines = Array.from(settingsQuestions.querySelectorAll('textarea[data-cat-idx]')).flatMap(ta => ta.value.split('\n').map(x => x.trim()).filter(Boolean));
+  if(!passBannedFilter(allLines)){ setStatus(statusEl, '면접에서 묻지 않는 질문이 있어 저장하지 않았어요.', true); return; }
   settingsQuestions.querySelectorAll('textarea[data-cat-idx]').forEach(ta => {
     const idx = parseInt(ta.getAttribute('data-cat-idx'), 10);
     const lines = ta.value.split('\n').map(x => x.trim()).filter(Boolean);
@@ -3095,7 +3381,35 @@ document.getElementById('common-prompt-reset-btn').onclick = () => {
 };
 
 /* ---- ② 오늘 수업 탭 (바꾸면 자동 저장) ---- */
+// 🔒 면접관 셀프체크 5문항 (2026-10-05) — 모의면접(면접관 역할) 진행 전 강사가 스스로 확인. 이 기기에만 저장
+const SELF_CHECK_ITEMS = [
+  '지원자의 서류(자소서·이력서)를 미리 읽고 들어간다',
+  '결혼·가족·외모·학벌 같은 사적 질문은 하지 않는다',
+  '압박 질문을 한다면, 그 의도를 지원자에게 설명할 수 있다',
+  '"인상이 좋다/별로다" 같은 판단을 구체적인 근거로 설명할 수 있다',
+  '마지막에 지원자에게 역질문(궁금한 점) 기회를 준다'
+];
+function renderSelfCheck(){
+  const box = document.getElementById('iv-selfcheck');
+  if(!box) return;
+  const key = 'moa_iv_selfcheck_' + (TEACHER_ID || 'none');
+  let st = {};
+  try{ st = JSON.parse(localStorage.getItem(key) || '{}'); }catch(e){}
+  const done = SELF_CHECK_ITEMS.filter((_, i) => st[i]).length;
+  box.innerHTML = `
+    <h3>🔒 면접관 셀프체크 <span style="font-weight:400;font-size:13px;color:var(--muted)">${done} / ${SELF_CHECK_ITEMS.length}</span></h3>
+    <p class="st-sub">학생 앞에서 면접관 역할을 하기 전에 확인해요. 지원자가 가장 싫어한 질문 1위는 '사적 질문'(33%)이에요.</p>
+    <div class="sc-check">${SELF_CHECK_ITEMS.map((t, i) => `<label><input type="checkbox" data-i="${i}" ${st[i] ? 'checked' : ''}><span>${i + 1}. ${escapeHtml(t)}</span></label>`).join('')}</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button class="btn-small" type="button" id="sc-reset">새 수업 — 체크 비우기</button>
+      <span class="${done === SELF_CHECK_ITEMS.length ? 'st-ok' : 'st-sub'}">${done === SELF_CHECK_ITEMS.length ? '✓ 준비 완료! 좋은 면접관 시범이 될 거예요.' : '체크는 이 기기에만 저장돼요.'}</span>
+    </div>`;
+  box.querySelectorAll('input[data-i]').forEach(cb => cb.onchange = () => { st[cb.dataset.i] = cb.checked; try{ localStorage.setItem(key, JSON.stringify(st)); }catch(e){} renderSelfCheck(); });
+  box.querySelector('#sc-reset').onclick = () => { try{ localStorage.removeItem(key); }catch(e){} renderSelfCheck(); };
+}
+
 function renderTodayTab(){
+  renderSelfCheck();
   document.getElementById('institution-name-input').value = INSTITUTION_NAME || '';
   document.getElementById('target-field-input').value = TARGET_FIELD || '';
   document.getElementById('group-expiry-input').value = GROUP_CODE_EXPIRY_DAYS || 5;
@@ -3286,6 +3600,7 @@ async function openReviewDetail(id){
         ${findRedflagNote(item.question) ? `<div style="font-size:12.5px;color:#8A5A00;margin:4px 0 6px">🔒 검증 포인트: ${escapeHtml(findRedflagNote(item.question))}</div>` : ''}
         <div class="rq-answer">${escapeHtml(item.answer)}</div>
         ${reviewRedFlagsHtml(item.feedback.red_flags, i)}
+        ${fbTrendHtml(item.feedback)}
         <label>👍 좋았던 점</label>
         <textarea data-item-idx="${i}" data-field="good" rows="2">${escapeHtml(item.feedback.good || '')}</textarea>
         <label>🔧 개선점</label>
@@ -3589,6 +3904,7 @@ async function renderResultView(id){
           ${fb.good ? `<div class="rr-row good"><span class="rr-num">1</span><div><h4>잘한 점</h4><p>${escapeHtml(fb.good)}</p></div></div>` : ''}
           ${fb.improve ? `<div class="rr-row fix"><span class="rr-num">2</span><div><h4>보완할 점</h4><p>${escapeHtml(fb.improve)}</p></div></div>` : ''}
           ${flagsBlock}
+          ${fbTrendHtml(fb)}
         </section>
         <details class="rr-mine-d"><summary>내가 한 답변 보기</summary><div class="rr-mine"><div class="rr-lbl">내가 한 답변</div><p>${escapeHtml(item.answer)}</p></div></details>
         ${showRetry ? `<div class="rr-retry rr-noexport"><a href="${retryHref}">${micSvg}다시 말해보기</a><span>연습 화면에서 같은 유형을 골라, 방향을 참고해 내 경험으로 한 번 더 답해 보세요</span></div>` : ''}
@@ -4719,6 +5035,7 @@ async function clientFinalSubmit(){
 
   history.replaceState({ screen: 'select' }, '');
   await loadConfig();
+  if(!isAdmin) applyResumeHandoff(); // 📝 자소서 앱에서 넘어온 꼬리질문 (2026-10-05)
   if(!isAdmin) STU_RESTORED_N = stuLoadAnswers(); // 💾 지난번 답변 불러오기
   if(!isAdmin && visibleJobSets().length > 0){
     renderJobSelectScreen();
