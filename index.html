@@ -2693,7 +2693,7 @@ function exInnerHtml(st) {
     <div class="ex-progress ex-interactive"><div class="ex-bar"><i style="width:${pct}%"></i></div><span>내 경험으로 바꾼 곳 <b>${done} / ${n}</b> · 완성도 <b>${pct}%</b></span></div>` : ''}
     <p class="ex-text">${textHtml}</p>
     <div class="ex-actions ex-interactive">
-      ${n ? `<button type="button" class="ex-btn ex-finish" data-exkey="${st.key}" ${done && !st.busy ? '' : 'disabled'}>${st.busy ? '완성하는 중... (30초 정도)' : '✨ 내 답변으로 완성하기'}</button>` : ''}
+      ${n ? `<button type="button" class="ex-btn ex-finish" data-exkey="${st.key}" ${done && !st.busy ? '' : 'disabled'}>${st.busy ? '완성하는 중... (30초~1분)' : '✨ 내 답변으로 완성하기'}</button>` : ''}
       <button type="button" class="ex-btn2 ex-copy" data-exkey="${st.key}">📋 복사하기</button>
       <span class="ex-count">${plain.length}자${lim ? ` / ${lim}자` : ''}</span>
     </div>

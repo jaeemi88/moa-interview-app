@@ -240,6 +240,8 @@ function aiErrorText(status, data) {
   return `AI 호출 중 오류가 발생했습니다. (${status} ${t} ${m.slice(0, 120)})`;
 }
 
+import { fitLength } from './_fitlen.js';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'POST 요청만 가능합니다.' });
@@ -345,6 +347,15 @@ export default async function handler(req, res) {
       ? feedback.direction_steps.map(x => String(x || '').trim().slice(0, 24)).filter(Boolean).slice(0, 4)
       : [];
 
+    // 글자 수 맞추기: 질문에 글자 수 제한(예: 500자 이내)이 있을 때만 (2026-10-05)
+    const qLimit = (String(question).match(/(\d{2,5})\s*자/) || [])[1];
+    if (qLimit && feedback.rewritten) {
+      const fx = await fitLength(feedback.rewritten, qLimit, { kind: 'speech', slots: true });
+      if (fx) {
+        feedback.rewritten = fx.text;
+        feedback.exampleSlots = (Array.isArray(fx.exampleSlots) ? fx.exampleSlots : []).filter((s) => s && s.example).map((s) => ({ example: String(s.example), hint: String(s.hint || ''), options: (Array.isArray(s.options) ? s.options : []).map(String).filter(Boolean).slice(0, 3) })).slice(0, 8);
+      }
+    }
     return res.status(200).json(feedback);
   } catch (err) {
     console.error('서버 오류:', err);

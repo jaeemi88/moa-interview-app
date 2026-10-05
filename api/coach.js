@@ -4,7 +4,7 @@
 // - mode 'defend' : "❓ 꼬리질문에 바로 답해보기" — 꼬리질문 답변이 처음 답변과 맞는지 한 줄 판정
 // - 학생 화면에서 버튼을 누를 때만 호출됨 (AI 비용 보호를 위해 입력 길이 제한)
 
-export const config = { maxDuration: 60 };
+export const config = { maxDuration: 120 }; // 글자 수 맞추기 재시도 여유 (2026-10-05)
 
 function sanitizeJsonString(raw) {
   let result = '';
@@ -92,6 +92,8 @@ function aiErrorText(status, data) {
   if (t === 'not_found_error' || /model/i.test(m)) return `AI 모델 설정에 문제가 있어요: ${m.slice(0, 120)} (${status})`;
   return `AI 호출 중 오류가 발생했습니다. (${status} ${t} ${m.slice(0, 120)})`;
 }
+
+import { fitLength } from './_fitlen.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -204,5 +206,7 @@ ${JSON_RULE}
 {"text": "완성된 답변 본문"}`;
   const parsed = await askAI(systemPrompt, text, Math.min(8000, 1500 + Math.round((charLimit || 600) * 1.6)), (p) => p && p.text);
   if (!parsed) return res.status(500).json({ error: 'AI 응답 형식이 올바르지 않습니다. 다시 눌러주세요.' });
-  return res.status(200).json({ text: String(parsed.text).replace(/[⟪⟫]/g, '').trim() });
+  let out = String(parsed.text).replace(/[⟪⟫]/g, '').trim();
+  if (charLimit) { const fx = await fitLength(out, charLimit, { kind: 'speech' }); if (fx) out = fx.text; } // 글자 수 맞추기
+  return res.status(200).json({ text: out });
 }
