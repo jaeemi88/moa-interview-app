@@ -8,6 +8,10 @@
 
 import Redis from 'ioredis';
 import { isStaff } from './_staff.js';
+import { getClient } from './client-code.js';
+import { getCompanyBrief, readBrief, checkBriefLimit, briefToPrompt, cleanCompany } from './_company.js';
+
+export const config = { maxDuration: 90 }; // 기업 심화 분석(웹 검색)이 20~40초 걸릴 수 있어 여유 (2026-10-05)
 
 let redis;
 function getRedis() {
@@ -62,6 +66,8 @@ export default async function handler(req, res) {
 
   // ✏️ 학생 직접 입력 (2026-10-05): 강사가 "오늘 수업" 탭에서 직접 입력을 켠 수업에서만 학생도 사용 가능
   if ((req.body || {}).mode === 'student') return handleStudentFree(req, res);
+  // 🔎 기업 심화 분석 (2026-10-05): '심화'로 켠 수업의 학생, 또는 유료 개인 고객만
+  if ((req.body || {}).mode === 'companyBrief') return handleCompanyBrief(req, res);
 
   try {
     if (!(await isStaff(req, getRedis()))) return res.status(401).json({ error: '강사용 암호가 필요합니다.' });
@@ -328,16 +334,37 @@ async function handleStudentFree(req, res) {
   }
   const kinds = Array.isArray(config.freeInputKinds) && config.freeInputKinds.length ? config.freeInputKinds : Object.keys(FREE_KINDS);
   if (!kinds.includes(kind)) return res.status(403).json({ error: `이 수업에서는 ${FREE_KINDS[kind]} 입력을 쓰지 않아요.` });
+  const depth = companyDepthOf(config);
+  if (kind === 'company' && depth === 'off') return res.status(403).json({ error: '이 수업에서는 기업 입력을 쓰지 않아요.' });
+  const deep = kind === 'company' && depth === 'deep';
 
   // 많이 입력된 키워드 기록 (나중에 정식 전공 패키지 후보로 활용)
   try { await client.zincrby(`interview_free_kw:${t}`, 1, `${kind}:${keyword}`); } catch (e) {}
 
   const norm = keyword.toLowerCase().replace(/\s+/g, '');
-  const cacheKey = `interview_free_pack:${kind}:${norm}`;
+  // 심화 기업은 검색 요약을 바탕으로 만든 질문이라 따로 7일 저장 (기본 기업 질문과 섞이지 않게)
+  const cacheKey = deep ? `interview_free_pack_deep:company:${norm}` : `interview_free_pack:${kind}:${norm}`;
   try {
     const hit = await client.get(cacheKey);
-    if (hit) return res.status(200).json({ ...JSON.parse(hit), cached: true });
+    if (hit) {
+      const pack = JSON.parse(hit);
+      if (deep) pack.brief = (await readBrief(client, pack.label || keyword)) || (await readBrief(client, keyword)) || pack.brief || null;
+      return res.status(200).json({ ...pack, cached: true });
+    }
   } catch (e) {}
+
+  // 🔎 심화: 먼저 웹 검색으로 기업 요약을 만들고(7일 저장), 그 요약을 근거로 질문을 만듦
+  let brief = null;
+  if (deep) {
+    brief = await readBrief(client, keyword);
+    if (!brief) {
+      const limMsg = await checkBriefLimit(client, { t });
+      if (limMsg) return res.status(429).json({ error: limMsg });
+      const r = await getCompanyBrief(client, keyword);
+      if (!r.ok) return res.status(r.status || 500).json({ error: r.error });
+      brief = r.brief;
+    }
+  }
 
   // 하루 생성 한도
   try {
@@ -349,7 +376,13 @@ async function handleStudentFree(req, res) {
   } catch (e) {}
 
   const kindName = FREE_KINDS[kind];
-  const companyRule = kind === 'company' ? `
+  const companyRule = deep && brief ? `
+[기업 입력 — 웹 검색으로 확인한 기업 요약 (${brief.searchedAt} 기준)]
+${briefToPrompt(brief)}
+- 질문 6개 중 2~3개는 위 인재상 키워드나 최근 이슈를 자연스럽게 녹인 질문으로 (예: "최근 ○○를 추진하고 있는데, 입사하면 어떤 역할을 하고 싶나요?")
+- 위 요약에 없는 제도명·수치·사업명은 지어내지 말 것
+- 평가 기준 중 1~2줄은 "인재상(키워드)과 연결된 경험을 드는지 본다", "최근 사업 방향을 알고 답하는지 본다"처럼 위 요약을 활용
+- 질문은 "우리 회사"라고 부르는 면접관 말투로` : kind === 'company' ? `
 [기업 입력일 때 — 사실 확인 원칙]
 - 이 기업의 구체적인 제도명·사업명·수치·최근 이슈·인재상 문구를 지어내지 말 것. 확실히 널리 알려진 업종·주력 분야 수준까지만 반영
 - 잘 모르는 기업이면 이름에서 짐작되는 업종의 일반적인 면접 질문으로 만들고, 기준에도 "회사 고유 정보는 지원자가 직접 조사했는지 본다"처럼 쓸 것
@@ -420,8 +453,9 @@ ${companyRule}
 
     const label = String(parsed.label || keyword).replace(/[<>{}\[\]`"\\]/g, '').trim().slice(0, 30) || keyword;
     const pack = { kind, keyword, label, questions, criteria };
-    try { await client.set(cacheKey, JSON.stringify(pack), 'EX', 60 * 86400); } catch (err) {}
-    return res.status(200).json({ ...pack, cached: false });
+    if (deep) pack.deep = true;
+    try { await client.set(cacheKey, JSON.stringify(pack), 'EX', (deep ? 7 : 60) * 86400); } catch (err) {}
+    return res.status(200).json({ ...pack, brief: brief || undefined, cached: false });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: '맞춤 질문을 만드는 중 오류가 났어요.' });
@@ -463,4 +497,50 @@ async function handleTopKeywords(req, res, mode) {
     console.error(err);
     return res.status(500).json({ error: '키워드 목록을 불러오지 못했어요.' });
   }
+}
+
+// ---------- 🔎 기업 분석 수준 (2026-10-05) ----------
+// 강사 "오늘 수업" 탭: off(끔: 고등학생·1회성) / basic(기본: 업종 수준, 검색 없음) / deep(심화: 실시간 검색)
+function companyDepthOf(config) {
+  const d = config && config.companyDepth;
+  return d === 'off' || d === 'deep' ? d : 'basic';
+}
+
+// 학생 화면 '지원 기업명' 칸이나 유료 고객 화면에서 기업 요약 카드를 받아 감
+// - 고객 코드(c)가 유효하면 수업 설정과 관계없이 심화 (유료 상품은 필수)
+// - 아니면 강사 코드(t)의 수업이 '심화'일 때만
+async function handleCompanyBrief(req, res) {
+  const client = getRedis();
+  const body = req.body || {};
+  const company = cleanCompany(body.company);
+  if (company.length < 2) return res.status(400).json({ error: '기업 이름을 두 글자 이상 적어 주세요.' });
+
+  let clientCode = '';
+  let t = '';
+  if (body.c) {
+    try {
+      const d = await getClient(client, body.c);
+      if (!d || Date.now() > d.expiresAt || d.refundedAt) return res.status(403).json({ error: '이용 기간이 끝난 코드예요.' });
+      clientCode = d.code;
+    } catch (e) {
+      return res.status(500).json({ error: '확인 중 오류가 났어요.' });
+    }
+  } else {
+    t = safeCodeT(body.t || req.query.t);
+    if (!t) return res.status(400).json({ error: '강사 코드가 없어요.' });
+    let config = null;
+    try {
+      const raw = await client.get(`interview_app_config:${t}`);
+      config = raw ? JSON.parse(raw) : null;
+    } catch (e) {}
+    if (companyDepthOf(config) !== 'deep') return res.status(403).json({ error: '이 수업에서는 기업 심화 분석을 쓰지 않아요.' });
+  }
+
+  const cached = await readBrief(client, company);
+  if (cached) return res.status(200).json({ brief: { ...cached, cached: true } });
+  const limMsg = await checkBriefLimit(client, { t, clientCode });
+  if (limMsg) return res.status(429).json({ error: limMsg });
+  const r = await getCompanyBrief(client, company);
+  if (!r.ok) return res.status(r.status || 500).json({ error: r.error });
+  return res.status(200).json({ brief: r.brief });
 }

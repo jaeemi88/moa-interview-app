@@ -185,6 +185,25 @@
   .free-card .free-err:empty{display:none}
   .free-card .free-go{font:inherit;font-size:15px;font-weight:600;border:0;border-radius:10px;padding:12px;min-height:50px;background:var(--moa-ink,var(--navy));color:#fff;cursor:pointer}
   .free-card .free-go:disabled{opacity:.7;cursor:wait}
+  /* 🔎 기업 심화 분석 카드 (2026-10-05) */
+  .cb-card{border:1px solid #DCE3F5;border-radius:12px;padding:12px 14px;margin-top:10px;background:#F7F9FE;display:flex;flex-direction:column;gap:8px}
+  .cb-card .cb-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .cb-card .cb-name{font-size:15px;font-weight:700;color:var(--ink)}
+  .cb-card .cb-badge{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:999px;background:#295BF2;color:#fff;white-space:nowrap}
+  .cb-card .cb-ind{margin:0;font-size:13px;color:var(--muted);line-height:1.5}
+  .cb-card .cb-lbl{font-size:12.5px;font-weight:700;color:var(--ink)}
+  .cb-card .cb-kw{display:flex;flex-wrap:wrap;gap:6px}
+  .cb-card .cb-kw span{font-size:13px;padding:4px 11px;border-radius:999px;background:#fff;border:1px solid #DCE3F5;color:#1E3A8A}
+  .cb-card details summary{cursor:pointer;font-size:13px;font-weight:700;color:#295BF2}
+  .cb-card ol{margin:6px 0 0;padding-left:18px;font-size:13px;line-height:1.65;color:var(--ink)}
+  .cb-card .cb-tip{margin:0;font-size:13px;line-height:1.55;color:#8A5A00;background:#FFF6E0;border-radius:8px;padding:7px 10px}
+  .cb-card .cb-thin{margin:0;font-size:12.5px;color:#8A5A00}
+  .cb-card .cb-src{font-size:12px;color:var(--muted);line-height:1.6}
+  .cb-card .cb-src a{color:#295BF2;word-break:break-all}
+  .cb-btn{font:inherit;font-size:14px;font-weight:600;border:1px solid #295BF2;color:#295BF2;background:#fff;border-radius:10px;padding:10px 12px;min-height:44px;margin-top:10px;width:100%;cursor:pointer}
+  .cb-btn:disabled{opacity:.6;cursor:wait}
+  .cb-err{margin:6px 0 0;font-size:13px;color:#E5484D}
+  .cb-err:empty{display:none}
   .free-opt{display:flex;flex-direction:column;line-height:1.35}
   .free-opt small{font-size:12.5px;color:var(--muted);font-weight:400;margin-top:2px}
   .kw-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}
@@ -976,6 +995,14 @@
       </div>
     </div>
     <div class="st-card" style="gap:6px">
+      <h3 style="margin-bottom:2px">🔒 기업 분석 수준</h3>
+      <p class="st-sub" style="margin-bottom:4px">대상에 맞게 골라 주세요. 네이버 유료 고객은 이 설정과 관계없이 항상 심화로 진행돼요.</p>
+      <label class="st-chk"><input type="radio" name="company-depth" value="off"><span class="free-opt">끔<small>기업 입력 칸 없음 · 고등학생, 1회성 특강</small></span></label>
+      <label class="st-chk"><input type="radio" name="company-depth" value="basic"><span class="free-opt">기본<small>업종 수준 질문·피드백, 검색 없음 · 일반 대학 수업</small></span></label>
+      <label class="st-chk"><input type="radio" name="company-depth" value="deep"><span class="free-opt">심화 (실시간 검색)<small>인재상·최근 이슈를 검색해 질문·피드백에 반영 · 취업 직전 반</small></span></label>
+      <p class="st-sub" id="company-depth-note" style="margin-top:4px;display:none">심화는 기업 1곳당 검색 비용(약 50~100원)이 들어요. 같은 기업은 7일 동안 저장해 두고 다시 써서, 한 반이 같은 기업을 적어도 검색은 1번이에요.</p>
+    </div>
+    <div class="st-card" style="gap:6px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
         <h3 style="margin:0">🔒 많이 입력된 키워드 TOP</h3>
         <button class="btn-small" type="button" id="kw-refresh">새로고침</button>
@@ -1560,6 +1587,10 @@ let FREE_INPUT_MODE = 'off';            // 'off'=프리셋만 | 'mixed'=프리�
 let FREE_INPUT_KINDS = ['major', 'job', 'company'];
 let FREE_INPUT_NOTICE = true;           // 기업 입력 안내 문구
 let STUDENT_FREE_INPUT = null;          // 학생이 직접 입력한 내용 {kind, keyword, label}
+// 🔎 기업 분석 수준 (2026-10-05) — 'off'=끔(고등학생·1회성) | 'basic'=기본(업종 수준, 검색 없음) | 'deep'=심화(실시간 검색)
+let COMPANY_DEPTH = 'basic';
+let STUDENT_COMPANY_BRIEF = null;       // 검색으로 만든 기업 요약 {name, industry, values, issues, tip, sources, searchedAt}
+function companyDeepOn(){ return !!CLIENT || COMPANY_DEPTH === 'deep'; } // 유료 개인 고객은 늘 심화
 const FREE_KIND_LABEL = { major: '전공', job: '직무', company: '기업' };
 const FREE_KIND_PH = { major: '예) 간호학과, 유아교육과', job: '예) 은행 창구, 생산관리', company: '예) 한국전력공사, ○○병원' };
 
@@ -1967,6 +1998,7 @@ async function loadConfig(){
       if(['off','mixed','only'].includes(parsed.freeInputMode)) FREE_INPUT_MODE = parsed.freeInputMode;
       if(Array.isArray(parsed.freeInputKinds) && parsed.freeInputKinds.length) FREE_INPUT_KINDS = parsed.freeInputKinds.filter(k => FREE_KIND_LABEL[k]);
       if(typeof parsed.freeInputNotice === 'boolean') FREE_INPUT_NOTICE = parsed.freeInputNotice;
+      if(['off','basic','deep'].includes(parsed.companyDepth)) COMPANY_DEPTH = parsed.companyDepth;
     }
   }catch(err){
     // 저장된 설정이 아직 없거나 네트워크 오류 - 기본값 유지
@@ -1978,7 +2010,7 @@ async function saveConfig(){
     const response = await fetch(apiUrl('/api/config'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ categories: CATEGORIES.filter(c => !c.transient), systemPrompt: SYSTEM_PROMPT, presets: PRESETS, reviewMode: REVIEW_MODE, retryLimit: RETRY_LIMIT, notifyEmail: NOTIFY_EMAIL, institutionName: INSTITUTION_NAME, groupCodeExpiryDays: GROUP_CODE_EXPIRY_DAYS, targetField: TARGET_FIELD, jobQuestionSets: JOB_QUESTION_SETS, freeInputMode: FREE_INPUT_MODE, freeInputKinds: FREE_INPUT_KINDS, freeInputNotice: FREE_INPUT_NOTICE })
+      body: JSON.stringify({ categories: CATEGORIES.filter(c => !c.transient), systemPrompt: SYSTEM_PROMPT, presets: PRESETS, reviewMode: REVIEW_MODE, retryLimit: RETRY_LIMIT, notifyEmail: NOTIFY_EMAIL, institutionName: INSTITUTION_NAME, groupCodeExpiryDays: GROUP_CODE_EXPIRY_DAYS, targetField: TARGET_FIELD, jobQuestionSets: JOB_QUESTION_SETS, freeInputMode: FREE_INPUT_MODE, freeInputKinds: FREE_INPUT_KINDS, freeInputNotice: FREE_INPUT_NOTICE, companyDepth: COMPANY_DEPTH })
     });
     const data = await response.json();
     return !!(data && data.ok);
@@ -2084,7 +2116,8 @@ function renderJobSelectScreen(){
 
 // ✏️ 직접 입력 카드 (2026-10-05)
 function buildFreeInputCard(){
-  const kinds = (FREE_INPUT_KINDS && FREE_INPUT_KINDS.length ? FREE_INPUT_KINDS : ['major', 'job', 'company']).filter(k => FREE_KIND_LABEL[k]);
+  let kinds = (FREE_INPUT_KINDS && FREE_INPUT_KINDS.length ? FREE_INPUT_KINDS : ['major', 'job', 'company']).filter(k => FREE_KIND_LABEL[k]);
+  if(COMPANY_DEPTH === 'off'){ kinds = kinds.filter(k => k !== 'company'); if(!kinds.length) kinds = ['major', 'job']; }
   let kind = (STUDENT_FREE_INPUT && kinds.includes(STUDENT_FREE_INPUT.kind)) ? STUDENT_FREE_INPUT.kind : kinds[0];
   const box = document.createElement('div');
   box.className = 'free-card';
@@ -2106,7 +2139,10 @@ function buildFreeInputCard(){
   function paint(){
     box.querySelectorAll('.free-chip').forEach(c => c.classList.toggle('on', c.dataset.k === kind));
     inp.placeholder = (kinds.length < 2 ? FREE_KIND_LABEL[kind] + ' — ' : '') + FREE_KIND_PH[kind];
-    notice.style.display = (kind === 'company' && FREE_INPUT_NOTICE) ? 'block' : 'none';
+    notice.textContent = COMPANY_DEPTH === 'deep'
+      ? '🔎 기업 인재상과 최근 소식을 검색해서 맞춤 질문을 만들어요. 30초쯤 걸려요.'
+      : '기업 정보는 일반적으로 알려진 내용 기준이에요. 최신 채용공고는 꼭 직접 확인하세요.';
+    notice.style.display = (kind === 'company' && (FREE_INPUT_NOTICE || COMPANY_DEPTH === 'deep')) ? 'block' : 'none';
   }
   box.querySelectorAll('.free-chip').forEach(c => c.onclick = () => { kind = c.dataset.k; err.textContent = ''; paint(); inp.focus(); });
   inp.addEventListener('input', () => { err.textContent = ''; });
@@ -2116,7 +2152,7 @@ function buildFreeInputCard(){
     const keyword = inp.value.replace(/\s+/g, ' ').trim();
     if(keyword.length < 2){ err.textContent = FREE_KIND_LABEL[kind] + ' 이름을 두 글자 이상 적어 주세요.'; inp.focus(); return; }
     go.disabled = true; inp.disabled = true;
-    go.textContent = '맞춤 질문을 만드는 중... (10초 정도)';
+    go.textContent = (kind === 'company' && COMPANY_DEPTH === 'deep') ? '기업 정보를 검색하는 중... (30초 정도)' : '맞춤 질문을 만드는 중... (10초 정도)';
     try{
       const r = await fetch('/api/generate-questions', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -2148,6 +2184,7 @@ function applyFreeInputPack(pack){
   applyRedflagQuestions(null);
   if(pack.kind === 'company'){
     STUDENT_COMPANY = label;            // 다음 화면 '지원 기업명' 칸에 자동으로 들어감
+    STUDENT_COMPANY_BRIEF = pack.brief || null; // 🔎 심화면 검색 요약 카드도 같이
     STUDENT_TARGET_FIELD_OVERRIDE = label + ' 지원';
   } else {
     STUDENT_TARGET_FIELD_OVERRIDE = label;
@@ -2155,7 +2192,66 @@ function applyFreeInputPack(pack){
   const kindName = FREE_KIND_LABEL[pack.kind] || '전공·직무';
   STUDENT_PROMPT_OVERRIDE = SYSTEM_PROMPT
     + (pack.criteria ? `\n\n[학생이 직접 입력한 ${kindName} '${label}' 특화 기준 — AI가 만든 기준이므로 참고로 반영]\n${pack.criteria}` : '')
-    + (pack.kind === 'company' ? `\n- 이 기업의 구체적인 제도명·사업명·수치·최근 이슈는 지어내지 말고, 필요하면 {{ }} 예시와 함께 "채용공고·홈페이지에서 확인하세요"라고 안내한다.` : '');
+    + (pack.kind === 'company' && !pack.brief ? `\n- 이 기업의 구체적인 제도명·사업명·수치·최근 이슈는 지어내지 말고, 필요하면 {{ }} 예시와 함께 "채용공고·홈페이지에서 확인하세요"라고 안내한다.` : '');
+}
+
+// 🔎 기업 심화 분석 카드 (2026-10-05) — '심화' 수업이거나 유료 고객일 때 '지원 기업명' 칸 아래에 붙음
+function companyBriefHtml(b){
+  const kw = (b.values || []).length
+    ? `<div class="cb-lbl">인재상 키워드</div><div class="cb-kw">${b.values.map(v => `<span>${escapeHtml(v)}</span>`).join('')}</div>`
+    : `<p class="cb-thin">${escapeHtml(b.valuesNote || '공식 인재상을 찾지 못했어요. 채용 홈페이지에서 확인해 보세요.')}</p>`;
+  const issues = (b.issues || []).length
+    ? `<details><summary>최근 이슈 ${b.issues.length}줄 더 보기</summary><ol>${b.issues.map(v => `<li>${escapeHtml(v)}</li>`).join('')}</ol></details>` : '';
+  const src = (b.sources || []).map((x, i) => `<a href="${escapeHtml(x.url)}" target="_blank" rel="noopener">${i + 1}. ${escapeHtml(x.title)}</a>`).join('<br>');
+  return `<div class="cb-head"><span class="cb-name">${escapeHtml(b.name)}</span><span class="cb-badge">심화 분석</span></div>
+    ${b.industry ? `<p class="cb-ind">${escapeHtml(b.industry)}</p>` : ''}
+    ${kw}${issues}
+    ${b.tip ? `<p class="cb-tip">💡 ${escapeHtml(b.tip)}</p>` : ''}
+    ${b.thin ? '<p class="cb-thin">검색된 정보가 적어요. 채용공고와 회사 홈페이지를 꼭 함께 확인하세요.</p>' : ''}
+    ${src ? `<details class="cb-src"><summary style="font-weight:400;color:var(--muted)">출처 ${b.sources.length}곳 · ${escapeHtml(b.searchedAt || '')} 검색</summary>${src}</details>` : ''}`;
+}
+function sameCompany(a, b){ const n = x => String(x || '').toLowerCase().replace(/\s|주식회사|\(주\)|㈜/g, ''); return n(a) && n(a) === n(b); }
+let COMPANY_BRIEF_AUTO_TRIED = '';
+function attachCompanyBrief(box, input){
+  const wrap = document.createElement('div');
+  box.appendChild(wrap);
+  const hint = box.querySelector('p');
+  if(hint) hint.textContent = '적어 주면 인재상·최근 소식을 검색해 질문과 피드백에 반영해 드려요.';
+  function paint(){
+    const b = STUDENT_COMPANY_BRIEF;
+    if(b && (sameCompany(b.name, STUDENT_COMPANY) || sameCompany(STUDENT_FREE_INPUT && STUDENT_FREE_INPUT.keyword, STUDENT_COMPANY))){
+      wrap.innerHTML = `<div class="cb-card">${companyBriefHtml(b)}</div>`;
+      return;
+    }
+    wrap.innerHTML = `<button type="button" class="cb-btn">🔎 이 기업 분석하기</button><p class="cb-err" role="alert"></p>`;
+    const btn = wrap.querySelector('.cb-btn'), err = wrap.querySelector('.cb-err');
+    btn.onclick = () => run(btn, err);
+  }
+  async function run(btn, err){
+    const name = input.value.replace(/\s+/g, ' ').trim();
+    if(name.length < 2){ err.textContent = '지원 기업명을 먼저 적어 주세요.'; input.focus(); return; }
+    btn.disabled = true; btn.textContent = '기업 정보를 검색하는 중... (30초 정도)'; err.textContent = '';
+    try{
+      const r = await fetch('/api/generate-questions', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(CLIENT ? { mode: 'companyBrief', c: CLIENT.code, company: name } : { mode: 'companyBrief', t: TEACHER_ID, company: name }) });
+      const d = await r.json().catch(() => ({}));
+      if(!r.ok || !d.brief){ throw new Error(d.error || '기업 정보를 찾지 못했어요. 잠시 후 다시 눌러 주세요.'); }
+      STUDENT_COMPANY_BRIEF = d.brief;
+      STUDENT_COMPANY = name; input.value = name;
+      if(CLIENT) clientSaveDraft();
+      paint();
+    }catch(e){
+      btn.disabled = false; btn.textContent = '🔎 이 기업 분석하기';
+      err.textContent = e.message || '인터넷 연결을 확인하고 다시 눌러 주세요.';
+    }
+  }
+  input.addEventListener('input', () => { if(STUDENT_COMPANY_BRIEF && !sameCompany(STUDENT_COMPANY_BRIEF.name, input.value)) { STUDENT_COMPANY_BRIEF = null; paint(); } });
+  paint();
+  // 유료 고객은 예약 때 적은 기업을 자동으로 한 번 분석 (같은 기업은 서버에 7일 저장돼 있어 바로 뜸)
+  if(CLIENT && STUDENT_COMPANY && !STUDENT_COMPANY_BRIEF && COMPANY_BRIEF_AUTO_TRIED !== STUDENT_COMPANY){
+    COMPANY_BRIEF_AUTO_TRIED = STUDENT_COMPANY;
+    const btn = wrap.querySelector('.cb-btn'); if(btn) btn.click();
+  }
 }
 
 function renderCategories(){
@@ -2174,7 +2270,10 @@ function renderCategories(){
   const companyInput = companyBox.querySelector('#student-company');
   companyInput.value = STUDENT_COMPANY;
   companyInput.addEventListener('input', e => { STUDENT_COMPANY = e.target.value.trim(); if(CLIENT) clientSaveDraft(); });
-  catList.appendChild(companyBox);
+  if(companyDeepOn()) attachCompanyBrief(companyBox, companyInput);
+  // 기업 분석 '끔'(고등학생·1회성) 수업이면 기업 칸을 보여주지 않음 (유료 고객은 항상 보임)
+  if(COMPANY_DEPTH !== 'off' || CLIENT) catList.appendChild(companyBox);
+  else STUDENT_COMPANY = '';
   const hiringBox = document.createElement('div');
   hiringBox.style.cssText = 'background:var(--white);border:1px solid var(--line);border-radius:6px;padding:14px 16px;margin-bottom:6px;';
   hiringBox.innerHTML = `
@@ -3010,6 +3109,14 @@ function buildFeedbackReq(question, text){
   const companyContext = STUDENT_COMPANY
     ? `\n\n[지원 기업] 이 수강생의 지원 기업은 '${STUDENT_COMPANY}'입니다. 입사 후 포부 관련 질문이면 이 기업명을 넣어 코멘트와 모범답안을 작성하되, 위 사실 확인 원칙대로 이 기업의 구체적인 제도명·특허·지사명·수치는 지어내지 말고 대괄호 빈칸으로 남기세요.`
     : '';
+  // 🔎 심화 분석 요약이 있으면 그 내용을 근거로 회사 맞춤 피드백 (2026-10-05) — 요약에 없는 사실은 여전히 지어내지 않음
+  const brief = STUDENT_COMPANY_BRIEF && companyDeepOn() ? STUDENT_COMPANY_BRIEF : null;
+  const briefContext = brief
+    ? `\n\n[지원 기업 조사 요약 — 웹 검색으로 확인, ${brief.searchedAt || ''} 기준]\n기업: ${brief.name}${brief.industry ? ' — ' + brief.industry : ''}`
+      + ((brief.values || []).length ? `\n공식 인재상 키워드: ${brief.values.join(', ')}` : '')
+      + (brief.issues || []).map((v, i) => `\n최근 이슈 ${i + 1}: ${v}`).join('')
+      + `\n[이 요약의 활용 원칙] 지원동기·입사 후 포부·직무 역량·회사 관련 질문일 때만 활용한다. 답변이 위 인재상 키워드나 최근 이슈와 연결되면 good에서 구체적으로 칭찬하고, 연결이 없으면 improve에서 "최근 ○○(위 요약의 실제 내용)와 연결해 보세요"처럼 위 요약 중 하나를 골라 연결 방법을 제안한다. rewritten에도 위 요약의 실제 내용은 그대로 써도 되지만, 요약에 없는 제도명·수치·사업명은 여전히 지어내지 말고 {{ }} 예시로 둔다. 자기소개·성격·결격 검증 같은 질문에서는 억지로 회사 정보를 넣으라고 하지 않는다.`
+    : '';
   // 결격 검증 질문이면, 이 질문이 걸러내려는 포인트를 AI에게 알려줌 (학생 화면에는 안 보임)
   const rfNote = findRedflagNote(question);
   const redflagContext = rfNote
@@ -3022,7 +3129,7 @@ function buildFeedbackReq(question, text){
   const overlap = resumeOverlapRatio(text);
   return {
     question, answer: text, hiringType: HIRING_TYPE,
-    systemPrompt: basePrompt + jobContext + ASPIRATION_GUIDE + companyContext + redflagContext + catGuide,
+    systemPrompt: basePrompt + jobContext + ASPIRATION_GUIDE + companyContext + briefContext + redflagContext + catGuide,
     answerSec: timing && timing.sec >= 5 ? timing.sec : 0, // 붙여넣기처럼 5초 미만이면 시간 피드백 생략
     targetSec: timing && timing.sec >= 5 ? timing.target : 0,
     resumeSentences: RESUME_FU && RESUME_FU.s ? RESUME_FU.s : [],
@@ -3594,7 +3701,16 @@ function renderFreeInputSetting(){
   document.querySelectorAll('.free-kind').forEach(c => { c.checked = FREE_INPUT_KINDS.includes(c.value); });
   document.getElementById('free-notice-chk').checked = !!FREE_INPUT_NOTICE;
   document.getElementById('free-sub').style.display = FREE_INPUT_MODE === 'off' ? 'none' : 'block';
+  document.querySelectorAll('input[name="company-depth"]').forEach(r => { r.checked = r.value === COMPANY_DEPTH; });
+  document.getElementById('company-depth-note').style.display = COMPANY_DEPTH === 'deep' ? 'block' : 'none';
+  // 기업 분석을 끄면 직접 입력의 '기업'도 같이 꺼진 것으로 보이게
+  const ck = document.querySelector('.free-kind[value="company"]');
+  if(ck){ ck.disabled = COMPANY_DEPTH === 'off'; ck.closest('label').style.opacity = COMPANY_DEPTH === 'off' ? '.45' : ''; }
 }
+// 🔎 기업 분석 수준 (2026-10-05)
+document.querySelectorAll('input[name="company-depth"]').forEach(r => r.addEventListener('change', () => {
+  COMPANY_DEPTH = r.value; renderFreeInputSetting(); autoSaveToday();
+}));
 document.querySelectorAll('input[name="free-mode"]').forEach(r => r.addEventListener('change', () => {
   FREE_INPUT_MODE = r.value; renderFreeInputSetting(); autoSaveToday();
 }));
