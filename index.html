@@ -185,6 +185,8 @@
   .free-card .free-err:empty{display:none}
   .free-card .free-go{font:inherit;font-size:15px;font-weight:600;border:0;border-radius:10px;padding:12px;min-height:50px;background:var(--moa-ink,var(--navy));color:#fff;cursor:pointer}
   .free-card .free-go:disabled{opacity:.7;cursor:wait}
+  .free-opt{display:flex;flex-direction:column;line-height:1.35}
+  .free-opt small{font-size:12.5px;color:var(--muted);font-weight:400;margin-top:2px}
   .kw-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}
   .kw-row:first-child{border-top:0}
   .kw-rank{width:24px;height:24px;border-radius:50%;background:#F1F3F7;color:var(--ink);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none}
@@ -959,9 +961,9 @@
     <div class="st-card" style="gap:6px">
       <h3 style="margin-bottom:2px">🔒 전공·직무 선택 방식</h3>
       <p class="st-sub" style="margin-bottom:4px">교육 전에 정해 주세요. 직접 입력을 켜면 목록에 없는 전공·직무·기업도 학생이 적어서 맞춤 질문과 피드백을 받을 수 있어요.</p>
-      <label class="st-chk"><input type="radio" name="free-mode" value="off">프리셋만 <span class="st-sub" style="margin-left:4px">체크한 전공 카드만 (지금과 같음)</span></label>
-      <label class="st-chk"><input type="radio" name="free-mode" value="mixed">프리셋 + 직접 입력 <span class="st-sub" style="margin-left:4px">카드 아래 직접 입력 칸 추가</span></label>
-      <label class="st-chk"><input type="radio" name="free-mode" value="only">직접 입력만 <span class="st-sub" style="margin-left:4px">지원처가 제각각인 캠프·개인 코칭용</span></label>
+      <label class="st-chk"><input type="radio" name="free-mode" value="off"><span class="free-opt">프리셋만<small>체크한 전공 카드만 (지금과 같음)</small></span></label>
+      <label class="st-chk"><input type="radio" name="free-mode" value="mixed"><span class="free-opt">프리셋 + 직접 입력<small>카드 아래 직접 입력 칸 추가</small></span></label>
+      <label class="st-chk"><input type="radio" name="free-mode" value="only"><span class="free-opt">직접 입력만<small>지원처가 제각각인 캠프·개인 코칭용</small></span></label>
       <div id="free-sub" style="display:none;border-top:1px solid var(--line);margin-top:6px;padding-top:10px">
         <span class="st-lbl" style="display:block;margin-bottom:4px">직접 입력 허용 종류</span>
         <div style="display:flex;gap:16px;flex-wrap:wrap">
@@ -969,7 +971,7 @@
           <label class="st-chk"><input type="checkbox" class="free-kind" value="job">직무</label>
           <label class="st-chk"><input type="checkbox" class="free-kind" value="company">기업</label>
         </div>
-        <label class="st-chk" style="margin-top:6px"><input type="checkbox" id="free-notice-chk">기업 입력 시 안내 문구 보이기 <span class="st-sub" style="margin-left:4px">"최신 채용공고는 직접 확인하세요"</span></label>
+        <label class="st-chk" style="margin-top:6px"><input type="checkbox" id="free-notice-chk"><span class="free-opt">기업 입력 시 안내 문구 보이기<small>"최신 채용공고는 직접 확인하세요"</small></span></label>
         <p class="st-sub" style="margin-top:6px">같은 키워드는 저장해 두고 다시 써서 두 번째 학생부터는 바로 떠요. 직접 입력한 학생 결과에는 "✏️ 직접 입력" 표시가 붙고, 통계는 "직접 입력" 한 묶음으로 모여요.</p>
       </div>
     </div>
