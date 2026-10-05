@@ -287,12 +287,14 @@ export default async function handler(req, res) {
     DIVERSITY_RULES +
     DIRECTION_STEPS_RULE +
     JSON_SAFETY_RULE;
+  // 강사 평가 기준은 같은 수업·같은 유형이면 학생마다 똑같아서 두 번째 캐시 칸으로 둠
+  const teacherBlock = majorRules ? `[강사 평가 기준 · 응답 형식 — 아래 JSON 필드를 모두 채우고, 위 규칙의 추가 필드(red_flags, exampleSlots, direction_steps)와 뒤의 criteria·memorized·speech도 함께 넣는다]\n${majorRules}` : '';
   const dynamicSystem =
-    (majorRules ? `[강사 평가 기준 · 응답 형식 — 아래 JSON 필드를 모두 채우고, 위 규칙의 추가 필드(red_flags, exampleSlots, direction_steps)와 아래 criteria·memorized·speech도 함께 넣는다]\n${majorRules}` : '') +
     trendRules({ answerSec, targetSec, resumeSentences, resumeOverlap }) +
     variety;
   const systemBlocks = [
     { type: 'text', text: staticSystem, cache_control: { type: 'ephemeral' } },
+    ...(teacherBlock ? [{ type: 'text', text: teacherBlock, cache_control: { type: 'ephemeral' } }] : []),
     { type: 'text', text: dynamicSystem }
   ];
 
