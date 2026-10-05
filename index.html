@@ -978,7 +978,7 @@
       <div id="today-visible-list"></div>
     </div>
     <div class="st-card" style="gap:6px">
-      <h3 style="margin-bottom:2px">🔒 전공·직무 선택 방식</h3>
+      <h3 style="margin-bottom:2px">🔒 전공·직무 선택 방식<a class="moa-q" target="_blank" rel="noopener" title="전공·직무 선택 방식 안내" href="https://moa-hub.vercel.app/manual.html#h-free">?</a></h3>
       <p class="st-sub" style="margin-bottom:4px">교육 전에 정해 주세요. 직접 입력을 켜면 목록에 없는 전공·직무·기업도 학생이 적어서 맞춤 질문과 피드백을 받을 수 있어요.</p>
       <label class="st-chk"><input type="radio" name="free-mode" value="off"><span class="free-opt">프리셋만<small>체크한 전공 카드만 (지금과 같음)</small></span></label>
       <label class="st-chk"><input type="radio" name="free-mode" value="mixed"><span class="free-opt">프리셋 + 직접 입력<small>카드 아래 직접 입력 칸 추가</small></span></label>
@@ -995,7 +995,7 @@
       </div>
     </div>
     <div class="st-card" style="gap:6px">
-      <h3 style="margin-bottom:2px">🔒 기업 분석 수준</h3>
+      <h3 style="margin-bottom:2px">🔒 기업 분석 수준<a class="moa-q" target="_blank" rel="noopener" title="기업 분석 수준 안내" href="https://moa-hub.vercel.app/manual.html#h-depth">?</a></h3>
       <p class="st-sub" style="margin-bottom:4px">대상에 맞게 골라 주세요. 네이버 유료 고객은 이 설정과 관계없이 항상 심화로 진행돼요.</p>
       <label class="st-chk"><input type="radio" name="company-depth" value="off"><span class="free-opt">끔<small>기업 입력 칸 없음 · 고등학생, 1회성 특강</small></span></label>
       <label class="st-chk"><input type="radio" name="company-depth" value="basic"><span class="free-opt">기본<small>업종 수준 질문·피드백, 검색 없음 · 일반 대학 수업</small></span></label>
@@ -1011,7 +1011,7 @@
       <div id="kw-top-list"><p class="st-sub">불러오는 중...</p></div>
     </div>
     <div class="st-card">
-      <h3>운영 방식</h3>
+      <h3>운영 방식<a class="moa-q" target="_blank" rel="noopener" title="제출 방식·재도전 안내" href="https://moa-hub.vercel.app/manual.html#h-review">?</a></h3>
       <div style="display:flex;flex-direction:column;gap:2px">
         <span class="st-lbl" style="margin-bottom:4px">제출 방식</span>
         <label class="st-chk"><input type="radio" name="review-mode" id="review-mode-off" value="off">바로 AI 피드백 보여주기</label>
@@ -5396,6 +5396,16 @@ async function clientFinalSubmit(){
 })();
 </script>
 
+<!-- ===== MOA 도움말 버튼 (2026-10-05): 강사 화면에만, 허브 운영 매뉴얼 '설정 도움말'로 ===== -->
+<style>
+.moa-q{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:6px;border-radius:50%;background:#E8EEFD;color:#295BF2;font-size:12px;font-weight:900;text-decoration:none;vertical-align:2px}
+.moa-q:hover{background:#C0D904;color:#141A2E}
+#moaHelp{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:9999;display:none;align-items:center;gap:6px;padding:10px 16px;border-radius:999px;background:#295BF2;color:#fff;text-decoration:none;font-family:'Noto Sans KR','맑은 고딕','Malgun Gothic',sans-serif;font-size:14px;font-weight:700;line-height:1;box-shadow:0 4px 14px rgba(17,48,140,.28)}
+#moaHelp .mark{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:#C0D904;color:#11308C;font-size:12px;font-weight:900}
+body.role-teacher #moaHelp{display:inline-flex}
+@media print{#moaHelp{display:none!important}}
+</style>
+<a id="moaHelp" href="https://moa-hub.vercel.app/manual.html#s4" target="_blank" rel="noopener"><span class="mark">?</span>도움말</a>
 <script src="/moa-ui.js"></script><!-- 2026-10-03 학생 화면 개편: 면접실 모드·타이머·말로 답하기 -->
 </body>
 </html>
