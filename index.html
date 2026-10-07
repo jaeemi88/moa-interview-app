@@ -2196,9 +2196,11 @@ function applyFreeInputPack(pack){
 }
 
 // 🔎 기업 심화 분석 카드 (2026-10-05) — '심화' 수업이거나 유료 고객일 때 '지원 기업명' 칸 아래에 붙음
+// 인재상 키워드 표시용 — 괄호 속 영문(잘린 것 포함)은 빼고 보여 줌 (예전에 저장된 요약도 깔끔하게, 2026-10-08)
+const cleanKw = v => String(v || '').replace(/\s*[(\[][^)\]]*[)\]]?/g, '').trim() || String(v || '');
 function companyBriefHtml(b){
   const kw = (b.values || []).length
-    ? `<div class="cb-lbl">인재상 키워드</div><div class="cb-kw">${b.values.map(v => `<span>${escapeHtml(v)}</span>`).join('')}</div>`
+    ? `<div class="cb-lbl">인재상 키워드</div><div class="cb-kw">${b.values.map(v => `<span>${escapeHtml(cleanKw(v))}</span>`).join('')}</div>`
     : `<p class="cb-thin">${escapeHtml(b.valuesNote || '공식 인재상을 찾지 못했어요. 채용 홈페이지에서 확인해 보세요.')}</p>`;
   const issues = (b.issues || []).length
     ? `<details><summary>최근 이슈 ${b.issues.length}줄 더 보기</summary><ol>${b.issues.map(v => `<li>${escapeHtml(v)}</li>`).join('')}</ol></details>` : '';
@@ -2210,7 +2212,10 @@ function companyBriefHtml(b){
     ${b.thin ? '<p class="cb-thin">검색된 정보가 적어요. 채용공고와 회사 홈페이지를 꼭 함께 확인하세요.</p>' : ''}
     ${src ? `<details class="cb-src"><summary style="font-weight:400;color:var(--muted)">출처 ${b.sources.length}곳 · ${escapeHtml(b.searchedAt || '')} 검색</summary>${src}</details>` : ''}`;
 }
-function sameCompany(a, b){ const n = x => String(x || '').toLowerCase().replace(/\s|주식회사|\(주\)|㈜/g, ''); return n(a) && n(a) === n(b); }
+// 회사 이름 비교 — 괄호 속 영문·(주)·띄어쓰기는 빼고 비교 (검색 결과가 '대한항공(Korean Air)'처럼 와도 같은 회사로, 2026-10-08)
+function sameCompany(a, b){ const n = x => String(x || '').toLowerCase().replace(/\(주\)|㈜|주식회사/g, '').replace(/\([^)]*\)|\[[^\]]*\]/g, '').replace(/\s/g, ''); return n(a) && n(a) === n(b); }
+// 기업 요약이 지금 적힌 회사 것인지 — 검색할 때 적었던 이름(query)과 결과 이름(name) 둘 다로 확인
+function briefMatches(b, company){ return !!b && (sameCompany(b.query, company) || sameCompany(b.name, company)); }
 let COMPANY_BRIEF_AUTO_TRIED = '';
 function attachCompanyBrief(box, input){
   const wrap = document.createElement('div');
@@ -2219,7 +2224,7 @@ function attachCompanyBrief(box, input){
   if(hint) hint.textContent = '적어 주면 인재상·최근 소식을 검색해 질문과 피드백에 반영해 드려요.';
   function paint(){
     const b = STUDENT_COMPANY_BRIEF;
-    if(b && (sameCompany(b.name, STUDENT_COMPANY) || sameCompany(STUDENT_FREE_INPUT && STUDENT_FREE_INPUT.keyword, STUDENT_COMPANY))){
+    if(b && (briefMatches(b, STUDENT_COMPANY) || sameCompany(STUDENT_FREE_INPUT && STUDENT_FREE_INPUT.keyword, STUDENT_COMPANY))){
       wrap.innerHTML = `<div class="cb-card">${companyBriefHtml(b)}</div>`;
       return;
     }
@@ -2236,7 +2241,7 @@ function attachCompanyBrief(box, input){
         body: JSON.stringify(CLIENT ? { mode: 'companyBrief', c: CLIENT.code, company: name } : { mode: 'companyBrief', t: TEACHER_ID, company: name }) });
       const d = await r.json().catch(() => ({}));
       if(!r.ok || !d.brief){ throw new Error(d.error || '기업 정보를 찾지 못했어요. 잠시 후 다시 눌러 주세요.'); }
-      STUDENT_COMPANY_BRIEF = d.brief;
+      STUDENT_COMPANY_BRIEF = { ...d.brief, query: name };
       STUDENT_COMPANY = name; input.value = name;
       if(CLIENT) clientSaveDraft();
       paint();
@@ -2245,7 +2250,7 @@ function attachCompanyBrief(box, input){
       err.textContent = e.message || '인터넷 연결을 확인하고 다시 눌러 주세요.';
     }
   }
-  input.addEventListener('input', () => { if(STUDENT_COMPANY_BRIEF && !sameCompany(STUDENT_COMPANY_BRIEF.name, input.value)) { STUDENT_COMPANY_BRIEF = null; paint(); } });
+  input.addEventListener('input', () => { if(STUDENT_COMPANY_BRIEF && !briefMatches(STUDENT_COMPANY_BRIEF, input.value)) { STUDENT_COMPANY_BRIEF = null; paint(); } });
   paint();
   // 유료 고객은 예약 때 적은 기업을 자동으로 한 번 분석 (같은 기업은 서버에 7일 저장돼 있어 바로 뜸)
   if(CLIENT && STUDENT_COMPANY && !STUDENT_COMPANY_BRIEF && COMPANY_BRIEF_AUTO_TRIED !== STUDENT_COMPANY){
