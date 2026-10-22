@@ -94,6 +94,10 @@ function aiErrorText(status, data) {
 }
 
 import { fitLength } from './_fitlen.js';
+import Redis from 'ioredis';
+import { createHash } from 'crypto';
+let redis;
+function getRedis() { if (!redis) redis = new Redis(process.env.REDIS_URL); return redis; }
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -104,6 +108,8 @@ export default async function handler(req, res) {
     if (body.mode === 'outline') return await outline(body, res);
     if (body.mode === 'defend') return await defend(body, res);
     if (body.mode === 'finish') return await finish(body, res);
+    // 🎁 무료 모의면접 1문항 체험 (2026-10-22): /free 페이지 — 1인 하루 1회, 전체 하루 30회, 답변 저장 안 함
+    if (body.mode === 'freeInterview') return await freeInterview(req, body, res);
     return res.status(400).json({ error: '지원하지 않는 요청입니다.' });
   } catch (err) {
     console.error('서버 오류:', err);
@@ -209,4 +215,82 @@ ${JSON_RULE}
   let out = String(parsed.text).replace(/[⟪⟫]/g, '').trim();
   if (charLimit) { const fx = await fitLength(out, charLimit, { kind: 'speech' }); if (fx) out = fx.text; } // 글자 수 맞추기
   return res.status(200).json({ text: out });
+}
+
+
+// ---------- 무료 모의면접 1문항 체험 (mode: 'freeInterview', 2026-10-22) ----------
+// 공개 페이지(/free)용. 인스타 댓글 '면접체험' DM으로 들어옴. 자소서 앱 /free와 같은 규칙:
+// 같은 사람(IP) 하루 1회, 전체 하루 30회. 답변은 저장하지 않음 (횟수 숫자만 이틀 뒤 자동 삭제)
+const IV_FREE_TOTAL = 30;
+const IV_FREE_PER_IP = 1;
+const kstDay = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10).replace(/-/g, '');
+async function ivFreeStat(r, ev) { try { if (r) await r.hincrby('moa_free_stats', ev + ':' + kstDay(), 1); } catch (e) {} }
+
+async function freeInterview(req, body, res) {
+  const question = clip(body.question, 200);
+  const answer = clip(body.answer, 1200);
+  const job = clip(body.job, 40);
+  if (!question) return res.status(400).json({ error: '면접 질문을 골라 주세요.' });
+  if (answer.length < 20) return res.status(400).json({ error: '답변을 20자 이상 적어 주세요.' });
+
+  const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
+  const ipHash = createHash('sha256').update('moa-iv-free:' + ip).digest('hex').slice(0, 24);
+  const day = kstDay();
+  const ipKey = `iv_free:ip:${day}:${ipHash}`;
+  const dayKey = `iv_free:day:${day}`;
+  let r = null;
+  try {
+    r = getRedis();
+    const ipCount = await r.incr(ipKey); await r.expire(ipKey, 172800);
+    if (ipCount > IV_FREE_PER_IP) return res.status(429).json({ error: '무료 체험은 하루 1번이에요. 내일 다시 이용해 주세요.', limit: 'ip' });
+    const dayCount = await r.incr(dayKey); await r.expire(dayKey, 172800);
+    if (dayCount > IV_FREE_TOTAL) {
+      await r.decr(ipKey);
+      await ivFreeStat(r, 'iv_free_full');
+      return res.status(429).json({ error: `오늘 준비한 무료 체험 ${IV_FREE_TOTAL}회가 모두 마감됐어요. 내일 다시 찾아 주세요.`, limit: 'day' });
+    }
+  } catch (e) {
+    console.error('무료 체험 횟수 확인 실패:', e);
+    return res.status(503).json({ error: '잠시 접속이 많아요. 조금 뒤 다시 눌러 주세요.' });
+  }
+  const refund = async () => { try { await r.decr(ipKey); await r.decr(dayKey); } catch (e) {} };
+
+  const systemPrompt = `당신은 15년 경력의 면접관이자 면접 코치입니다. 처음 만난 지원자가 면접 질문 1개에 말하듯 답한 내용을 보내 무료 체험을 받습니다.
+면접관 자리에서 들은 그대로 짧고 정확하게, 바로 고칠 수 있는 것만 알려 주세요. 지원자 답변에 없는 경험·숫자·이름은 지어내지 않습니다.
+${TONE_RULES}
+
+[점검 4가지 — 각각 status는 good(잘함) / fix(보완) 중 하나, note는 1문장]
+1. answerFirst: 첫 문장에서 질문에 바로 답하는지 (두괄식)
+2. concrete: 내가 한 행동·숫자·장면이 구체적인지
+3. jobLink: 지원 분야(없으면 일반 직무)와 연결되는지
+4. natural: 외운 듯한 문어체, '열정·소통 능력·최선' 같은 상투어 없이 말하듯 자연스러운지
+
+[작성 규칙]
+- 모든 문장은 지원자에게 말하듯 부드러운 존댓말. 큰따옴표 대신 작은따옴표를 쓴다. 지원자를 탓하거나 깎아내리지 않는다.
+- first: 면접관이 첫 10초에 속으로 한 생각 한 문장 (예: '경험은 좋은데, 결론이 늦게 나와서 집중이 흐려졌어요')
+- summary: 지금 답변의 상태 한 문장 (잘한 점 1 + 핵심 아쉬움 1)
+- followUp: 이 답변을 들은 면접관이 이어서 물을 꼬리질문 1개 (답변의 실제 내용에서 나오는 질문)
+- oneFix: 지금 하나만 고친다면 무엇을 어떻게 — 2문장 이내
+- opener: 이렇게 첫 문장을 시작해 보라는 예시 한 문장. 지원자 답변에 없는 사실은 [빈칸]으로 둔다.
+
+${JSON_RULE}
+{"first":"","summary":"","checks":{"answerFirst":{"status":"good|fix","note":""},"concrete":{"status":"good|fix","note":""},"jobLink":{"status":"good|fix","note":""},"natural":{"status":"good|fix","note":""}},"followUp":"","oneFix":"","opener":""}`;
+
+  const userMsg = `[지원 분야] ${job || '미입력'}\n[면접 질문] ${question}\n\n[지원자 답변]\n${answer}`;
+  try {
+    const parsed = await askAI(systemPrompt, userMsg, 1200, (p) => p && p.checks);
+    if (!parsed) { await refund(); return res.status(500).json({ error: 'AI 응답 형식이 올바르지 않습니다. 다시 눌러 주세요.' }); }
+    const keys = ['answerFirst', 'concrete', 'jobLink', 'natural'];
+    const checks = {};
+    keys.forEach((k) => {
+      const c = (parsed.checks && parsed.checks[k]) || {};
+      checks[k] = { status: c.status === 'good' ? 'good' : 'fix', note: clip(c.note, 200) };
+    });
+    await ivFreeStat(r, 'iv_free_use');
+    return res.status(200).json({ first: clip(parsed.first, 200), summary: clip(parsed.summary, 300), checks, followUp: clip(parsed.followUp, 200), oneFix: clip(parsed.oneFix, 400), opener: clip(parsed.opener, 300) });
+  } catch (err) {
+    console.error('무료 체험 오류:', err);
+    await refund();
+    return res.status(500).json({ error: err.message || '서버 오류가 발생했습니다.' });
+  }
 }
