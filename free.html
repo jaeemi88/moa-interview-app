@@ -98,6 +98,7 @@ select:focus,input:focus{outline:none;border-color:var(--ink)}
 .follow b{font-size:17px;line-height:1.5}
 .follow span{font-size:13px;color:var(--muted)}
 .opener{font-size:15px;border-left:4px solid var(--lime);padding:6px 0 6px 12px;margin-top:8px}
+.once{margin:0;font-size:15px;color:var(--ink);background:var(--app-soft);border-radius:12px;padding:12px 14px}.once b{color:var(--app);font-weight:900}
 </style>
 </head>
 <body>
@@ -125,7 +126,7 @@ select:focus,input:focus{outline:none;border-color:var(--ink)}
     <textarea id="a" maxlength="1200" placeholder="면접장에서 말하듯 적어 주세요. (20자 ~ 1,200자)"></textarea>
     <div class="row"><button type="button" class="btn ghost sm mic" id="mic" hidden><span class="dot" aria-hidden="true"></span><span id="micT">말로 답하기</span></button><span class="cnt" id="cnt">0 / 1,200자</span></div>
     <div class="row"><button type="button" class="btn app" id="go">AI 면접관에게 듣기</button></div>
-    <span class="left">체험은 하루 1번이에요. 가장 자신 없는 질문으로 골라 보세요.</span>
+    <p class="once"><b>체험은 하루 1번이에요.</b> 가장 자신 없는 질문으로 골라 보세요.</p>
   </div>
 
   <section id="result" hidden aria-live="polite"></section>
