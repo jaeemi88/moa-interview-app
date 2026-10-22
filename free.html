@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>무료 모의면접 1문항 체험 · MOA FORMULA</title>
+<meta name="description" content="면접 질문 하나에 말하듯 답하면 AI 면접관이 첫인상·두괄식·구체성·직무 연결·말투를 점검하고 꼬리질문까지 던져 드려요. 하루 30명 무료.">
+<meta property="og:title" content="면접 질문 하나, AI 면접관이 먼저 들어 볼게요 · 하루 30명 무료">
+<meta property="og:description" content="면접관 첫인상 한 줄과 이어서 나올 꼬리질문까지. 답변은 저장하지 않아요.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap">
+<!-- 무료 모의면접 1문항 체험 (2026-10-22): /api/coach mode freeInterview 호출. 1인 하루 1회 · 전체 하루 30회 · 답변 저장 안 함. 인스타 댓글 '면접체험' DM으로 들어옴 -->
+<style>
+:root{--ink:#141A2E;--ink2:#3B4256;--muted:#5F6678;--line:#E6E8EE;--surface:#F4F5F7;--lime:#C0D904;--lime-soft:#EEF4C2;--olive:#3D4500;--app:#295BF2;--app-soft:#EAF0FE;--mark:#FFF1A8;--warn:#B54708;--warn-soft:#FFF4E5;--ok:#1F7A4D;--ok-soft:#E3F5EA}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font-family:'Noto Sans KR','맑은 고딕','Malgun Gothic',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.6;word-break:keep-all}
+header{display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top,0px)) 20px 14px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:-0.3px}
+.brand i{width:22px;height:22px;border-radius:6px;background:var(--lime);display:inline-block}
+.app{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--ink2)}
+.app::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--app)}
+main{max-width:640px;margin:0 auto;padding:28px 20px 60px;display:flex;flex-direction:column;gap:22px}
+.kicker{margin:0;font-size:13px;font-weight:700;color:var(--app);letter-spacing:.06em}
+h1{margin:4px 0 0;font-size:clamp(28px,7vw,36px);font-weight:900;letter-spacing:-1px;line-height:1.25;text-wrap:balance}
+.lead{margin:0;color:var(--ink2);font-size:15px}
+.priv{display:flex;gap:8px;align-items:flex-start;background:var(--surface);border-radius:12px;padding:12px 14px;font-size:13px;color:var(--muted)}
+label{font-size:14px;font-weight:700}
+textarea{width:100%;min-height:200px;border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;font:inherit;font-size:16px;line-height:1.7;resize:vertical;color:var(--ink);background:#fff}
+textarea:focus{outline:none;border-color:var(--ink)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.cnt{font-size:13px;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
+.btn{font:inherit;font-size:16px;font-weight:700;border:0;border-radius:14px;padding:14px 22px;background:var(--ink);color:#fff;cursor:pointer;min-height:52px}
+.btn.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+.btn.sm{font-size:14px;padding:10px 14px;min-height:0}
+.btn:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid var(--app);outline-offset:2px}
+#result{display:flex;flex-direction:column;gap:16px}
+.score{border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:6px}
+.score.bad{background:var(--warn-soft)} .score.good{background:var(--ok-soft)}
+.score b{font-size:22px;font-weight:900;letter-spacing:-0.5px}
+.score.bad b{color:var(--warn)} .score.good b{color:var(--ok)}
+.score p{margin:0;font-size:14px;color:var(--ink2)}
+.paper{border:1px solid var(--line);border-radius:14px;padding:16px 18px;white-space:pre-wrap;font-size:15px;line-height:1.9;overflow-wrap:anywhere}
+.paper mark{background:var(--mark);border-bottom:2px solid #E0B400;border-radius:3px;padding:1px 2px;color:inherit}
+.paper sup{font-size:11px;font-weight:900;color:var(--warn);margin-left:1px}
+.list{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.list li{border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.list .w{font-weight:900}
+.list .w span{font-size:12px;font-weight:700;color:var(--warn);margin-right:6px}
+.list .alt{font-size:14px;color:var(--ink2)}
+.list .alt em{font-style:normal;background:var(--ok-soft);color:var(--ok);font-weight:700;border-radius:4px;padding:0 4px}
+.tone{border-radius:14px;background:var(--surface);padding:14px 16px;font-size:14px;color:var(--ink2)}
+.tone small{display:block;color:var(--muted);font-size:12px;margin-top:4px}
+.self{border:1.5px dashed var(--line);border-radius:14px;padding:14px 16px;font-size:14px}
+.self b{display:block;margin-bottom:4px}
+.cta{background:var(--ink);color:#fff;border-radius:22px;padding:22px 20px;display:flex;flex-direction:column;gap:10px}
+.cta h2{margin:0;font-size:20px;font-weight:900;letter-spacing:-0.4px;line-height:1.4}
+.cta p{margin:0;font-size:14px;color:#C8CEE0}
+.cta a{display:block;text-align:center;text-decoration:none;font-weight:700;border-radius:14px;padding:14px 16px}
+.cta a.main{background:var(--lime);color:var(--ink)}
+.cta a.sub{border:1px solid rgba(255,255,255,.35);color:#fff;font-size:14px}
+footer{text-align:center;font-size:12px;color:var(--muted);padding:0 20px 40px}
+[hidden]{display:none!important}
+select,input{width:100%;border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;font:inherit;font-size:16px;color:var(--ink);background:#fff}
+select:focus,input:focus{outline:none;border-color:var(--ink)}
+.field{display:flex;flex-direction:column;gap:6px}
+.left{font-size:13px;color:var(--muted)}
+.btn.app{background:var(--app)}
+.btn[disabled]{opacity:.55;cursor:default}
+.checks{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.checks li{border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+.checks .st{flex:none;font-size:12px;font-weight:900;border-radius:999px;padding:3px 10px;margin-top:2px}
+.checks .st.good{background:var(--ok-soft);color:var(--ok)} .checks .st.fix{background:var(--warn-soft);color:var(--warn)}
+.checks b{display:block;font-size:15px}
+.checks p{margin:2px 0 0;font-size:14px;color:var(--ink2)}
+.flag{border-left:4px solid var(--warn);background:var(--warn-soft);border-radius:0 12px 12px 0;padding:12px 14px;font-size:14px}
+.flag q{display:block;font-weight:700;color:var(--ink);margin-bottom:4px}
+.fix1{background:var(--lime-soft);border-radius:18px;padding:18px 18px;font-size:15px}
+.fix1 b{display:block;color:var(--olive);font-size:13px;letter-spacing:.04em;margin-bottom:4px}
+.h3{margin:4px 0 0;font-size:16px;font-weight:900}
+.wait{display:flex;gap:10px;align-items:center;color:var(--ink2);font-size:15px}
+.spin{width:20px;height:20px;border:3px solid var(--line);border-top-color:var(--app);border-radius:50%;animation:sp 0.9s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:14px;font-weight:700;border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:9px 14px;cursor:pointer;min-height:44px}
+.chip[aria-pressed="true"]{background:var(--app);border-color:var(--app);color:#fff}
+.stage{background:var(--ink);color:#fff;border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:6px}
+.stage small{color:#C8CEE0;font-size:12px;font-weight:700;letter-spacing:.06em}
+.stage b{font-size:19px;line-height:1.45;font-weight:900;letter-spacing:-0.3px}
+.mic{display:inline-flex;align-items:center;gap:8px}
+.mic.on{background:#B42318;color:#fff;border-color:#B42318}
+.mic .dot{width:10px;height:10px;border-radius:50%;background:currentColor}
+.mic.on .dot{animation:bl 1s infinite}@keyframes bl{50%{opacity:.25}}
+.first{border-radius:18px;background:var(--surface);padding:18px;display:flex;flex-direction:column;gap:6px}
+.first small{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.04em}
+.first p{margin:0;font-size:17px;font-weight:700;line-height:1.55}
+.follow{border:2px solid var(--app);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.follow small{font-size:12px;font-weight:900;color:var(--app);letter-spacing:.04em}
+.follow b{font-size:17px;line-height:1.5}
+.follow span{font-size:13px;color:var(--muted)}
+.opener{font-size:15px;border-left:4px solid var(--lime);padding:6px 0 6px 12px;margin-top:8px}
+</style>
+</head>
+<body>
+<header><div class="brand"><i aria-hidden="true"></i>MOA FORMULA</div><div class="app">무료 모의면접 체험</div></header>
+<main>
+  <div>
+    <p class="kicker">하루 30명 · 1인 1회 무료</p>
+    <h1>면접 질문 하나,<br>AI 면접관이 먼저 들어 볼게요</h1>
+  </div>
+  <p class="lead">질문을 고르고 <b>말하듯</b> 답해 보세요. 면접관의 <b>첫인상 한 줄</b>, 4가지 점검, 그리고 <b>이어서 나올 꼬리질문</b>까지 알려 드려요.</p>
+  <div class="priv" role="note"><span aria-hidden="true">🔒</span><span>답변은 피드백에만 쓰고 <b>저장하지 않아요.</b> 이름·학교·연락처는 빼고 말해 주세요.</span></div>
+
+  <div class="field">
+    <label id="qL">면접 질문 고르기</label>
+    <div class="chips" role="group" aria-labelledby="qL" id="chips"></div>
+    <input id="qOwn" maxlength="200" placeholder="받고 싶은 질문을 직접 적어 주세요" hidden>
+  </div>
+  <div class="field">
+    <label for="job">지원 분야 (선택)</label>
+    <input id="job" maxlength="40" placeholder="예) 간호사, 항공 승무원, 공기업 사무">
+  </div>
+  <div class="stage" aria-live="polite"><small>면접관</small><b id="qShow"></b></div>
+  <div class="field">
+    <label for="a">내 답변</label>
+    <textarea id="a" maxlength="1200" placeholder="면접장에서 말하듯 적어 주세요. (20자 ~ 1,200자)"></textarea>
+    <div class="row"><button type="button" class="btn ghost sm mic" id="mic" hidden><span class="dot" aria-hidden="true"></span><span id="micT">말로 답하기</span></button><span class="cnt" id="cnt">0 / 1,200자</span></div>
+    <div class="row"><button type="button" class="btn app" id="go">AI 면접관에게 듣기</button></div>
+    <span class="left">체험은 하루 1번이에요. 가장 자신 없는 질문으로 골라 보세요.</span>
+  </div>
+
+  <section id="result" hidden aria-live="polite"></section>
+
+  <section class="cta" aria-labelledby="ctaH">
+    <h2 id="ctaH">진짜 면접처럼, 사람 면접관 앞에서 연습해 보세요</h2>
+    <p>항공사 승무원 12년, 대학 겸임교수 출신 강사가 1:1로 모의면접을 진행하고 답변마다 바로 피드백해 드려요.</p>
+    <a class="main" href="https://booking.naver.com/booking/5/bizes/1748919" target="_blank" rel="noopener">1:1 모의면접 예약하기</a>
+    <a class="sub" href="https://resume-feedback-app-phi.vercel.app/blackbox" target="_blank" rel="noopener">떨어진 자소서도 무료 판독 받아 보기</a>
+  </section>
+</main>
+<footer>진로모아커리어센터 · MOA FORMULA<br>AI 참고 피드백이에요 · 실제 면접 준비는 강사와 함께</footer>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const QS=['1분 자기소개를 해 주세요.','우리 회사에 지원한 이유는 무엇인가요?','본인의 가장 큰 강점은 무엇인가요?','실패했던 경험과 그 뒤에 달라진 점을 말해 주세요.','마지막으로 하고 싶은 말이 있나요?'];
+const SHORT=['1분 자기소개','지원동기','가장 큰 강점','실패 경험','마지막 한마디','직접 쓰기'];
+let qi=0;
+function drawChips(){$('chips').innerHTML=SHORT.map((t,i)=>`<button type="button" class="chip" data-i="${i}" aria-pressed="${i===qi}">${t}</button>`).join('');$('qOwn').hidden=qi!==5;$('qShow').textContent=qi===5?($('qOwn').value.trim()||'받고 싶은 질문을 적어 주세요.'):QS[qi]}
+$('chips').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;qi=+b.dataset.i;drawChips();if(qi===5)$('qOwn').focus()};
+$('qOwn').oninput=drawChips;drawChips();
+$('a').addEventListener('input',()=>{$('cnt').textContent=$('a').value.length.toLocaleString()+' / 1,200자'});
+// 말로 답하기: 휴대폰·크롬의 음성 인식이 있을 때만 버튼을 보여 줌
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null,base='';
+if(SR){$('mic').hidden=false;$('mic').onclick=()=>{
+  if(rec){rec.stop();return}
+  rec=new SR();rec.lang='ko-KR';rec.continuous=true;rec.interimResults=true;base=$('a').value?($('a').value.trim()+' '):'';
+  rec.onresult=e=>{let t='';for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;$('a').value=(base+t).slice(0,1200);$('a').dispatchEvent(new Event('input'))};
+  rec.onend=()=>{rec=null;$('mic').classList.remove('on');$('micT').textContent='말로 답하기'};
+  rec.onerror=()=>{};rec.start();$('mic').classList.add('on');$('micT').textContent='말하는 중 · 누르면 멈춤'}}
+const LABEL={answerFirst:'두괄식 · 첫 문장에 답했나',concrete:'구체성 · 내 행동과 숫자',jobLink:'직무 연결 · 왜 이 일인가',natural:'말투 · 외운 티와 상투어'};
+const KEYS=['answerFirst','concrete','jobLink','natural'];
+function render(d){const R=$('result'),good=KEYS.filter(k=>d.checks&&d.checks[k]&&d.checks[k].status==='good').length;
+  R.innerHTML=(d.first?`<div class="first"><small>면접관 속마음 · 첫 10초</small><p>${esc(d.first)}</p></div>`:'')
+    +`<div class="score ${good>=3?'good':'bad'}"><b>4가지 중 ${good}가지 잘했어요</b><p>${esc(d.summary)}</p></div>`
+    +`<ul class="checks">${KEYS.map(k=>{const c=(d.checks||{})[k]||{};return `<li><span class="st ${c.status==='good'?'good':'fix'}">${c.status==='good'?'잘함':'보완'}</span><div><b>${LABEL[k]}</b><p>${esc(c.note)}</p></div></li>`}).join('')}</ul>`
+    +(d.followUp?`<div class="follow"><small>이어서 이렇게 물을 거예요</small><b>${esc(d.followUp)}</b><span>바로 답할 수 있나요? 실제 면접에서는 이 질문에서 갈려요.</span></div>`:'')
+    +(d.oneFix||d.opener?`<div class="fix1"><b>지금 하나만 고친다면</b>${esc(d.oneFix)}${d.opener?`<div class="opener">${esc(d.opener)}</div>`:''}</div>`:'');
+}
+const DEMO={first:'성실하다는 말은 들었는데, 무엇을 했는지는 아직 안 들렸어요.',summary:'경험을 고른 건 좋아요. 다만 결론이 마지막에 나와서 면접관이 끝까지 기다려야 해요.',checks:{answerFirst:{status:'fix',note:'첫 문장을 강점 한 단어와 근거로 시작해 보세요.'},concrete:{status:'good',note:'아르바이트 6개월이라는 기간이 들어가 믿음이 가요.'},jobLink:{status:'fix',note:'그 강점이 지원 분야의 어떤 업무에 쓰이는지 한 줄이 빠졌어요.'},natural:{status:'fix',note:'최선을 다하겠습니다 같은 다짐보다 행동으로 맺어 보세요.'}},followUp:'그 6개월 동안 가장 힘들었던 손님 한 분을 떠올려 보면, 어떻게 대응하셨어요?',oneFix:'결론을 맨 앞으로 옮겨 보세요. 강점 → 근거 장면 → 직무 연결 순서면 30초 안에 끝나요.',opener:'제 강점은 끝까지 확인하는 습관입니다. [아르바이트]에서 6개월 동안 [빈칸]을 매일 점검했습니다.'};
+if(new URLSearchParams(location.search).has('demo')){$('a').value='저는 성실한 사람입니다. 카페 아르바이트를 6개월 동안 하면서 한 번도 지각하지 않았고 손님들에게 친절하게 대하려고 노력했습니다. 입사하면 최선을 다하겠습니다.';$('a').dispatchEvent(new Event('input'));qi=2;drawChips();$('job').value='호텔 프런트';if(location.search.includes('demo=r')){$('result').hidden=false;render(DEMO)}}
+$('go').onclick=async()=>{
+  const q=qi===5?$('qOwn').value.trim():QS[qi],a=$('a').value.trim(),R=$('result'),B=$('go');
+  const msg=(t,p)=>{R.hidden=false;R.innerHTML=`<div class="score bad"><b>${esc(t)}</b><p>${esc(p)}</p></div>`};
+  if(!q)return msg('질문을 적어 주세요','어떤 질문에 대한 답인지 알아야 정확히 들을 수 있어요.');
+  if(a.length<20)return msg('답변을 조금 더 해 주세요','20자 이상이면 들어 볼 수 있어요.');
+  if(rec)rec.stop();
+  B.disabled=true;R.hidden=false;R.innerHTML='<div class="wait"><span class="spin" aria-hidden="true"></span>AI 면접관이 듣고 있어요… 20초쯤 걸려요</div>';
+  try{
+    const r=await fetch('/api/coach',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'freeInterview',question:q,answer:a,job:$('job').value.trim()})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok){B.disabled=false;return msg(r.status===429?'오늘 무료 체험이 끝났어요':'잠시 문제가 생겼어요',d.error||'잠시 뒤 다시 눌러 주세요.')}
+    render(d);B.textContent='오늘 체험 완료';R.scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){B.disabled=false;msg('연결이 잠시 끊겼어요','인터넷 연결을 확인하고 다시 눌러 주세요.')}
+};
+</script>
+</body>
+</html>

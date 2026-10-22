@@ -1,5 +1,12 @@
 {
   "rewrites": [
-    { "source": "/go/:key", "destination": "/index.html" }
+    {
+      "source": "/go/:key",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/free",
+      "destination": "/free.html"
+    }
   ]
 }
