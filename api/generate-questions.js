@@ -6,6 +6,7 @@
 // 반환되며, 강사가 "설정 저장"을 눌러야 실제로 적용됩니다.
 // 보안 (2026-09-25): 강사용 암호가 있어야 사용 가능 (AI 비용 보호)
 
+import { withUsage } from './_usage.js'; // AI 사용 기록 (2026-10-24)
 import Redis from 'ioredis';
 import { isStaff } from './_staff.js';
 import { getClient } from './client-code.js';
@@ -59,7 +60,7 @@ const BANNED_RULE = `
 const BANNED_RE = [/결혼|기혼|미혼|혼인|애인|남자\s?친구|여자\s?친구|연애/, /출산|임신|아이를?\s?(낳|가질)|자녀\s?계획|육아\s?계획/, /부모님?(의|께서)?\s?(직업|직장|학력|재산)|가족\s?(관계|구성|사항|학력|직업)|집안|재산/, /외모|얼굴|키가|키는|몸무게|체중|성형|예쁘|잘생|체형/, /학벌|명문대|지방대|출신\s?(학교|대학|지역)|어느\s?학교|고향|어디\s?출신/, /종교|지지\s?(정당|후보)|정치\s?성향|나이가\s?(많|적)/];
 const isBanned = (q) => BANNED_RE.some((re) => re.test(String(q || '')));
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'POST 요청만 허용됩니다.' });
   }
@@ -544,3 +545,5 @@ async function handleCompanyBrief(req, res) {
   if (!r.ok) return res.status(r.status || 500).json({ error: r.error });
   return res.status(200).json({ brief: r.brief });
 }
+
+export default withUsage('interview', 'generate-questions', handler);

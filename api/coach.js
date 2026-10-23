@@ -93,13 +93,14 @@ function aiErrorText(status, data) {
   return `AI 호출 중 오류가 발생했습니다. (${status} ${t} ${m.slice(0, 120)})`;
 }
 
+import { withUsage } from './_usage.js'; // AI 사용 기록 (2026-10-24)
 import { fitLength } from './_fitlen.js';
 import Redis from 'ioredis';
 import { createHash } from 'crypto';
 let redis;
 function getRedis() { if (!redis) redis = new Redis(process.env.REDIS_URL); return redis; }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'POST 요청만 가능합니다.' });
   }
@@ -294,3 +295,5 @@ ${JSON_RULE}
     return res.status(500).json({ error: err.message || '서버 오류가 발생했습니다.' });
   }
 }
+
+export default withUsage('interview', 'coach', handler);

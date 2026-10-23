@@ -7,6 +7,7 @@
 // - 합격/보류/탈락 같은 평가 점수는 일부러 받지 않음 (학생 자신감 보호)
 // - 모든 데이터는 하루 뒤 자동 삭제 (이름 등 개인정보는 받지 않음)
 
+import { withUsage } from './_usage.js'; // AI 사용 기록 (2026-10-24)
 import Redis from 'ioredis';
 import { isStaff } from './_staff.js';
 
@@ -51,7 +52,7 @@ async function touch(r, code, round) {
   ]);
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const r = getRedis();
   try {
     // ---------- 학생·강사 공통: 현재 라운드 확인 (GET ?code=&peek=1) ----------
@@ -264,3 +265,5 @@ async function summarize(list, title) {
   }
   return null;
 }
+
+export default withUsage('interview', 'live', handler);
