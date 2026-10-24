@@ -1075,6 +1075,8 @@
 <script src="/staff-guard.js" data-mode="admin" data-color="#295BF2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
+// 쓰임새 기록 (2026-10-24 · 2단계 정리): 화면이 열린 횟수만 운영보드로 보냄 (이름·기기 정보는 보내지 않음)
+function moaUse(s){try{var k=String(s),t=Date.now(),m=window.__moaUse||(window.__moaUse={});if(m[k]&&t-m[k]<600000)return;m[k]=t;var u='https://jinromoa-board.vercel.app/api/usage',b=JSON.stringify({a:'iv',s:k});if(navigator.sendBeacon)navigator.sendBeacon(u,b);else fetch(u,{method:'POST',body:b,keepalive:true,mode:'no-cors'})}catch(e){}}
 // ── 날짜 표시 통일 (2026-09-28, 취업스킬 전 앱 공통 규칙) ──
 // 기본(기록) 2026.10.26 · week(일정) 2026.10.26(월) · short 10.26(월) · time 2026.10.26 14:00 · stime 10.26(월) 14:00 · ym 2000.03 · formal 2026년 9월 27일
 function moaDate(v, kind){
@@ -2527,6 +2529,7 @@ function startCategory(cat, skipHistory){
   if(ALL_ANSWERS[cat.id]) Object.assign(answersByIdx, ALL_ANSWERS[cat.id].items); // 저장된 답변 다시 보여주기
   screenSelect.style.display = 'none';
   screenChat.style.display = 'flex';
+  moaUse('qa');
   headerTitle.textContent = cat.title + ' 연습';
   sessionAnswers = [];
   makeLinkBtn.style.display = 'none';
@@ -2712,6 +2715,7 @@ function chatBodyFollowUpInit(){
     if(reply.length < 10){ out.innerHTML = '<div style="color:#C0392B;font-size:12.5px">10자 이상 적어주세요.</div>'; return; }
     if(!prev){ out.innerHTML = '<div style="color:#C0392B;font-size:12.5px">처음 답변을 찾지 못했어요. 질문을 다시 열어주세요.</div>'; return; }
     checkBtn.disabled = true; checkBtn.textContent = '판정 중...';
+    moaUse('defend');
     out.innerHTML = '<div style="color:var(--muted);font-size:12.5px">면접관 시점으로 보고 있어요. 5~10초 걸려요.</div>';
     try{
       const res = await fetch(apiUrl('/api/coach'), {
@@ -3330,6 +3334,7 @@ document.getElementById('st-preview-btn').onclick = () => {
 
 /* ---- ① 전공 패키지 탭 ---- */
 function renderPackageTab(){
+  moaUse('pkg');
   renderPackageEditor();
   renderPackageList();
   renderCommonQuestions();
@@ -3683,6 +3688,7 @@ function renderSelfCheck(){
 }
 
 function renderTodayTab(){
+  moaUse('today');
   renderSelfCheck();
   document.getElementById('institution-name-input').value = INSTITUTION_NAME || '';
   document.getElementById('target-field-input').value = TARGET_FIELD || '';
@@ -3907,6 +3913,7 @@ let currentReviewId = null;
 let currentReviewRecord = null;
 
 async function renderReviewList(){
+  moaUse('review');
   reviewListBody.innerHTML = '<p style="color:var(--muted);font-size:13px;">불러오는 중...</p>';
   try{
     const response = await fetch(apiUrl('/api/reviews?list=1'));
@@ -4200,6 +4207,7 @@ async function renderResultView(id){
   screenChat.style.display = 'none';
   screenSettings.style.display = 'none';
   screenResult.style.display = 'flex';
+  moaUse('result');
   screenResult.classList.add('rr'); // 2026-09-30 '리허설 리포트' 디자인
 
   try{
@@ -4690,6 +4698,7 @@ function liveStudentUrl(code){
 }
 
 function openLiveBoard(){
+  moaUse('live');
   let el = document.getElementById('live-board');
   if(!el){
     el = document.createElement('div');
@@ -5206,6 +5215,7 @@ function clientSaveDraft(){
 }
 
 async function initClientMode(rawCode){
+  moaUse('client');
   document.body.classList.add('role-student');
   document.getElementById('role-badge').textContent = '개인 고객';
   gearBtn.style.display = 'none';
@@ -5418,6 +5428,7 @@ async function clientFinalSubmit(){
   await loadConfig();
   if(!isAdmin) applyResumeHandoff(); // 📝 자소서 앱에서 넘어온 꼬리질문 (2026-10-05)
   if(!isAdmin) STU_RESTORED_N = stuLoadAnswers(); // 💾 지난번 답변 불러오기
+  if(!isAdmin) moaUse('start'); // 학생 시작 화면
   if(!isAdmin && jobScreenNeeded()){
     renderJobSelectScreen();
     setupStudentBackGuard('jobs');
