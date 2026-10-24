@@ -242,6 +242,33 @@ function aiErrorText(status, data) {
 
 import { withUsage } from './_usage.js'; // AI 사용 기록 (2026-10-24)
 import { fitLength } from './_fitlen.js';
+import Redis from 'ioredis';
+import { whoIs } from './_staff.js';
+
+// ───────────────────────────────────────────
+// ★ 원장님 비교 화면(/compare.html)용 시험 설정 (2026-10-24)
+//   원장님 암호(x-staff-pin)가 맞을 때만 body.lab = { model, tone } 을 받음. 학생·강사 화면 요청은 그대로.
+//   model: 지금 모델(claude-sonnet-4-6) / 후속 모델(claude-sonnet-5-5) · tone: 'live'면 아래 말하는 문체 규칙 추가
+// ───────────────────────────────────────────
+const LAB_MODELS = ['claude-sonnet-4-6', 'claude-sonnet-5-5'];
+let redis;
+function getRedis() {
+  if (!redis) redis = new Redis(process.env.REDIS_URL);
+  return redis;
+}
+
+const SPEAK_RULES = `
+
+[말하는 답변 문체 — rewritten에 적용, 위 문체 지침보다 우선 (시험 중)]
+rewritten은 읽는 글이 아니라 면접장에서 소리 내어 말하는 답변이다. 읽는 순간 지원자의 목소리가 들리게 쓴다.
+- 첫 문장은 질문에 대한 결론을 짧게 말한다(25자 안팎). 「한 마디로 말하면」, 「~라고 판단했습니다」 같은 예고·보고서 표현으로 시작하지 않는다.
+- 한 문장은 40자 안팎으로, 한 문장에 생각 하나만 담는다. 「~하는 시점에서」, 「~함으로써」, 「~에 있어」, 「~와 맞닿아」 같은 문어 연결은 쓰지 않는다.
+- 핵심 경험은 한 장면으로 보여 준다: 그때 실제로 한 행동 하나와 건넨 말 한마디(「 」). 원문에 없는 말·장면은 {{ }} 규칙을 그대로 따른다.
+- 사람이 움직이는 동사를 쓴다. 「대응을 진행했습니다」 대신 「먼저 다가가 여쭤봤습니다」처럼.
+- 감정은 꾸미지 않되, 그 순간 든 생각 한 줄은 넣는다(예: 이때 '순서만 바꿔 안내하면 되겠다' 싶었습니다). 신파·감탄은 여전히 쓰지 않는다.
+- 회사 이야기는 한 가지만, 자기 경험과 바로 이어서 말한다. 회사 소개를 나열하지 않는다.
+- 마무리는 다짐 대신 입사 후 첫 행동 하나로 맺는다.
+- 공손한 면접 말투(~습니다)는 유지하고, 「그래서」, 「그때」, 「덕분에」처럼 말할 때 쓰는 이음말로 문장을 잇는다.`;
 
 async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -252,6 +279,14 @@ async function handler(req, res) {
 
   if (!question) {
     return res.status(400).json({ error: '질문(문항) 내용이 없습니다.' });
+  }
+
+  let lab = null;
+  if (req.body && req.body.lab) {
+    const who = await whoIs(req, getRedis()).catch(() => null);
+    if (!who || who.role !== 'master') return res.status(403).json({ error: '원장님 암호가 필요합니다.' });
+    const m = String(req.body.lab.model || '');
+    lab = { model: LAB_MODELS.includes(m) ? m : LAB_MODELS[0], tone: req.body.lab.tone === 'live' ? 'live' : 'base', started: Date.now() };
   }
 
   // 이번 요청의 다양화 재료 (매번 무작위)
@@ -292,7 +327,8 @@ async function handler(req, res) {
   const teacherBlock = majorRules ? `[강사 평가 기준 · 응답 형식 — 아래 JSON 필드를 모두 채우고, 위 규칙의 추가 필드(red_flags, exampleSlots, direction_steps)와 뒤의 criteria·memorized·speech도 함께 넣는다]\n${majorRules}` : '';
   const dynamicSystem =
     trendRules({ answerSec, targetSec, resumeSentences, resumeOverlap }) +
-    variety;
+    variety +
+    (lab && lab.tone === 'live' ? SPEAK_RULES : '');
   const systemBlocks = [
     { type: 'text', text: staticSystem, cache_control: { type: 'ephemeral' } },
     ...(teacherBlock ? [{ type: 'text', text: teacherBlock, cache_control: { type: 'ephemeral' } }] : []),
@@ -310,8 +346,10 @@ async function handler(req, res) {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: lab ? lab.model : 'claude-sonnet-4-6',
         max_tokens: 5200, // 결격 신호·예시 보기 추가로 여유 있게 (실제 쓴 만큼만 비용 발생)
+        // 후속 모델은 '생각하는 단계'가 기본으로 켜져 있어 비용·시간이 늘어남 → 끈 상태로 시험
+        ...(lab && lab.model === 'claude-sonnet-5-5' ? { thinking: { type: 'between_tools' } } : {}),
         system: systemBlocks,
         messages: [
           { role: 'user', content: `[질문]\n${question}\n\n[답변]\n${answer || ''}` }
@@ -368,6 +406,7 @@ async function handler(req, res) {
         feedback.exampleSlots = (Array.isArray(fx.exampleSlots) ? fx.exampleSlots : []).filter((s) => s && s.example).map((s) => ({ example: String(s.example), hint: String(s.hint || ''), options: (Array.isArray(s.options) ? s.options : []).map(String).filter(Boolean).slice(0, 3) })).slice(0, 8);
       }
     }
+    if (lab) feedback._lab = { model: lab.model, tone: lab.tone, ms: Date.now() - lab.started };
     return res.status(200).json(feedback);
   } catch (err) {
     console.error('서버 오류:', err);

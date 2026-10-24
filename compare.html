@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>모델 비교 · 모의면접</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<!-- 원장님 전용 (2026-10-24): 같은 답변을 A 지금 모델 · B 후속 모델 · C 후속 모델 + 말하는 문체로 동시에 받아 나란히 비교.
+     서버(api/feedback.js)는 원장님 암호가 맞을 때만 시험 설정을 받음. 학생 화면에는 영향 없음. -->
+<script src="/staff-guard.js" data-mode="always" data-color="#295BF2"></script>
+<style>
+  :root{--ink:#141A2E;--ink2:#3B4256;--muted:#5F6678;--line:#E6E8EE;--surface:#F4F5F7;--app:#295BF2;--mark:#FFF1A8;--danger:#B42318}
+  *{box-sizing:border-box}
+  body{margin:0;background:#fff;color:var(--ink);font-family:'Noto Sans KR','맑은 고딕','Malgun Gothic',sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:16px}
+  .logo{font-weight:700;letter-spacing:.12em;font-size:13px;color:var(--ink);display:flex;align-items:center;gap:8px}
+  .logo i{width:8px;height:8px;border-radius:50%;background:var(--app);display:inline-block}
+  h1{font-size:22px;margin:14px 0 4px}
+  .lead{color:var(--muted);font-size:14px;line-height:1.7;margin:0 0 14px}
+  .card{border:1px solid var(--line);border-radius:14px;padding:14px;background:#fff;margin-bottom:12px}
+  label{display:block;font-size:13px;font-weight:700;color:var(--ink2);margin:10px 0 6px}
+  select,textarea{width:100%;font:inherit;font-size:15px;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff;color:var(--ink)}
+  textarea{min-height:96px;line-height:1.6;resize:vertical}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+  button{font:inherit;min-height:44px;padding:8px 16px;border-radius:10px;border:1px solid var(--ink);background:var(--ink);color:#fff;font-weight:700;cursor:pointer}
+  button[disabled]{opacity:.5;cursor:default}
+  .note{font-size:12px;color:var(--muted);line-height:1.6}
+  .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  @media (max-width:860px){.grid{grid-template-columns:1fr}}
+  .col h3{margin:0 0 2px;font-size:15px}
+  .col .sub{font-size:12px;color:var(--muted);margin-bottom:10px}
+  .ans{font-size:15px;line-height:1.85;white-space:pre-wrap;word-break:keep-all}
+  .ans mark{background:var(--mark);padding:0 2px;border-radius:3px}
+  .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .meta span{font-size:12px;background:var(--surface);border-radius:999px;padding:3px 10px;color:var(--ink2)}
+  details{margin-top:10px;font-size:13px;color:var(--ink2);line-height:1.7}
+  details summary{cursor:pointer;color:var(--muted)}
+  .err{color:var(--danger);font-size:13px}
+  .pick{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .pick button{background:#fff;color:var(--ink);border-color:var(--line);font-weight:500}
+  .pick button[aria-pressed="true"]{border-color:var(--app);color:var(--app);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo"><i></i>MOA FORMULA</div>
+  <h1>AI 모델·문체 비교</h1>
+  <p class="lead">같은 답변을 세 가지 방식으로 동시에 받아 완성 답변을 나란히 비교합니다. 한 번 비교할 때 AI를 3번 사용하며 약 200~300원이 듭니다. 실제 학생 답변 대신 예시 답변을 사용하십시오.</p>
+
+  <div class="card">
+    <label for="sample">예시 답변</label>
+    <select id="sample"></select>
+    <label for="q">질문</label>
+    <textarea id="q" style="min-height:52px"></textarea>
+    <label for="a">학생 답변</label>
+    <textarea id="a"></textarea>
+    <div class="row">
+      <button type="button" id="run">세 가지로 비교하기</button>
+      <span class="note" id="status"></span>
+    </div>
+  </div>
+
+  <div class="grid" id="out"></div>
+  <div class="card" id="vote" style="display:none">
+    <b style="font-size:15px">어느 쪽이 가장 좋았나요?</b>
+    <p class="note" style="margin:4px 0 0">고르신 결과는 이 기기에만 남습니다. 여러 예시를 보신 뒤 채팅으로 알려 주시면 그대로 반영하겠습니다.</p>
+    <div class="pick" id="pick"></div>
+    <p class="note" id="tally" style="margin-top:10px"></p>
+  </div>
+</div>
+<script>
+// 1,400원/달러로 환산한 추정치 (캐시 저장 1.25배, 캐시 읽기 0.1배)
+var PRICE = { 'claude-sonnet-4-6': [3, 15], 'claude-sonnet-5-5': [2, 10] };
+var WON = 1400;
+var VARIANTS = [
+  { key: 'A', title: 'A. 지금 그대로', sub: '현재 모델 · 현재 문체', lab: { model: 'claude-sonnet-4-6', tone: 'base' } },
+  { key: 'B', title: 'B. 새 모델', sub: '후속 모델 · 현재 문체', lab: { model: 'claude-sonnet-5-5', tone: 'base' } },
+  { key: 'C', title: 'C. 새 모델 + 말하는 문체', sub: '후속 모델 · 생동감 개선안', lab: { model: 'claude-sonnet-5-5', tone: 'live' } }
+];
+var SAMPLES = [
+  { name: '객실승무원 · 지원동기', job: '객실승무원', q: '대한항공에 지원한 동기를 말씀해 주세요.',
+    a: '저는 대한항공이 아시아나와 통합하면서 더 큰 항공사가 되는 시기에 함께하고 싶어서 지원했습니다. 면세점에서 아르바이트를 하면서 외국인 손님을 많이 응대했고 서비스에 자신감이 생겼습니다. 입사하면 안전과 서비스를 빨리 배워서 좋은 승무원이 되겠습니다.' },
+  { name: '간호 · 갈등 해결 경험', job: '간호사', q: '팀원과 갈등이 있었을 때 어떻게 해결했나요?',
+    a: '실습 때 같은 조 동기와 환자 기록 정리 방식이 달라서 갈등이 있었습니다. 저는 대화를 통해서 서로의 방식을 이해했고 결국 하나의 방식으로 정리했습니다. 이 경험으로 소통이 중요하다는 것을 알게 되었습니다.' },
+  { name: '사무행정 · 본인의 강점', job: '사무행정', q: '본인의 강점은 무엇입니까?',
+    a: '제 강점은 꼼꼼함입니다. 학교 행정실에서 근로장학생으로 일하면서 서류를 정리하는 업무를 했는데 실수 없이 잘 처리했습니다. 입사 후에도 꼼꼼하게 업무를 처리하겠습니다.' },
+  { name: '호텔 · 실패 경험', job: '호텔리어', q: '실패했던 경험과 그 경험에서 배운 점을 말씀해 주세요.',
+    a: '호텔 실습에서 체크인 때 고객 예약을 잘못 확인해서 다른 방을 배정한 적이 있습니다. 고객이 불만을 말씀하셔서 선배님께 도움을 요청해 해결했습니다. 그 뒤로는 예약 내용을 두 번 확인하는 습관을 갖게 되었습니다.' },
+  { name: '공공기관 · 입사 후 포부', job: '공공기관 사무', q: '입사 후 포부를 말씀해 주세요.',
+    a: '입사하면 먼저 업무를 빠르게 익히고 민원인에게 친절한 직원이 되고 싶습니다. 그리고 장기적으로는 전문성을 키워서 기관의 발전에 기여하는 인재가 되겠습니다.' }
+];
+
+var BASE_PROMPT = '';
+var sel = document.getElementById('sample'), qEl = document.getElementById('q'), aEl = document.getElementById('a');
+var runBtn = document.getElementById('run'), statusEl = document.getElementById('status'), out = document.getElementById('out');
+
+SAMPLES.forEach(function (s, i) { var o = document.createElement('option'); o.value = i; o.textContent = s.name; sel.appendChild(o); });
+var oc = document.createElement('option'); oc.value = 'custom'; oc.textContent = '직접 입력'; sel.appendChild(oc);
+function fill() { var s = SAMPLES[sel.value]; if (s) { qEl.value = s.q; aEl.value = s.a; } else { qEl.value = ''; aEl.value = ''; } }
+sel.addEventListener('change', fill); fill();
+
+// 학생 화면과 같은 기본 평가 기준을 index.html에서 그대로 읽어 옴 (두 곳이 어긋나지 않게)
+fetch('/index.html').then(function (r) { return r.text(); }).then(function (t) {
+  var m = t.match(/const DEFAULT_SYSTEM_PROMPT = `([\s\S]*?)`;/);
+  BASE_PROMPT = m ? m[1] : '';
+  if (!BASE_PROMPT) statusEl.textContent = '기본 평가 기준을 읽지 못했습니다. 새로고침해 주십시오.';
+});
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function marked(t) { return esc(t).replace(/\{\{([\s\S]*?)\}\}/g, '<mark>$1</mark>'); }
+function costWon(model, u) {
+  var p = PRICE[model] || PRICE['claude-sonnet-4-6'];
+  if (!u) return 0;
+  var usd = ((u.in || 0) * p[0] + (u.cacheWrite || 0) * p[0] * 1.25 + (u.cached || 0) * p[0] * 0.1 + (u.out || 0) * p[1]) / 1e6;
+  return Math.round(usd * WON);
+}
+
+function colHtml(v, body) {
+  return '<div class="card col" id="col' + v.key + '"><h3>' + esc(v.title) + '</h3><div class="sub">' + esc(v.sub) + '</div>' + body + '</div>';
+}
+
+function runOne(v, q, a, job) {
+  var prompt = BASE_PROMPT + '\n\n[직무 맥락] 이 수강생은 \'' + job + '\' 직무를 준비 중입니다. 가능하면 코멘트와 rewritten에 이 직무의 특성을 반영하세요.';
+  return fetch('/api/feedback', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question: q, answer: a, systemPrompt: prompt, hiringType: 'normal', lab: v.lab })
+  }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); }).then(function (x) {
+    var el = document.getElementById('col' + v.key);
+    if (!x.ok) { el.outerHTML = colHtml(v, '<p class="err">' + esc(x.d.error || '오류가 발생했습니다.') + '</p>'); return; }
+    var d = x.d, lab = d._lab || {};
+    var won = costWon(lab.model, d._usage);
+    el.outerHTML = colHtml(v,
+      '<div class="ans">' + marked(d.rewritten || '') + '</div>' +
+      '<div class="meta"><span>약 ' + won + '원</span><span>' + Math.round((lab.ms || 0) / 100) / 10 + '초</span><span>' + String(d.rewritten || '').replace(/\{\{|\}\}/g, '').length + '자</span></div>' +
+      '<details><summary>잘한 점 · 개선점 보기</summary><p><b>잘한 점</b><br>' + esc(d.good) + '</p><p><b>개선점</b><br>' + esc(d.improve) + '</p></details>');
+  }).catch(function () {
+    var el = document.getElementById('col' + v.key);
+    if (el) el.outerHTML = colHtml(v, '<p class="err">연결에 실패했습니다. 다시 시도해 주십시오.</p>');
+  });
+}
+
+runBtn.addEventListener('click', function () {
+  var q = qEl.value.trim(), a = aEl.value.trim();
+  if (!q || !a) { statusEl.textContent = '질문과 답변을 모두 입력해 주십시오.'; return; }
+  if (!BASE_PROMPT) { statusEl.textContent = '기본 평가 기준을 읽는 중입니다. 잠시 후 다시 눌러 주십시오.'; return; }
+  var s = SAMPLES[sel.value], job = s ? s.job : '지원 직무';
+  runBtn.disabled = true; statusEl.textContent = '세 가지 답변을 받는 중입니다. 30초~1분 정도 걸립니다.';
+  out.innerHTML = VARIANTS.map(function (v) { return colHtml(v, '<p class="note">받는 중입니다.</p>'); }).join('');
+  document.getElementById('vote').style.display = 'none';
+  Promise.all(VARIANTS.map(function (v) { return runOne(v, q, a, job); })).then(function () {
+    runBtn.disabled = false; statusEl.textContent = '완료되었습니다. 형광펜은 AI가 채운 예시 자리입니다.';
+    showVote(sel.value);
+  });
+});
+
+// 이 기기에만 남는 간단한 선택 기록
+function getVotes() { try { return JSON.parse(localStorage.getItem('moa_compare_votes') || '{}'); } catch (e) { return {}; } }
+function showVote(key) {
+  var box = document.getElementById('vote'), pick = document.getElementById('pick');
+  box.style.display = 'block';
+  function paint() {
+    var votes = getVotes();
+    pick.innerHTML = VARIANTS.map(function (v) { return '<button type="button" data-k="' + v.key + '" aria-pressed="' + (votes[key] === v.key) + '">' + esc(v.title) + '</button>'; }).join('');
+    var cnt = { A: 0, B: 0, C: 0 }; Object.keys(votes).forEach(function (k) { cnt[votes[k]] = (cnt[votes[k]] || 0) + 1; });
+    document.getElementById('tally').textContent = '지금까지 선택: A ' + cnt.A + ' · B ' + cnt.B + ' · C ' + cnt.C;
+  }
+  pick.onclick = function (e) {
+    var b = e.target.closest('[data-k]'); if (!b) return;
+    var votes = getVotes(); votes[key] = b.getAttribute('data-k');
+    try { localStorage.setItem('moa_compare_votes', JSON.stringify(votes)); } catch (x) {}
+    paint();
+  };
+  paint();
+}
+</script>
+</body>
+</html>
