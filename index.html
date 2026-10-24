@@ -2259,11 +2259,23 @@ function attachCompanyBrief(box, input){
   }
 }
 
+// 특강 질문 유형 (2026-10-24): 허브 입장 코드에 질문 유형을 정해 두면 그 QR로 들어온 학생 주소에 ?qt=유형id 가 붙음
+//   → 그 유형 카드만 보여 줌. 강사 목록에 없는 유형이거나 유료 고객이면 전체를 그대로 보여 줌
+function classQt(){
+  if(CLIENT) return '';
+  const v = String(__params.get('qt') || '');
+  return /^[a-z0-9-]{1,30}$/.test(v) && CATEGORIES.some(c => c.id === v) ? v : '';
+}
 function renderCategories(){
   catList.innerHTML = '';
   { const lead = document.querySelector('#screen-select > p.lead'); if(lead) lead.style.display = ''; }
   if(!CLIENT){ const mine = myResultsList(); if(mine.length){ catList.insertAdjacentHTML('beforeend', myResultsBoxHtml(mine)); setTimeout(fillMyResultsBox, 0); } }
   if(CLIENT) catList.insertAdjacentHTML('beforeend', clientBannerHtml());
+  const qt = classQt();
+  if(qt){
+    const qc = CATEGORIES.find(c => c.id === qt);
+    catList.insertAdjacentHTML('beforeend', `<div style="background:var(--white);border:1px solid var(--line);border-left:4px solid var(--navy);border-radius:6px;padding:12px 14px;margin-bottom:6px;font-size:14px;line-height:1.6">오늘 특강은 <b>${escapeHtml(qc.title)}</b> 질문으로 진행합니다.</div>`);
+  }
   // 지원 기업명 입력칸 (선택) — 입사 후 포부 피드백을 회사 맞춤으로
   const companyBox = document.createElement('div');
   companyBox.style.cssText = 'background:var(--white);border:1px solid var(--line);border-radius:6px;padding:14px 16px;margin-bottom:6px;';
@@ -2311,6 +2323,7 @@ function renderCategories(){
     catList.appendChild(note);
   }
   CATEGORIES.forEach((cat, i) => {
+    if(qt && cat.id !== qt) return; // 특강 질문 유형만 (번호·답변 기록은 원래 순서 그대로)
     const card = document.createElement('button');
     card.className = 'cat-card';
     card.innerHTML = `
