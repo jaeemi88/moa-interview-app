@@ -240,9 +240,10 @@ function aiErrorText(status, data) {
   return `AI 호출 중 오류가 발생했습니다. (${status} ${t} ${m.slice(0, 120)})`;
 }
 
+import { withUsage } from './_usage.js'; // AI 사용 기록 (2026-10-24)
 import { fitLength } from './_fitlen.js';
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'POST 요청만 가능합니다.' });
   }
@@ -373,3 +374,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 }
+
+export default withUsage('interview', 'feedback', handler);
