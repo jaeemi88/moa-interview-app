@@ -8,5 +8,10 @@
       "source": "/free",
       "destination": "/free.html"
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "claude/**": false
+    }
+  }
 }
