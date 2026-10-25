@@ -140,6 +140,9 @@ select:focus,input:focus{outline:none;border-color:var(--ink)}
 </main>
 <footer>진로모아커리어센터 · MOA FORMULA<br>AI 참고 피드백이에요 · 실제 면접 준비는 강사와 함께</footer>
 <script>
+// 쓰임새 기록 (2026-10-24 · 2단계 정리): 화면이 열린 횟수만 운영보드로 보냄 (이름·기기 정보는 보내지 않음)
+function moaUse(s){try{var k=String(s),t=Date.now(),m=window.__moaUse||(window.__moaUse={});if(m[k]&&t-m[k]<600000)return;m[k]=t;var u='https://jinromoa-board.vercel.app/api/usage',b=JSON.stringify({a:'iv',s:k});if(navigator.sendBeacon)navigator.sendBeacon(u,b);else fetch(u,{method:'POST',body:b,keepalive:true,mode:'no-cors'})}catch(e){}}
+moaUse('free');
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const QS=['1분 자기소개를 해 주세요.','우리 회사에 지원한 이유는 무엇인가요?','본인의 가장 큰 강점은 무엇인가요?','실패했던 경험과 그 뒤에 달라진 점을 말해 주세요.','마지막으로 하고 싶은 말이 있나요?'];
