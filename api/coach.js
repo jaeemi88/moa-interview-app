@@ -94,6 +94,7 @@ function aiErrorText(status, data) {
 }
 
 import { withUsage } from './_usage.js'; // AI 사용 기록 (2026-10-24)
+import { withOnce } from './_once.js'; // 학생당 1회 강의 코드 (2026-10-27)
 import { fitLength } from './_fitlen.js';
 import Redis from 'ioredis';
 import { createHash } from 'crypto';
@@ -296,4 +297,4 @@ ${JSON_RULE}
   }
 }
 
-export default withUsage('interview', 'coach', handler);
+export default withUsage('interview', 'coach', withOnce('iv', b => ['outline', 'defend', 'finish'].includes(b.mode) ? b.mode : '', handler));
