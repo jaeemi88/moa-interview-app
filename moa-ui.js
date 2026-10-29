@@ -205,7 +205,7 @@
         right.appendChild(set);
       }
       var hub = document.querySelector('.moa-hubbar a');
-      if (hub && hub.style.display !== 'none') right.appendChild(el('a', { class: 'moa-lock', href: hub.getAttribute('href') }, '허브'));
+      if (hub && hub.style.display !== 'none') right.appendChild(el('a', { class: 'moa-lock moa-lock-hub', href: hub.getAttribute('href') }, '허브'));
       var title = header.querySelector('.title-row');
       header.insertBefore(right, title ? title.nextSibling : null);
     }
