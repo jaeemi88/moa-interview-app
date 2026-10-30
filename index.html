@@ -1723,6 +1723,30 @@ function iwItemHtml(item, idx, total, record) {
   // 질문 하나가 한 쪽 안에 들어갈 만하면(약 1,300자 이하) 통째로 같은 쪽에, 더 길면 소제목 단위로 넘김
   return len <= 1300 ? iwSection(body) : body;
 }
+// 내려받는 파일 끝 센터 안내 (2026-10-30 대표님 승인 · 1차: Word·PDF에만, 화면에는 넣지 않음)
+const CENTER_LINKS = [
+  ['1:1 모의면접', '네이버 예약 · 진로모아커리어센터', 'https://booking.naver.com/booking/5/bizes/1748919'],
+  ['면접 팁', '인스타그램 @jinromoa', 'https://www.instagram.com/jinromoa'],
+  ['문의', '카카오톡 채널 · 진로모아', 'https://pf.kakao.com/_kxaUaX']
+];
+const CENTER_TITLE = '실제 면접관 앞에서 연습해 보고 싶다면';
+const CENTER_LEAD = '항공승무원 출신 강사가 1:1 모의면접으로 답변마다 바로 피드백을 드립니다.';
+function iwCenterBox() {
+  return `<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:16pt 0 0"><tr style="page-break-inside:avoid">
+    <td width="4" style="background:${IW.blue};width:4pt">&nbsp;</td>
+    <td style="background:${IW.light};padding:9pt 12pt;font-family:${IW.font}">
+      <p style="margin:0 0 3pt;font-size:10.5pt;font-weight:bold;color:${IW.deep}">${CENTER_TITLE}</p>
+      <p style="margin:0 0 5pt;font-size:9.5pt;color:${IW.text}">${CENTER_LEAD}</p>
+      ${CENTER_LINKS.map(([k, t, u]) => `<p style="margin:0 0 2pt;font-size:9.5pt;color:${IW.text}"><b>${k}</b>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="${u}" style="color:${IW.blue}">${t}</a></p>`).join('')}
+    </td></tr></table>`;
+}
+function centerBoxPrintHtml() {
+  return `<div style="break-inside:avoid;page-break-inside:avoid;margin-top:22px;padding:12px 16px;border-top:3px solid ${IW.blue};border-radius:6px;background:${IW.light};font-size:12.5px;line-height:1.7;color:${IW.text}">
+    <div style="font-weight:800;color:${IW.deep};font-size:13.5px">${CENTER_TITLE}</div>
+    <div style="margin:2px 0 6px">${CENTER_LEAD}</div>
+    ${CENTER_LINKS.map(([k, t, u]) => `<div><b>${k}</b> · <a href="${u}" style="color:${IW.blue}">${t}</a> <span style="color:${IW.muted};font-size:11px">${u.replace('https://', '')}</span></div>`).join('')}
+  </div>`;
+}
 function iwBuild(record) {
   const items = record.items || [];
   const d = new Date(record.createdAt || Date.now());
@@ -1743,6 +1767,7 @@ function iwBuild(record) {
       <p style="margin:4pt 0 0;font-size:9.5pt;color:#E3EAFF">${record.studentName ? escapeHtml(record.studentName) + '님 · ' : ''}${dateStr}${items.length > 1 ? ` · 총 ${items.length}문항` : ''}</p>
     </td></tr></table>
   ${items.map((it, i) => iwItemHtml(it, i, items.length, record)).join('')}
+  ${iwCenterBox()}
   <p style="margin:18pt 0 0;font-size:8.5pt;color:${IW.muted};text-align:center;font-family:${IW.font}">진로모아커리어센터 · MOA FORMULA 취업의 공식</p>
 </div></body></html>`;
 }
@@ -1788,7 +1813,7 @@ document.getElementById('result-pdf-btn').onclick = () => {
     .rr-row,.rr-flag,.rr-dir,.rr-mine,.ex-final{break-inside:avoid;page-break-inside:avoid}
     button,.ex-interactive,.rr-noexport{display:none !important}
     summary{list-style:none}
-  </style></head><body><div id="screen-result" class="${screenResult.className}">${headClone ? headClone.outerHTML : ''}<div id="result-items">${clone.innerHTML}</div></div></body></html>`);
+  </style></head><body><div id="screen-result" class="${screenResult.className}">${headClone ? headClone.outerHTML : ''}<div id="result-items">${clone.innerHTML}</div>${centerBoxPrintHtml()}</div></body></html>`);
   doc.close();
   const go = () => { try { frame.contentWindow.focus(); frame.contentWindow.print(); } catch (e) { window.print(); } setTimeout(() => frame.remove(), 60000); };
   if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(() => setTimeout(go, 300)); else setTimeout(go, 800);
