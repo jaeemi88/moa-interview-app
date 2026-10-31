@@ -185,7 +185,7 @@
   .free-card .free-err:empty{display:none}
   .free-card .free-go{font:inherit;font-size:15px;font-weight:600;border:0;border-radius:10px;padding:12px;min-height:50px;background:var(--moa-ink,var(--navy));color:#fff;cursor:pointer}
   .free-card .free-go:disabled{opacity:.7;cursor:wait}
-  /* 🔎 기업 심화 분석 카드 (2026-10-05) */
+  /*  기업 심화 분석 카드 (2026-10-05) */
   .cb-card{border:1px solid #DCE3F5;border-radius:12px;padding:12px 14px;margin-top:10px;background:#F7F9FE;display:flex;flex-direction:column;gap:8px}
   .cb-card .cb-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
   .cb-card .cb-name{font-size:15px;font-weight:700;color:var(--ink)}
@@ -589,7 +589,7 @@
   #screen-result.rr #result-download-btn{align-self:flex-start;background:#fff;border:1.5px solid var(--rr-blue);color:var(--rr-blue);border-radius:10px;min-height:40px;font-weight:700;}
   .rr-steps{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;font-weight:700;color:var(--rr-muted);margin-bottom:6px;}
   .rr-steps .on{padding:4px 12px;border-radius:999px;background:var(--rr-blue);color:#fff;}
-  .rr-steps .done::before{content:'✓ ';color:var(--rr-green);}
+  .rr-steps .done::before{content:' ';color:var(--rr-green);}
   .rr-steps i{width:20px;height:1px;background:var(--rr-line2);}
   .rr-nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0 16px;}
   .rr-nav .lbl{font-size:13px;color:var(--rr-muted);margin-right:4px;}
@@ -815,7 +815,7 @@
   <div class="title-row">
     <h1 id="header-title" style="cursor:pointer" title="홈으로">모의면접 시뮬레이터</h1>
     <span class="role-badge" id="role-badge">학생용</span>
-    <button class="gear-btn" id="gear-btn" title="질문·평가기준 설정">⚙</button>
+    <button class="gear-btn" id="gear-btn" title="질문·평가기준 설정"></button>
   </div>
   <div class="progress-track" id="progress-track" style="display:none;"></div>
   <div class="swipe-hint" id="swipe-hint" style="display:none;">좌우로 넘기거나 위 점을 눌러 다른 질문으로 이동하세요</div>
@@ -843,8 +843,8 @@
       <button class="qnav-btn" id="next-btn" title="다음 질문">›</button>
     </div>
   </div>
-  <button class="link-cta" id="make-link-btn" style="display:none;">📎 지금까지 결과로 학생 링크 만들기</button>
-  <button class="link-cta" id="bundle-all-btn" style="display:none;background:var(--sage);margin-top:8px;">🗂 다른 유형 답변까지 모아서 보내기</button>
+  <button class="link-cta" id="make-link-btn" style="display:none;"> 지금까지 결과로 학생 링크 만들기</button>
+  <button class="link-cta" id="bundle-all-btn" style="display:none;background:var(--sage);margin-top:8px;"> 다른 유형 답변까지 모아서 보내기</button>
 </div>
 
 <div id="screen-result">
@@ -852,8 +852,8 @@
     <div class="r-brand">진로모아커리어센터 · MOA FORMULA 모의면접 결과</div>
     <h2 id="result-title">면접 연습 결과</h2>
     <div class="r-meta" id="result-meta"></div>
-    <button class="btn btn-secondary" id="result-download-btn" type="button" style="margin-top:8px">📄 워드로 저장</button>
-    <button class="btn btn-secondary" id="result-pdf-btn" type="button" style="margin-top:8px">🖨️ PDF로 저장</button>
+    <button class="btn btn-secondary" id="result-download-btn" type="button" style="margin-top:8px"> 워드로 저장</button>
+    <button class="btn btn-secondary" id="result-pdf-btn" type="button" style="margin-top:8px"> PDF로 저장</button>
   </div>
   <div id="result-items"></div>
 </div>
@@ -876,7 +876,7 @@
     <button class="btn-outline" id="st-qr-btn" type="button" style="flex:1">QR 보기</button>
     <button class="btn-outline" id="st-preview-btn" type="button" style="flex:1">학생 화면 미리보기</button>
   </div>
-  <button class="btn-outline" id="st-live-btn" type="button" style="width:100%;margin-top:8px">🔒 🎯 면접관 체험 보드 (수업 시연용)</button>
+  <button class="btn-outline" id="st-live-btn" type="button" style="width:100%;margin-top:8px">  면접관 체험 보드 (수업 시연용)</button>
   <div class="st-tabs">
     <button class="st-tab" data-st-tab="pkg" type="button">전공 패키지</button>
     <button class="st-tab" data-st-tab="today" type="button">오늘 수업</button>
@@ -911,7 +911,7 @@
       <div style="display:flex;flex-direction:column;gap:8px">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
           <label class="st-lbl" for="pk-redflag"><span class="st-step">4</span>결격 검증 질문 <span style="font-weight:400;color:var(--muted);font-size:13px">(선택)</span></label>
-          <button class="btn-outline" id="pk-rf-gen-btn" type="button" style="font-size:13px">🔒 AI로 결격 검증 질문 만들기</button>
+          <button class="btn-outline" id="pk-rf-gen-btn" type="button" style="font-size:13px"> AI로 결격 검증 질문 만들기</button>
         </div>
         <textarea class="st-inp" id="pk-redflag" rows="7" placeholder="한 줄에 하나씩: 질문 // 걸러내는 것&#10;예) 더 조건 좋은 병원에서 연락이 오면 어떻게 하시겠어요? // 경유지 태도·짧은 근속"></textarea>
         <p class="st-sub" id="pk-rf-status">이 전공에서 면접관이 특히 걸러내는 태도를 확인하는 꼬리질문이에요. "//" 뒤의 설명은 학생에게 안 보이고, AI 피드백과 검토 화면에만 쓰여요. 비워두면 기본 결격 검증 질문이 나와요.</p>
@@ -978,7 +978,7 @@
       <div id="today-visible-list"></div>
     </div>
     <div class="st-card" style="gap:6px">
-      <h3 style="margin-bottom:2px">🔒 전공·직무 선택 방식<a class="moa-q" target="_blank" rel="noopener" title="전공·직무 선택 방식 안내" href="https://moa-hub.vercel.app/manual.html#h-free">?</a></h3>
+      <h3 style="margin-bottom:2px"> 전공·직무 선택 방식<a class="moa-q" target="_blank" rel="noopener" title="전공·직무 선택 방식 안내" href="https://moa-hub.vercel.app/manual.html#h-free">?</a></h3>
       <p class="st-sub" style="margin-bottom:4px">교육 전에 정해 주세요. 직접 입력을 켜면 목록에 없는 전공·직무·기업도 학생이 적어서 맞춤 질문과 피드백을 받을 수 있어요.</p>
       <label class="st-chk"><input type="radio" name="free-mode" value="off"><span class="free-opt">프리셋만<small>체크한 전공 카드만 (지금과 같음)</small></span></label>
       <label class="st-chk"><input type="radio" name="free-mode" value="mixed"><span class="free-opt">프리셋 + 직접 입력<small>카드 아래 직접 입력 칸 추가</small></span></label>
@@ -991,11 +991,11 @@
           <label class="st-chk"><input type="checkbox" class="free-kind" value="company">기업</label>
         </div>
         <label class="st-chk" style="margin-top:6px"><input type="checkbox" id="free-notice-chk"><span class="free-opt">기업 입력 시 안내 문구 보이기<small>"최신 채용공고는 직접 확인하세요"</small></span></label>
-        <p class="st-sub" style="margin-top:6px">같은 키워드는 저장해 두고 다시 써서 두 번째 학생부터는 바로 떠요. 직접 입력한 학생 결과에는 "✏️ 직접 입력" 표시가 붙고, 통계는 "직접 입력" 한 묶음으로 모여요.</p>
+        <p class="st-sub" style="margin-top:6px">같은 키워드는 저장해 두고 다시 써서 두 번째 학생부터는 바로 떠요. 직접 입력한 학생 결과에는 " 직접 입력" 표시가 붙고, 통계는 "직접 입력" 한 묶음으로 모여요.</p>
       </div>
     </div>
     <div class="st-card" style="gap:6px">
-      <h3 style="margin-bottom:2px">🔒 기업 분석 수준<a class="moa-q" target="_blank" rel="noopener" title="기업 분석 수준 안내" href="https://moa-hub.vercel.app/manual.html#h-depth">?</a></h3>
+      <h3 style="margin-bottom:2px"> 기업 분석 수준<a class="moa-q" target="_blank" rel="noopener" title="기업 분석 수준 안내" href="https://moa-hub.vercel.app/manual.html#h-depth">?</a></h3>
       <p class="st-sub" style="margin-bottom:4px">대상에 맞게 골라 주세요. 네이버 유료 고객은 이 설정과 관계없이 항상 심화로 진행돼요.</p>
       <label class="st-chk"><input type="radio" name="company-depth" value="off"><span class="free-opt">끔<small>기업 입력 칸 없음 · 고등학생, 1회성 특강</small></span></label>
       <label class="st-chk"><input type="radio" name="company-depth" value="basic"><span class="free-opt">기본<small>업종 수준 질문·피드백, 검색 없음 · 일반 대학 수업</small></span></label>
@@ -1004,7 +1004,7 @@
     </div>
     <div class="st-card" style="gap:6px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-        <h3 style="margin:0">🔒 많이 입력된 키워드 TOP</h3>
+        <h3 style="margin:0"> 많이 입력된 키워드 TOP</h3>
         <button class="btn-small" type="button" id="kw-refresh">새로고침</button>
       </div>
       <p class="st-sub">학생들이 직접 입력한 전공·직무·기업이에요. 자주 나오는 키워드는 "전공 패키지로 추가"를 누르면 AI가 만든 질문·기준 그대로 정식 목록에 들어가요. (패키지 탭에서 다듬을 수 있어요)</p>
@@ -1069,7 +1069,7 @@
   </div>
   <div id="review-detail-body"></div>
   <div class="review-detail-actions">
-    <button class="btn btn-primary" id="review-approve-btn">✅ 승인 및 학생 링크 생성</button>
+    <button class="btn btn-primary" id="review-approve-btn"> 승인 및 학생 링크 생성</button>
   </div>
 </div>
 <script src="/staff-guard.js" data-mode="admin" data-color="#295BF2"></script>
@@ -1285,7 +1285,7 @@ function redFlagsHtml(flags){
   if(!Array.isArray(flags)) return '';
   const list = flags.filter(f => f && (f.quote || f.why));
   if(!list.length){
-    return `<div style="background:#EAF7EF;border:1px solid #BfE3CC;border-radius:8px;padding:10px 12px;margin:0 0 10px;font-size:13.5px;color:#1E6B41;line-height:1.6">✅ <b>결격 신호 없음</b> — "일 잘할 것 같은 인상 + 큰 흠 없음" 기준을 통과했어요</div>`;
+    return `<div style="background:#EAF7EF;border:1px solid #BfE3CC;border-radius:8px;padding:10px 12px;margin:0 0 10px;font-size:13.5px;color:#1E6B41;line-height:1.6"> <b>결격 신호 없음</b> — "일 잘할 것 같은 인상 + 큰 흠 없음" 기준을 통과했어요</div>`;
   }
   return `<div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin:0 0 12px;line-height:1.6">
     <div style="font-weight:700;font-size:14px;color:#B45309;margin-bottom:6px">! 면접관이 멈칫할 수 있는 표현 (${list.length}개)</div>
@@ -1294,13 +1294,13 @@ function redFlagsHtml(flags){
         ${f.type ? `<span style="display:inline-block;background:#fff;border:1px solid #E2E8F0;color:#334155;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:700;margin-bottom:4px">${escapeHtml(f.type)}</span>` : ''}
         ${f.quote ? `<div style="font-weight:700">"${escapeHtml(f.quote)}"</div>` : ''}
         ${f.why ? `<div>→ ${escapeHtml(f.why)}</div>` : ''}
-        ${f.fix ? `<div style="margin-top:2px">✏️ 이렇게: ${escapeHtml(f.fix)}</div>` : ''}
+        ${f.fix ? `<div style="margin-top:2px"> 이렇게: ${escapeHtml(f.fix)}</div>` : ''}
       </div>`).join('')}
   </div>`;
 }
 
 
-// ---------- 🎯 질문 의도 보기 (2026-10-05 · 학습용) ----------
+// ----------  질문 의도 보기 (2026-10-05 · 학습용) ----------
 // 학생이 "이 질문은 무엇을 보려는 걸까?"를 알고 답하도록. 강사가 새로 넣은 질문은 유형 설명으로 대신 보여 줌.
 // ※ 결격 검증 질문은 걸러내는 포인트를 학생에게 알려 주지 않는 원칙이라 유형 설명만 보여 줘요.
 const CATEGORY_INTENTS = {
@@ -1343,7 +1343,7 @@ function questionIntent(cat, q){
   return QUESTION_INTENTS[q] || (cat && CATEGORY_INTENTS[cat.id]) || '이 질문으로 면접관은 내 경험이 입사 후 어떤 행동으로 이어질지를 예측해요. 결론 → 근거 경험 → 직무 연결 순서로 답해 보세요.';
 }
 
-// ---------- 🔒 질문은행 금지 필터 (2026-10-05) ----------
+// ----------  질문은행 금지 필터 (2026-10-05) ----------
 // 채용절차법·면접 윤리상 묻지 않는 질문(결혼·출산·가족·외모·학벌 비하 등)은 저장·생성 단계에서 막음.
 // 걸리는 표현이 있으면 어느 줄인지와 이유를 알려 줘요. (필요하면 아래 목록을 고쳐 쓰셔도 돼요)
 const BANNED_QUESTION_RULES = [
@@ -1365,7 +1365,7 @@ function bannedReason(q){
 function passBannedFilter(lines){
   const bad = (lines || []).map(q => ({ q, why: bannedReason(q) })).filter(x => x.why);
   if(!bad.length) return true;
-  alert('🔒 면접에서 묻지 않는 질문이 있어 저장하지 않았어요.\n\n' + bad.slice(0, 6).map(x => `· ${x.q}\n   → ${x.why}`).join('\n') + '\n\n이 질문을 고치거나 지운 뒤 다시 저장해 주세요.');
+  alert(' 면접에서 묻지 않는 질문이 있어 저장하지 않았어요.\n\n' + bad.slice(0, 6).map(x => `· ${x.q}\n   → ${x.why}`).join('\n') + '\n\n이 질문을 고치거나 지운 뒤 다시 저장해 주세요.');
   return false;
 }
 
@@ -1383,7 +1383,7 @@ const AI_SKILL_GUIDE = `
 - 자소서·과제를 AI로 대신 썼다고 말하면 결격 신호로 보지 말고, 초안은 직접 쓰고 AI는 다듬기에 썼다는 방향으로 고치도록 안내한다.
 - AI를 전혀 안 썼다면, 앞으로 이 직무에서 어떻게 배우고 쓸지 구체적인 계획을 말하게 한다.`;
 
-// ---------- 📝 자소서 꼬리질문 넘겨받기 (2026-10-05 · 자소서 앱 결과 화면에서 넘어옴) ----------
+// ----------  자소서 꼬리질문 넘겨받기 (2026-10-05 · 자소서 앱 결과 화면에서 넘어옴) ----------
 // 주소 # 뒤에 담겨 오므로 서버로 보내지지 않음. 이름·연락처 없이 질문과 핵심 문장만, 이 폰에 3일 보관.
 const RESUME_FU_KEY = 'moa_iv_resume_fu';
 function readResumeHandoff(){
@@ -1422,14 +1422,14 @@ function fbTrendHtml(fb){
   const c = fb.criteria, sp = fb.speech, mem = fb.memorized;
   if(!c && !sp && !(mem && mem.flag)) return '';
   const lab = { consistency: '일관성', logic: '논리', sincerity: '진정성' };
-  const chips = c ? Object.keys(lab).map(k => `<span class="tr-chip ${c[k] && c[k].ok ? 'ok' : 'fix'}">${c[k] && c[k].ok ? '✓' : '△'} ${lab[k]}</span>`).join('') : '';
+  const chips = c ? Object.keys(lab).map(k => `<span class="tr-chip ${c[k] && c[k].ok ? 'ok' : 'fix'}">${c[k] && c[k].ok ? '' : '△'} ${lab[k]}</span>`).join('') : '';
   const notes = c ? Object.keys(lab).filter(k => c[k] && c[k].note).map(k => `<li><b>${lab[k]}</b> ${escapeHtml(c[k].note)}</li>`).join('') : '';
   const spRow = sp ? `<div class="tr-sp"><span class="${sp.intro ? 'ok' : ''}">서론</span><i>→</i><span class="${sp.body ? 'ok' : ''}">본론</span><i>→</i><span class="${sp.conclusion ? 'ok' : ''}">결론</span>${fb.answer_sec ? `<em>${fb.answer_sec}초${fb.target_sec ? ' / 목표 ' + fb.target_sec + '초' : ''}</em>` : ''}</div>${sp.note ? `<p class="tr-note">${escapeHtml(sp.note)}</p>` : ''}` : '';
   return `<div class="tr-box">
     <div class="tr-h">면접관 기준 3가지</div>
     ${chips ? `<div class="tr-chips">${chips}</div>` : ''}
     ${notes ? `<ul class="tr-list">${notes}</ul>` : ''}
-    ${mem && mem.flag ? `<div class="tr-mem"><b>🗣️ 외운 답변처럼 들릴 수 있어요</b>${mem.reason ? ' — ' + escapeHtml(mem.reason) : ''}</div>` : ''}
+    ${mem && mem.flag ? `<div class="tr-mem"><b> 외운 답변처럼 들릴 수 있어요</b>${mem.reason ? ' — ' + escapeHtml(mem.reason) : ''}</div>` : ''}
     ${spRow ? `<div class="tr-h" style="margin-top:10px">말하기 구조</div>${spRow}` : ''}
   </div>`;
 }
@@ -1584,12 +1584,12 @@ const ASPIRATION_GUIDE = `
 4) 사실 확인 원칙(가장 중요): 학생 답변에 나오지 않은 지원사의 자격제도명·직급명·특허명·해외지사명·수치를 절대 지어내지 않는다. 지원 기업명이 주어진 경우에도 마찬가지다. sample_direction과 rewritten에는 {{신입 직무교육 과정}}처럼 실제 이름으로 단정하지 않는 일반 표현의 {{ }} 예시로 채우고, improve에서 "채용공고·회사 홈페이지·DART 사업보고서·최근 보도자료에서 확인해 채우세요"라고 조사할 곳을 안내한다. 학생이 이미 쓴 회사 정보는 살려서 다듬는다.
 5) 과한 포부 경계: 근거 없이 "임원이 되겠다"는 식의 표현이나 이직·창업을 떠올리게 하는 표현("경력을 쌓아 독립")은 결격 신호가 될 수 있으므로 부드럽게 짚는다.`;
 let STUDENT_PROMPT_OVERRIDE = ''; // 학생이 고른 세트에 평가 기준 프리셋이 연결돼 있으면 그 기준으로 평가
-// ✏️ 학생 직접 입력 (2026-10-05) — 강사가 "오늘 수업" 탭에서 교육 전에 정함
+//  학생 직접 입력 (2026-10-05) — 강사가 "오늘 수업" 탭에서 교육 전에 정함
 let FREE_INPUT_MODE = 'off';            // 'off'=프리셋만 | 'mixed'=프리셋+직접 입력 | 'only'=직접 입력만
 let FREE_INPUT_KINDS = ['major', 'job', 'company'];
 let FREE_INPUT_NOTICE = true;           // 기업 입력 안내 문구
 let STUDENT_FREE_INPUT = null;          // 학생이 직접 입력한 내용 {kind, keyword, label}
-// 🔎 기업 분석 수준 (2026-10-05) — 'off'=끔(고등학생·1회성) | 'basic'=기본(업종 수준, 검색 없음) | 'deep'=심화(실시간 검색)
+//  기업 분석 수준 (2026-10-05) — 'off'=끔(고등학생·1회성) | 'basic'=기본(업종 수준, 검색 없음) | 'deep'=심화(실시간 검색)
 let COMPANY_DEPTH = 'basic';
 let STUDENT_COMPANY_BRIEF = null;       // 검색으로 만든 기업 요약 {name, industry, values, issues, tip, sources, searchedAt}
 function companyDeepOn(){ return !!CLIENT || COMPANY_DEPTH === 'deep'; } // 유료 개인 고객은 늘 심화
@@ -1692,31 +1692,31 @@ function iwItemHtml(item, idx, total, record) {
     <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:${idx > 0 ? '16pt' : '0'} 0 6pt"><tr>
       <td style="background:${IW.light};padding:5pt 10pt;font-family:${IW.font};font-size:10pt;font-weight:bold;color:${IW.blue}"><p style="margin:0;page-break-after:avoid">Q${idx + 1}${total > 1 ? ' / ' + total : ''}${catName ? ' · ' + escapeHtml(catName) : ''}</p></td></tr></table>
     <p style="page-break-after:avoid;margin:0 0 8pt;font-size:11pt;font-weight:bold;line-height:160%;font-family:${IW.font}">${iwEsc(item.question)}</p>`;
-  const finalBlock = fin ? `${iwTitle('✅ 완성된 내 답변')}
+  const finalBlock = fin ? `${iwTitle(' 완성된 내 답변')}
     <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse"><tr>
       <td style="border:1.5pt solid ${IW.green};padding:10pt 12pt;font-family:${IW.font}">
         <p style="margin:0;font-size:11pt;line-height:185%">${fin.html}</p>
         <p style="margin:6pt 0 0;font-size:8.5pt;color:${IW.muted};text-align:right">${fin.plainLen}자${lim ? ` / ${lim}자` : ''}</p>
       </td></tr></table>
     ${fin.left ? `<p style="margin:4pt 0 0;font-size:9pt;color:#8A6D00;font-family:${IW.font}">🟨 노란 부분(예시 ${fin.left}곳)은 AI가 넣은 예시예요. 내 실제 경험으로 바꿔 말해야 면접에서 흔들리지 않아요.</p>` : ''}` : '';
-  const mineBlock = iwTitle('🗣️ 내가 한 답변') + iwBox('', iwEsc(item.answer), '#F6F7F5', '#B8BEB8');
-  const fbBlock = iwTitle('💬 AI 피드백') +
+  const mineBlock = iwTitle(' 내가 한 답변') + iwBox('', iwEsc(item.answer), '#F6F7F5', '#B8BEB8');
+  const fbBlock = iwTitle(' AI 피드백') +
     (fb.good ? iwBox('잘한 점', iwEsc(fb.good), IW.greenBg, IW.green) : '') +
     (fb.improve ? iwBox('보완할 점', iwEsc(fb.improve), IW.warnBg, IW.warn) : '') +
-    (flags.length ? iwBox('면접관이 멈칫할 표현', flags.map(f => `${f.type ? '<b>[' + escapeHtml(f.type) + ']</b> ' : ''}${f.quote ? '“' + escapeHtml(f.quote) + '” — ' : ''}${escapeHtml(f.why || '')}${f.fix ? `<br><span style="color:${IW.green}">✏️ 이렇게: ${escapeHtml(f.fix)}</span>` : ''}`).join('<br><br>'), '#FFF8E6', '#D97706')
-      : (Array.isArray(fb.red_flags) ? `<p style="margin:0 0 8pt;font-size:9.5pt;color:${IW.green};font-family:${IW.font}">✓ 면접관이 멈칫할 표현은 없어요</p>` : '')) +
+    (flags.length ? iwBox('면접관이 멈칫할 표현', flags.map(f => `${f.type ? '<b>[' + escapeHtml(f.type) + ']</b> ' : ''}${f.quote ? '“' + escapeHtml(f.quote) + '” — ' : ''}${escapeHtml(f.why || '')}${f.fix ? `<br><span style="color:${IW.green}"> 이렇게: ${escapeHtml(f.fix)}</span>` : ''}`).join('<br><br>'), '#FFF8E6', '#D97706')
+      : (Array.isArray(fb.red_flags) ? `<p style="margin:0 0 8pt;font-size:9.5pt;color:${IW.green};font-family:${IW.font}"> 면접관이 멈칫할 표현은 없어요</p>` : '')) +
     (() => { // 2026-10-05 면접관 기준 3가지 · 외운 답변 · 말하기 구조
       const c = fb.criteria, sp = fb.speech, mem = fb.memorized;
       if(!c && !sp && !(mem && mem.flag)) return '';
       const lab = { consistency: '일관성', logic: '논리', sincerity: '진정성' };
-      const lines = c ? Object.keys(lab).map(k => `<b style="color:${c[k] && c[k].ok ? IW.green : IW.warn}">${c[k] && c[k].ok ? '✓' : '△'} ${lab[k]}</b> ${escapeHtml((c[k] && c[k].note) || '')}`) : [];
-      if(mem && mem.flag) lines.push(`<b style="color:${IW.warn}">🗣️ 외운 답변 신호</b> ${escapeHtml(mem.reason || '')}`);
-      if(sp) lines.push(`<b>말하기 구조</b> 서론 ${sp.intro ? '✓' : '△'} → 본론 ${sp.body ? '✓' : '△'} → 결론 ${sp.conclusion ? '✓' : '△'}${fb.answer_sec ? ` · ${fb.answer_sec}초` : ''}${sp.note ? ' — ' + escapeHtml(sp.note) : ''}`);
+      const lines = c ? Object.keys(lab).map(k => `<b style="color:${c[k] && c[k].ok ? IW.green : IW.warn}">${c[k] && c[k].ok ? '' : '△'} ${lab[k]}</b> ${escapeHtml((c[k] && c[k].note) || '')}`) : [];
+      if(mem && mem.flag) lines.push(`<b style="color:${IW.warn}"> 외운 답변 신호</b> ${escapeHtml(mem.reason || '')}`);
+      if(sp) lines.push(`<b>말하기 구조</b> 서론 ${sp.intro ? '' : '△'} → 본론 ${sp.body ? '' : '△'} → 결론 ${sp.conclusion ? '' : '△'}${fb.answer_sec ? ` · ${fb.answer_sec}초` : ''}${sp.note ? ' — ' + escapeHtml(sp.note) : ''}`);
       return iwBox('면접관 기준 3가지', lines.join('<br>'), IW.light, IW.deep);
     })();
-  const dirBlock = (steps.length || fb.sample_direction) ? iwTitle('🧭 AI가 제안하는 답변 방향') + iwBox('', steps.length ? steps.map((t, i) => `<b style="color:${IW.blue}">${i + 1}</b> ${escapeHtml(t)}`).join('&nbsp;&nbsp;→&nbsp;&nbsp;') : iwEsc(fb.sample_direction), IW.light, IW.blue) : '';
-  const moreBlock = (fb.interviewer_inference ? iwTitle('🎯 면접관 시점') + iwBox('이 답변으로 보이는 평소 모습', iwEsc(fb.interviewer_inference), IW.light, IW.deep) : '') +
-    (fuRows ? iwTitle('🎤 예상 꼬리질문 (다음 리허설 대비)') + `<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">${fuRows}</table>` : '');
+  const dirBlock = (steps.length || fb.sample_direction) ? iwTitle(' AI가 제안하는 답변 방향') + iwBox('', steps.length ? steps.map((t, i) => `<b style="color:${IW.blue}">${i + 1}</b> ${escapeHtml(t)}`).join('&nbsp;&nbsp;→&nbsp;&nbsp;') : iwEsc(fb.sample_direction), IW.light, IW.blue) : '';
+  const moreBlock = (fb.interviewer_inference ? iwTitle(' 면접관 시점') + iwBox('이 답변으로 보이는 평소 모습', iwEsc(fb.interviewer_inference), IW.light, IW.deep) : '') +
+    (fuRows ? iwTitle(' 예상 꼬리질문 (다음 리허설 대비)') + `<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">${fuRows}</table>` : '');
   const body = head + finalBlock + mineBlock + fbBlock + dirBlock + moreBlock;
   const len = [item.question, item.answer, fb.rewritten, fb.good, fb.improve, fb.sample_direction, fb.interviewer_inference].map(x => String(x || '').length).reduce((a, b) => a + b, 0)
     + flags.reduce((a, f) => a + String(f.why || '').length + String(f.fix || '').length, 0);
@@ -1830,7 +1830,7 @@ let sessionAnswers = []; // {question, answer, feedback}
 let answersByIdx = {}; // question index -> {question, answer, feedback}
 let ALL_ANSWERS = {}; // categoryId -> { catTitle, items: { idx: {question, answer, feedback} } } — 카테고리 전환해도 유지됨
 
-// ---------- 💾 일반 수강생 답변 자동 저장 (2026-10-05) ----------
+// ----------  일반 수강생 답변 자동 저장 (2026-10-05) ----------
 // 답할 때마다 학생 폰(브라우저) 안에만 저장 → 새로고침·창 닫힘·카톡 갔다 와도 그대로
 // 서버·AI 호출 없음, 강사별로 따로 보관, 3일 지나면 자동 삭제, '전체 모아서 보내기' 성공 시 삭제
 const STU_SAVE_DAYS = 3;
@@ -1866,7 +1866,7 @@ function stuLoadAnswers(){
 }
 function stuClearAnswers(){ STU_RESTORED_N = 0; try{ localStorage.removeItem(stuSaveKey()); }catch(e){} }
 
-// ---------- 📬 내 결과함 + 🔑 확인코드 (2026-10-05) ----------
+// ----------  내 결과함 +  확인코드 (2026-10-05) ----------
 // 연락처 없이 결과 받기: ① 같은 폰이면 제출 기록(코드·날짜·유형만)을 기억해 자동으로 결과함에 표시
 // ② 다른 폰이면 확인코드 6자리로 조회. 이름·연락처는 폰에도 서버 코드표에도 저장하지 않음
 const MY_RESULTS_DAYS = 90;
@@ -1905,22 +1905,22 @@ function showLinkCode(code, who){
   row.style.display = 'block';
   row.innerHTML = who === 'teacher'
     ? `확인코드 <b style="font-size:16px;letter-spacing:2px">${escapeHtml(code)}</b><br><span style="color:var(--muted)">학생이 같은 폰이면 앱을 다시 열 때 '내 결과함'에 자동으로 떠요. 다른 폰이면 '확인코드로 내 결과 찾기'에 이 코드를 넣으면 돼요.</span>`
-    : `내 확인코드 <b style="font-size:16px;letter-spacing:2px">${escapeHtml(code)}</b> · 📸 캡처해 두세요<br><span style="color:var(--muted)">링크를 잃어버려도 앱 첫 화면 '확인코드로 내 결과 찾기'에서 다시 볼 수 있어요.</span>`;
+    : `내 확인코드 <b style="font-size:16px;letter-spacing:2px">${escapeHtml(code)}</b> ·  캡처해 두세요<br><span style="color:var(--muted)">링크를 잃어버려도 앱 첫 화면 '확인코드로 내 결과 찾기'에서 다시 볼 수 있어요.</span>`;
 }
 function showMyCodeScreen(code){
   const wrap = document.createElement('div');
   wrap.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(14,21,51,.55);display:flex;align-items:center;justify-content:center;padding:16px';
   wrap.innerHTML = `<div style="background:#fff;border-radius:14px;max-width:380px;width:100%;padding:22px 20px;text-align:center;font-family:inherit">
-    <div style="font-size:28px">📬</div>
+    <div style="font-size:28px"></div>
     <div style="font-size:18px;font-weight:700;margin:6px 0 4px;color:#141A2E">제출 완료!</div>
     <p style="margin:0 0 14px;font-size:13.5px;color:#5B6275;line-height:1.6">강사님이 검토한 뒤 결과가 도착해요.</p>
     ${code ? `<div style="background:#F4F7FF;border:1px dashed #295BF2;border-radius:10px;padding:14px 10px;margin-bottom:12px">
       <div style="font-size:12px;color:#5B6275">내 확인코드</div>
       <div style="font-size:30px;font-weight:800;letter-spacing:6px;color:#141A2E;margin-top:2px">${escapeHtml(code)}</div>
-      <div style="font-size:12.5px;color:#295BF2;font-weight:700;margin-top:4px">📸 지금 이 화면을 캡처해 두세요</div></div>` : ''}
+      <div style="font-size:12.5px;color:#295BF2;font-weight:700;margin-top:4px"> 지금 이 화면을 캡처해 두세요</div></div>` : ''}
     <div style="text-align:left;font-size:13px;color:#374151;line-height:1.7;background:#FAFAFB;border-radius:8px;padding:10px 12px;margin-bottom:14px">
-      ✅ <b>이 폰</b>: 같은 QR로 다시 들어오면 맨 위 <b>'내 결과함'</b>에 자동으로 떠요<br>
-      🔑 <b>다른 폰</b>: 첫 화면 <b>'확인코드로 내 결과 찾기'</b>에 코드를 넣으세요
+       <b>이 폰</b>: 같은 QR로 다시 들어오면 맨 위 <b>'내 결과함'</b>에 자동으로 떠요<br>
+       <b>다른 폰</b>: 첫 화면 <b>'확인코드로 내 결과 찾기'</b>에 코드를 넣으세요
     </div>
     <button type="button" class="ok" style="width:100%;background:#141A2E;color:#fff;border:none;border-radius:10px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">확인했어요</button>
   </div>`;
@@ -1928,14 +1928,14 @@ function showMyCodeScreen(code){
   wrap.querySelector('.ok').onclick = () => { wrap.remove(); if(screenSelect.style.display === 'block') renderCategories(); };
 }
 const MR_BADGE = {
-  pending: '<span style="background:#FFF4DC;color:#9A6200;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700">🕓 검토 중</span>',
-  done: '<span style="background:#E3F6EC;color:#16794A;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700">✅ 결과 도착</span>',
+  pending: '<span style="background:#FFF4DC;color:#9A6200;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700"> 검토 중</span>',
+  done: '<span style="background:#E3F6EC;color:#16794A;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700"> 결과 도착</span>',
   expired: '<span style="background:#F1F2F4;color:#6B7280;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700">⌛ 기간 끝남</span>',
   none: '<span style="background:#F1F2F4;color:#6B7280;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700">찾을 수 없음</span>'
 };
 function myResultsBoxHtml(list){
   return `<div id="my-results-box" style="background:#fff;border:2px solid #141A2E;border-radius:12px;padding:14px 14px 6px;margin-bottom:14px">
-    <div style="font-size:15px;font-weight:700;color:#141A2E;margin-bottom:8px">📬 내 결과함</div>
+    <div style="font-size:15px;font-weight:700;color:#141A2E;margin-bottom:8px"> 내 결과함</div>
     ${list.map(r => `<div class="mr-row" data-code="${escapeHtml(r.code)}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-top:1px solid #EEF0F3">
       <div style="min-width:0"><div style="font-size:13.5px;font-weight:600;color:#141A2E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(r.label)}</div>
       <div style="font-size:12px;color:#6B7280">${moaDate(r.at, 'short')} 제출 · 코드 ${escapeHtml(r.code)}</div></div>
@@ -1967,7 +1967,7 @@ function openCodeLookup(){
   const wrap = document.createElement('div');
   wrap.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(14,21,51,.55);display:flex;align-items:center;justify-content:center;padding:16px';
   wrap.innerHTML = `<div style="background:#fff;border-radius:14px;max-width:380px;width:100%;padding:20px;font-family:inherit">
-    <div style="font-size:17px;font-weight:700;color:#141A2E;margin-bottom:4px">🔑 확인코드로 내 결과 찾기</div>
+    <div style="font-size:17px;font-weight:700;color:#141A2E;margin-bottom:4px"> 확인코드로 내 결과 찾기</div>
     <p style="margin:0 0 12px;font-size:13px;color:#5B6275;line-height:1.6">제출할 때 받은 영문·숫자 6자리를 넣어 주세요.</p>
     <input type="text" class="cl-in" maxlength="8" autocomplete="off" autocapitalize="characters" placeholder="예: K7M2QX" style="width:100%;box-sizing:border-box;font-size:20px;letter-spacing:4px;text-align:center;text-transform:uppercase;padding:12px;border:1.5px solid #D1D5DB;border-radius:10px;font-family:inherit">
     <div class="cl-msg" style="min-height:20px;font-size:13px;margin:8px 0;line-height:1.6"></div>
@@ -1986,7 +1986,7 @@ function openCodeLookup(){
     let d; try{ d = await lookupResultCode(code); }catch(e){ d = { status: 'none', error: '연결이 불안정해요. 잠시 후 다시 해 주세요.' }; }
     go.disabled = false; go.textContent = '결과 찾기';
     if(d.status === 'done'){ myResultAdd(code, '모의면접 결과'); openResultById(d.id); return; }
-    if(d.status === 'pending'){ myResultAdd(code, '모의면접 (검토 중)'); msg.style.color = '#9A6200'; msg.textContent = '🕓 아직 강사님이 검토 중이에요. 결과가 도착하면 이 폰의 내 결과함에도 떠요.'; return; }
+    if(d.status === 'pending'){ myResultAdd(code, '모의면접 (검토 중)'); msg.style.color = '#9A6200'; msg.textContent = ' 아직 강사님이 검토 중이에요. 결과가 도착하면 이 폰의 내 결과함에도 떠요.'; return; }
     if(d.status === 'expired'){ msg.style.color = '#6B7280'; msg.textContent = '⌛ 조회 기간이 지났어요. 필요하면 강사님께 문의해 주세요.'; return; }
     msg.style.color = '#B42318'; msg.textContent = d.error || '이 코드로 찾은 결과가 없어요.';
   };
@@ -2083,7 +2083,7 @@ function jobScreenNeeded(){
 }
 // 제출 기록에 붙는 표시 (강사 목록·결과함에서 직접 입력한 학생을 알아보기 쉽게)
 function freeInputTag(){
-  return STUDENT_FREE_INPUT ? ` · ✏️ 직접 입력(${FREE_KIND_LABEL[STUDENT_FREE_INPUT.kind] || ''}): ${STUDENT_FREE_INPUT.label || STUDENT_FREE_INPUT.keyword}` : '';
+  return STUDENT_FREE_INPUT ? ` ·  직접 입력(${FREE_KIND_LABEL[STUDENT_FREE_INPUT.kind] || ''}): ${STUDENT_FREE_INPUT.label || STUDENT_FREE_INPUT.keyword}` : '';
 }
 
 // 학생이 고른 전공 패키지에 결격 검증 질문이 있으면 그 질문으로, 없으면 기본 질문으로
@@ -2145,7 +2145,7 @@ function renderJobSelectScreen(){
   catList.appendChild(skipBtn);
 }
 
-// ✏️ 직접 입력 카드 (2026-10-05)
+//  직접 입력 카드 (2026-10-05)
 function buildFreeInputCard(){
   let kinds = (FREE_INPUT_KINDS && FREE_INPUT_KINDS.length ? FREE_INPUT_KINDS : ['major', 'job', 'company']).filter(k => FREE_KIND_LABEL[k]);
   if(COMPANY_DEPTH === 'off'){ kinds = kinds.filter(k => k !== 'company'); if(!kinds.length) kinds = ['major', 'job']; }
@@ -2153,7 +2153,7 @@ function buildFreeInputCard(){
   const box = document.createElement('div');
   box.className = 'free-card';
   box.innerHTML = `
-    <div class="free-title">✏️ 직접 입력하기</div>
+    <div class="free-title"> 직접 입력하기</div>
     <div class="free-chips" ${kinds.length < 2 ? 'style="display:none"' : ''}>
       ${kinds.map(k => `<button type="button" class="free-chip" data-k="${k}">${FREE_KIND_LABEL[k]}</button>`).join('')}
     </div>
@@ -2171,7 +2171,7 @@ function buildFreeInputCard(){
     box.querySelectorAll('.free-chip').forEach(c => c.classList.toggle('on', c.dataset.k === kind));
     inp.placeholder = (kinds.length < 2 ? FREE_KIND_LABEL[kind] + ' — ' : '') + FREE_KIND_PH[kind];
     notice.textContent = COMPANY_DEPTH === 'deep'
-      ? '🔎 기업 인재상과 최근 소식을 검색해서 맞춤 질문을 만들어요. 30초쯤 걸려요.'
+      ? ' 기업 인재상과 최근 소식을 검색해서 맞춤 질문을 만들어요. 30초쯤 걸려요.'
       : '기업 정보는 일반적으로 알려진 내용 기준이에요. 최신 채용공고는 꼭 직접 확인하세요.';
     notice.style.display = (kind === 'company' && (FREE_INPUT_NOTICE || COMPANY_DEPTH === 'deep')) ? 'block' : 'none';
   }
@@ -2215,7 +2215,7 @@ function applyFreeInputPack(pack){
   applyRedflagQuestions(null);
   if(pack.kind === 'company'){
     STUDENT_COMPANY = label;            // 다음 화면 '지원 기업명' 칸에 자동으로 들어감
-    STUDENT_COMPANY_BRIEF = pack.brief || null; // 🔎 심화면 검색 요약 카드도 같이
+    STUDENT_COMPANY_BRIEF = pack.brief || null; //  심화면 검색 요약 카드도 같이
     STUDENT_TARGET_FIELD_OVERRIDE = label + ' 지원';
   } else {
     STUDENT_TARGET_FIELD_OVERRIDE = label;
@@ -2226,7 +2226,7 @@ function applyFreeInputPack(pack){
     + (pack.kind === 'company' && !pack.brief ? `\n- 이 기업의 구체적인 제도명·사업명·수치·최근 이슈는 지어내지 말고, 필요하면 {{ }} 예시와 함께 "채용공고·홈페이지에서 확인하세요"라고 안내한다.` : '');
 }
 
-// 🔎 기업 심화 분석 카드 (2026-10-05) — '심화' 수업이거나 유료 고객일 때 '지원 기업명' 칸 아래에 붙음
+//  기업 심화 분석 카드 (2026-10-05) — '심화' 수업이거나 유료 고객일 때 '지원 기업명' 칸 아래에 붙음
 // 인재상 키워드 표시용 — 괄호 속 영문(잘린 것 포함)은 빼고 보여 줌 (예전에 저장된 요약도 깔끔하게, 2026-10-08)
 const cleanKw = v => String(v || '').replace(/\s*[(\[][^)\]]*[)\]]?/g, '').trim() || String(v || '');
 function companyBriefHtml(b){
@@ -2239,7 +2239,7 @@ function companyBriefHtml(b){
   return `<div class="cb-head"><span class="cb-name">${escapeHtml(b.name)}</span><span class="cb-badge">심화 분석</span></div>
     ${b.industry ? `<p class="cb-ind">${escapeHtml(b.industry)}</p>` : ''}
     ${kw}${issues}
-    ${b.tip ? `<p class="cb-tip">💡 ${escapeHtml(b.tip)}</p>` : ''}
+    ${b.tip ? `<p class="cb-tip"> ${escapeHtml(b.tip)}</p>` : ''}
     ${b.thin ? '<p class="cb-thin">검색된 정보가 적어요. 채용공고와 회사 홈페이지를 꼭 함께 확인하세요.</p>' : ''}
     ${src ? `<details class="cb-src"><summary style="font-weight:400;color:var(--muted)">출처 ${b.sources.length}곳 · ${escapeHtml(b.searchedAt || '')} 검색</summary>${src}</details>` : ''}`;
 }
@@ -2259,7 +2259,7 @@ function attachCompanyBrief(box, input){
       wrap.innerHTML = `<div class="cb-card">${companyBriefHtml(b)}</div>`;
       return;
     }
-    wrap.innerHTML = `<button type="button" class="cb-btn">🔎 이 기업 분석하기</button><p class="cb-err" role="alert"></p>`;
+    wrap.innerHTML = `<button type="button" class="cb-btn"> 이 기업 분석하기</button><p class="cb-err" role="alert"></p>`;
     const btn = wrap.querySelector('.cb-btn'), err = wrap.querySelector('.cb-err');
     btn.onclick = () => run(btn, err);
   }
@@ -2277,7 +2277,7 @@ function attachCompanyBrief(box, input){
       if(CLIENT) clientSaveDraft();
       paint();
     }catch(e){
-      btn.disabled = false; btn.textContent = '🔎 이 기업 분석하기';
+      btn.disabled = false; btn.textContent = ' 이 기업 분석하기';
       err.textContent = e.message || '인터넷 연결을 확인하고 다시 눌러 주세요.';
     }
   }
@@ -2311,7 +2311,7 @@ function renderCategories(){
   const companyBox = document.createElement('div');
   companyBox.style.cssText = 'background:var(--white);border:1px solid var(--line);border-radius:6px;padding:14px 16px;margin-bottom:6px;';
   companyBox.innerHTML = `
-    <label class="st-lbl" for="student-company">🏢 지원 기업명 <span style="font-weight:400;color:var(--muted);font-size:13px">(선택)</span></label>
+    <label class="st-lbl" for="student-company"> 지원 기업명 <span style="font-weight:400;color:var(--muted);font-size:13px">(선택)</span></label>
     <input class="st-inp" id="student-company" type="text" maxlength="40" placeholder="예: ○○병원, ○○항공" style="margin-top:8px">
     <p style="margin:8px 0 0;font-size:12.5px;color:var(--muted);line-height:1.5">적어주면 '입사 후 포부' 피드백을 이 회사에 맞춰 드려요.</p>
   `;
@@ -2325,7 +2325,7 @@ function renderCategories(){
   const hiringBox = document.createElement('div');
   hiringBox.style.cssText = 'background:var(--white);border:1px solid var(--line);border-radius:6px;padding:14px 16px;margin-bottom:6px;';
   hiringBox.innerHTML = `
-    <div class="st-lbl">🎯 면접 방식</div>
+    <div class="st-lbl"> 면접 방식</div>
     <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:8px;font-size:14px">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="hiring-type" value="general" ${HIRING_TYPE === 'general' ? 'checked' : ''}> 일반 면접</label>
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="hiring-type" value="blind" ${HIRING_TYPE === 'blind' ? 'checked' : ''}> 블라인드 면접</label>
@@ -2334,10 +2334,10 @@ function renderCategories(){
   `;
   hiringBox.querySelectorAll('input[name="hiring-type"]').forEach(r => r.addEventListener('change', e => { HIRING_TYPE = e.target.value; if(CLIENT) clientSaveDraft(); }));
   catList.appendChild(hiringBox);
-  // 👔 면접 복장 안내 (2026-10-05 · 2026 채용 현장 조사 반영)
+  //  면접 복장 안내 (2026-10-05 · 2026 채용 현장 조사 반영)
   const tipBox = document.createElement('details');
   tipBox.className = 'iv-tip';
-  tipBox.innerHTML = `<summary>👔 면접 복장, 정장이 꼭 정답일까요?</summary>
+  tipBox.innerHTML = `<summary> 면접 복장, 정장이 꼭 정답일까요?</summary>
     <div class="bar" role="img" aria-label="면접관 선호 복장: 비즈니스 캐주얼 47%, 정장 43%, 기타 10%"><i style="width:47%;background:#295BF2"></i><i style="width:43%;background:#141A2E"></i></div>
     <div class="lg"><b style="color:#295BF2">비즈니스 캐주얼 47%</b><b style="color:#141A2E">정장 43%</b></div>
     <p>요즘 면접관은 비즈니스 캐주얼과 정장을 비슷하게 선호해요. 공고에 복장 안내가 있으면 그대로, 없으면 회사 분위기(홈페이지·SNS 사진)를 확인하고, 그래도 모르겠으면 정장이 안전해요. 핵심은 옷보다 <b>깔끔함과 단정함</b>이에요.</p>`;
@@ -2345,7 +2345,7 @@ function renderCategories(){
   if(!CLIENT && STU_RESTORED_N > 0 && Object.keys(ALL_ANSWERS).length){
     const note = document.createElement('div');
     note.style.cssText = 'background:#EEF3FF;border:1px solid #C9D7FD;border-radius:6px;padding:12px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.6;color:#1B3A8C';
-    note.innerHTML = `💾 지난번에 쓴 답변 <b>${stuCountAnswers(ALL_ANSWERS)}개</b>를 불러왔어요. 이어서 연습하면 돼요.<br><span style="color:#5A6B95;font-size:12.5px">이 폰에만 ${STU_SAVE_DAYS}일간 보관되고, 보내기를 마치면 지워져요.</span> <button type="button" id="stu-reset-btn" style="margin-left:4px;background:none;border:none;color:#295BF2;text-decoration:underline;font-size:12.5px;cursor:pointer;padding:0">처음부터 새로 하기</button>`;
+    note.innerHTML = ` 지난번에 쓴 답변 <b>${stuCountAnswers(ALL_ANSWERS)}개</b>를 불러왔어요. 이어서 연습하면 돼요.<br><span style="color:#5A6B95;font-size:12.5px">이 폰에만 ${STU_SAVE_DAYS}일간 보관되고, 보내기를 마치면 지워져요.</span> <button type="button" id="stu-reset-btn" style="margin-left:4px;background:none;border:none;color:#295BF2;text-decoration:underline;font-size:12.5px;cursor:pointer;padding:0">처음부터 새로 하기</button>`;
     note.querySelector('#stu-reset-btn').onclick = () => {
       const ok = window.confirm('저장된 답변을 모두 지우고 처음부터 할까요?');
       if(!ok) return;
@@ -2379,14 +2379,14 @@ function renderCategories(){
       const fin = document.createElement('button');
       fin.className = 'cat-card';
       fin.style.cssText = 'margin-top:14px;background:var(--navy,#295BF2);color:#fff';
-      fin.innerHTML = `<span class="cat-text"><span><div class="cat-title">📮 최종 제출하기</div><div class="cat-desc" style="color:#fff;opacity:.9">${catIds.length}개 유형 · 답변 ${n}개 · 제출은 한 번만 가능해요<br>제출하면 강사가 검토해 결과지를 보내드려요</div></span></span><span class="arrow">›</span>`;
+      fin.innerHTML = `<span class="cat-text"><span><div class="cat-title"> 최종 제출하기</div><div class="cat-desc" style="color:#fff;opacity:.9">${catIds.length}개 유형 · 답변 ${n}개 · 제출은 한 번만 가능해요<br>제출하면 강사가 검토해 결과지를 보내드려요</div></span></span><span class="arrow">›</span>`;
       fin.onclick = clientFinalSubmit;
       catList.appendChild(fin);
     }
     return;
   }
   if(catIds.length > 0 && !REVIEW_MODE){
-    // 📋 내 피드백 모아보기 (2026-10-05) — '바로 AI 피드백 보여주기' 설정일 때만
+    //  내 피드백 모아보기 (2026-10-05) — '바로 AI 피드백 보여주기' 설정일 때만
     const nAns = stuCountAnswers(ALL_ANSWERS);
     const sumBtn = document.createElement('button');
     sumBtn.className = 'cat-card';
@@ -2394,7 +2394,7 @@ function renderCategories(){
     sumBtn.style.setProperty('background', '#FFFFFF', 'important');
     sumBtn.style.setProperty('border', '2px solid #141A2E', 'important');
     sumBtn.style.setProperty('color', '#141A2E', 'important');
-    sumBtn.innerHTML = `<span class="cat-text"><span><div class="cat-title" style="color:#141A2E !important">📋 내 피드백 모아보기</div><div class="cat-desc" style="color:#5B6275 !important;opacity:1 !important">${catIds.length}개 유형 · 답변 ${nAns}개 · 바로 확인</div></span></span><span class="arrow" style="color:#141A2E !important">›</span>`;
+    sumBtn.innerHTML = `<span class="cat-text"><span><div class="cat-title" style="color:#141A2E !important"> 내 피드백 모아보기</div><div class="cat-desc" style="color:#5B6275 !important;opacity:1 !important">${catIds.length}개 유형 · 답변 ${nAns}개 · 바로 확인</div></span></span><span class="arrow" style="color:#141A2E !important">›</span>`;
     sumBtn.onclick = () => { renderMyFeedbackSummary(); history.pushState({ screen: 'select', view: 'summary' }, ''); };
     catList.appendChild(sumBtn);
   }
@@ -2408,7 +2408,7 @@ function renderCategories(){
     bundleBtn.innerHTML = `
       <span class="cat-text">
         <span>
-          <div class="cat-title">🗂 지금까지 전체 모아서 보내기</div>
+          <div class="cat-title"> 지금까지 전체 모아서 보내기</div>
           <div class="cat-desc" style="color:#fff;opacity:0.85">${catIds.length}개 유형 · 질문 ${totalQuestions}개</div>
         </span>
       </span>
@@ -2417,17 +2417,17 @@ function renderCategories(){
     bundleBtn.onclick = sendAllCategoriesBundle;
     catList.appendChild(bundleBtn);
   }
-  // 🔑 다른 폰에서 제출한 학생용 — 확인코드로 결과 찾기
+  //  다른 폰에서 제출한 학생용 — 확인코드로 결과 찾기
   const lk = document.createElement('button');
   lk.type = 'button';
   lk.id = 'code-lookup-link';
-  lk.textContent = '🔑 확인코드로 내 결과 찾기';
+  lk.textContent = ' 확인코드로 내 결과 찾기';
   lk.style.cssText = 'display:block;margin:18px auto 6px;background:none;border:none;color:#295BF2;font-size:14px;font-weight:700;text-decoration:underline;cursor:pointer;font-family:inherit;padding:8px';
   lk.onclick = openCodeLookup;
   catList.appendChild(lk);
 }
 
-// ---------- 📋 내 피드백 모아보기 화면 (2026-10-05) ----------
+// ----------  내 피드백 모아보기 화면 (2026-10-05) ----------
 // 지금까지 답한 질문의 AI 피드백을 한 화면에 — 잘한 점·보완할 점 먼저, 예시 답변·꼬리질문은 펼쳐서
 function renderMyFeedbackSummary(){
   showSelectScreen();
@@ -2451,13 +2451,13 @@ function renderMyFeedbackSummary(){
       const fu = fb.follow_up || {};
       const fus = [['이유형', fu.reason], ['대안형', fu.alternative], ['수치형', fu.quantify]].filter(x => x[1]);
       const more = [
-        steps.length ? `<div style="font-weight:700;margin:10px 0 4px">🧭 답변 방향</div><ol style="margin:0;padding-left:18px">${steps.map(t => `<li>${esc(t)}</li>`).join('')}</ol>` : (fb.sample_direction ? `<div style="font-weight:700;margin:10px 0 4px">🧭 답변 방향</div><p style="margin:0">${esc(fb.sample_direction)}</p>` : ''),
-        fb.rewritten ? `<div style="font-weight:700;margin:10px 0 4px">✨ 예시 답변</div><div style="background:#F4F7FF;border-radius:6px;padding:10px 12px;white-space:pre-wrap">${esc(exPlain(fb.rewritten))}</div>` : '',
-        fus.length ? `<div style="font-weight:700;margin:10px 0 4px">🎤 예상 꼬리질문</div><ul style="margin:0;padding-left:18px">${fus.map(x => `<li><b style="color:var(--muted);font-weight:600">${x[0]}</b> ${esc(x[1])}</li>`).join('')}</ul>` : ''
+        steps.length ? `<div style="font-weight:700;margin:10px 0 4px"> 답변 방향</div><ol style="margin:0;padding-left:18px">${steps.map(t => `<li>${esc(t)}</li>`).join('')}</ol>` : (fb.sample_direction ? `<div style="font-weight:700;margin:10px 0 4px"> 답변 방향</div><p style="margin:0">${esc(fb.sample_direction)}</p>` : ''),
+        fb.rewritten ? `<div style="font-weight:700;margin:10px 0 4px"> 예시 답변</div><div style="background:#F4F7FF;border-radius:6px;padding:10px 12px;white-space:pre-wrap">${esc(exPlain(fb.rewritten))}</div>` : '',
+        fus.length ? `<div style="font-weight:700;margin:10px 0 4px"> 예상 꼬리질문</div><ul style="margin:0;padding-left:18px">${fus.map(x => `<li><b style="color:var(--muted);font-weight:600">${x[0]}</b> ${esc(x[1])}</li>`).join('')}</ul>` : ''
       ].join('');
       html += `<div style="background:var(--white);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:10px;font-size:13.5px;line-height:1.65">
         <div style="font-weight:700;font-size:14.5px">Q${idx + 1}. ${esc(it.question || '')}</div>
-        <details style="margin:6px 0 0"><summary style="cursor:pointer;color:var(--muted);font-size:13px">🗣️ 내 답변 보기</summary><div style="white-space:pre-wrap;margin-top:6px;color:#374151">${esc(it.answer || '')}</div></details>
+        <details style="margin:6px 0 0"><summary style="cursor:pointer;color:var(--muted);font-size:13px"> 내 답변 보기</summary><div style="white-space:pre-wrap;margin-top:6px;color:#374151">${esc(it.answer || '')}</div></details>
         ${fb.good ? `<div style="margin-top:8px"><b style="color:#1F8A5B">잘한 점</b> ${esc(fb.good)}</div>` : ''}
         ${fb.improve ? `<div style="margin-top:4px"><b style="color:#B7791F">보완할 점</b> ${esc(fb.improve)}</div>` : ''}
         ${more ? `<details style="margin-top:8px"><summary style="cursor:pointer;color:#295BF2;font-weight:600;font-size:13px">예시 답변·꼬리질문 펼치기</summary>${more}</details>` : ''}
@@ -2465,7 +2465,7 @@ function renderMyFeedbackSummary(){
       </div>`;
     });
   });
-  html += `<button type="button" id="fs-link" class="cat-card" style="margin-top:16px;background:#295BF2;color:#fff;border-color:#295BF2"><span class="cat-text"><span><div class="cat-title">📎 결과 링크 만들기</div><div class="cat-desc" style="color:#fff;opacity:0.9">워드·PDF로 저장하고 선생님께 보낼 수 있어요</div></span></span><span class="arrow">›</span></button>`;
+  html += `<button type="button" id="fs-link" class="cat-card" style="margin-top:16px;background:#295BF2;color:#fff;border-color:#295BF2"><span class="cat-text"><span><div class="cat-title"> 결과 링크 만들기</div><div class="cat-desc" style="color:#fff;opacity:0.9">워드·PDF로 저장하고 선생님께 보낼 수 있어요</div></span></span><span class="arrow">›</span></button>`;
   catList.innerHTML = html;
   catList.querySelector('#fs-back').onclick = () => history.back();
   catList.querySelector('#fs-link').onclick = sendAllCategoriesBundle;
@@ -2581,7 +2581,7 @@ function goToQuestion(idx){
 function goPrev(){ goToQuestion(currentQuestionIdx - 1); }
 function goNext(){ goToQuestion(currentQuestionIdx + 1); }
 
-// ---------- 💡 답변 뼈대 잡기 (2026-09-26 추가) ----------
+// ----------  답변 뼈대 잡기 (2026-09-26 추가) ----------
 // 카테고리별 4칸: 학생이 짧게 메모하면 "30초 말하기 순서" + 초안 1개를 만들어 줌
 // 문구는 자유롭게 고쳐 써도 됩니다. (label=칸 이름, q=질문, hint=힌트)
 const INTERVIEW_SCAFFOLDS = {
@@ -2650,17 +2650,17 @@ function addScaffoldCard(){
   wrap.className = 'sc-wrap';
   wrap.style.cssText = 'align-self:stretch;';
   wrap.innerHTML = `
-    <button type="button" class="btn-outline sc-toggle" style="min-height:38px;font-size:13px">💡 막막하면 눌러보세요 — 답변 뼈대 잡기</button>
+    <button type="button" class="btn-outline sc-toggle" style="min-height:38px;font-size:13px"> 막막하면 눌러보세요 — 답변 뼈대 잡기</button>
     <div class="sc-panel" style="display:none;background:#EEF3FF;border:1px solid #CFDAFB;border-radius:10px;padding:12px 14px;margin-top:8px;font-size:13.5px;line-height:1.6">
       <div style="color:var(--deep-green)">칸마다 <b>단어·짧은 메모</b>만 적어요. 2칸 이상 채우면 말하기 순서를 잡아 드려요.</div>
-      <div style="font-size:12px;color:var(--muted)">${escapeHtml(HIRING_TYPE === 'blind' ? INTERVIEW_BLIND_TIP : '✅ ' + INTERVIEW_NOUN_TIP)}</div>
+      <div style="font-size:12px;color:var(--muted)">${escapeHtml(HIRING_TYPE === 'blind' ? INTERVIEW_BLIND_TIP : ' ' + INTERVIEW_NOUN_TIP)}</div>
       ${rows.map((r, k) => `
         <div style="margin-top:10px">
           <div style="font-weight:700;color:var(--deep-green)">${escapeHtml(r.label)} <span style="font-weight:400;color:var(--ink)">— ${escapeHtml(r.q)}</span></div>
           ${r.hint && !(HIRING_TYPE === 'blind' && r.hint.indexOf('이름') >= 0) ? `<div style="font-size:12px;color:var(--muted)">${escapeHtml(r.hint)}</div>` : ''}
           <input class="st-inp sc-memo" data-k="${k}" type="text" maxlength="150" placeholder="짧게 메모" style="margin-top:4px;padding:8px 10px">
         </div>`).join('')}
-      <button type="button" class="btn btn-primary sc-make" disabled style="margin-top:12px;width:100%">🗣️ 30초 말하기 순서 잡기</button>
+      <button type="button" class="btn btn-primary sc-make" disabled style="margin-top:12px;width:100%"> 30초 말하기 순서 잡기</button>
       <div class="sc-status" style="font-size:12px;color:var(--muted);margin-top:6px"></div>
       <div class="sc-out"></div>
     </div>`;
@@ -2672,7 +2672,7 @@ function addScaffoldCard(){
   toggle.onclick = () => {
     const open = panel.style.display !== 'none';
     panel.style.display = open ? 'none' : 'block';
-    toggle.textContent = open ? '💡 막막하면 눌러보세요 — 답변 뼈대 잡기' : '▲ 답변 뼈대 접기';
+    toggle.textContent = open ? ' 막막하면 눌러보세요 — 답변 뼈대 잡기' : '▲ 답변 뼈대 접기';
   };
   makeBtn.onclick = async () => {
     const memo = memoOf();
@@ -2701,11 +2701,11 @@ function addScaffoldCard(){
       status.innerHTML = '읽지 말고 <b>순서만 보고 소리 내어</b> 말해보세요. 초안은 참고용이에요.';
       out.innerHTML = `
         <div style="background:var(--white);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-top:8px">
-          <div style="font-weight:700;color:var(--deep-green);margin-bottom:4px">🗣️ 말하기 순서</div>
+          <div style="font-weight:700;color:var(--deep-green);margin-bottom:4px"> 말하기 순서</div>
           ${steps.map((t, k) => `<div>${k + 1}. ${escapeHtml(t)}</div>`).join('')}
         </div>
         ${data.script ? `<div style="background:var(--white);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-top:8px">
-          <div style="font-weight:700;color:var(--deep-green);margin-bottom:4px">📝 30초 답변 초안</div>
+          <div style="font-weight:700;color:var(--deep-green);margin-bottom:4px"> 30초 답변 초안</div>
           <div class="sc-script" style="white-space:pre-wrap">${escapeHtml(data.script)}</div>
           <button type="button" class="btn-outline sc-use" style="min-height:34px;font-size:13px;margin-top:8px">답변 칸에 넣기</button>
         </div>` : ''}`;
@@ -2719,12 +2719,12 @@ function addScaffoldCard(){
     }catch(err){
       status.textContent = '만들지 못했어요: ' + err.message;
     }
-    makeBtn.disabled = false; makeBtn.textContent = '🗣️ 30초 말하기 순서 잡기';
+    makeBtn.disabled = false; makeBtn.textContent = ' 30초 말하기 순서 잡기';
   };
   chatBody.appendChild(wrap);
 }
 
-// ---------- ❓ 꼬리질문에 바로 답해보기 (2026-09-26 추가) ----------
+// ----------  꼬리질문에 바로 답해보기 (2026-09-26 추가) ----------
 // 판정은 화면에서만 보여주고 저장하지 않음 (몇 번이든 다시 연습 가능)
 chatBodyFollowUpInit();
 function chatBodyFollowUpInit(){
@@ -2755,10 +2755,10 @@ function chatBodyFollowUpInit(){
       const r = await res.json();
       if(!res.ok || r.error) throw new Error(r.error || '판정하지 못했어요.');
       const look = {
-        ok:      { t: '✅ 처음 답변과 일치 — 이대로 말하면 돼요', bg: '#EAF7EF', c: '#1E6B41' },
-        caution: { t: '⚠️ 새 내용 주의 — 처음 답변과 맞춰주세요', bg: '#FFF7E8', c: '#8A5A00' },
-        weak:    { t: '🔁 설명이 약해요 — 구체적인 장면을 보충하세요', bg: '#FDECEC', c: '#B42318' }
-      }[r.verdict] || { t: '⚠️ 확인 필요', bg: '#FFF7E8', c: '#8A5A00' };
+        ok:      { t: ' 처음 답변과 일치 — 이대로 말하면 돼요', bg: '#EAF7EF', c: '#1E6B41' },
+        caution: { t: ' 새 내용 주의 — 처음 답변과 맞춰주세요', bg: '#FFF7E8', c: '#8A5A00' },
+        weak:    { t: ' 설명이 약해요 — 구체적인 장면을 보충하세요', bg: '#FDECEC', c: '#B42318' }
+      }[r.verdict] || { t: ' 확인 필요', bg: '#FFF7E8', c: '#8A5A00' };
       out.innerHTML = `<div style="background:${look.bg};color:${look.c};border-radius:8px;padding:8px 10px;margin-top:6px;font-size:13px;line-height:1.6"><b>${look.t}</b><br><span style="color:var(--ink)">${escapeHtml(r.comment || '')}</span></div>`;
     }catch(err){
       out.innerHTML = `<div style="color:#C0392B;font-size:12.5px">판정하지 못했어요: ${escapeHtml(err.message)}</div>`;
@@ -2795,10 +2795,10 @@ function renderQuestionCard(){
   const existing = answersByIdx[currentQuestionIdx];
   if(existing && CLIENT){
     addBubble('a', existing.answer);
-    addBubble('f', '💾 저장됐어요. 최종 제출 전까지는 언제든 고칠 수 있어요.');
+    addBubble('f', ' 저장됐어요. 최종 제출 전까지는 언제든 고칠 수 있어요.');
     const editBtn = document.createElement('button');
     editBtn.className = 'redo-btn';
-    editBtn.textContent = '✏️ 고치기';
+    editBtn.textContent = ' 고치기';
     editBtn.onclick = () => {
       const old = existing.answer;
       delete answersByIdx[currentQuestionIdx];
@@ -2816,7 +2816,7 @@ function renderQuestionCard(){
   } else if(existing){
     addBubble('a', existing.answer);
     if(REVIEW_MODE){
-      addBubble('f', '🕓 제출 완료 — 강사님이 확인한 후 결과를 보내드릴게요.');
+      addBubble('f', ' 제출 완료 — 강사님이 확인한 후 결과를 보내드릴게요.');
     } else {
       addFeedbackBubble(existing.feedback);
     }
@@ -2825,7 +2825,7 @@ function renderQuestionCard(){
     if(usedRetries < limitNum){
       const redoBtn = document.createElement('button');
       redoBtn.className = 'redo-btn';
-      redoBtn.textContent = '✏️ 다시 답변하기';
+      redoBtn.textContent = ' 다시 답변하기';
       redoBtn.onclick = () => {
         retryCountByIdx[currentQuestionIdx] = usedRetries + 1;
         delete answersByIdx[currentQuestionIdx];
@@ -2860,16 +2860,16 @@ function renderQuestionCard(){
     updateCharCount();
   }
 
-  makeLinkBtn.textContent = REVIEW_MODE ? '📤 강사 검토 요청 보내기' : '📎 지금까지 결과로 학생 링크 만들기';
+  makeLinkBtn.textContent = REVIEW_MODE ? ' 강사 검토 요청 보내기' : ' 지금까지 결과로 학생 링크 만들기';
 }
 
-// 🎯 질문 의도 보기 토글 (2026-10-05 · 학습용) — 누를 때만 펼쳐짐
+//  질문 의도 보기 토글 (2026-10-05 · 학습용) — 누를 때만 펼쳐짐
 function addIntentToggle(cat, question){
   const w = document.createElement('div');
   w.className = 'iv-intent';
-  w.innerHTML = `<button type="button" class="iv-intent-btn" aria-expanded="false">🎯 질문 의도 보기</button><p class="iv-intent-txt" hidden>${escapeHtml(questionIntent(cat, question))}</p>`;
+  w.innerHTML = `<button type="button" class="iv-intent-btn" aria-expanded="false"> 질문 의도 보기</button><p class="iv-intent-txt" hidden>${escapeHtml(questionIntent(cat, question))}</p>`;
   const btn = w.querySelector('button'), txt = w.querySelector('p');
-  btn.onclick = () => { const open = txt.hidden; txt.hidden = !open; btn.setAttribute('aria-expanded', String(open)); btn.textContent = open ? '🎯 질문 의도 접기' : '🎯 질문 의도 보기'; };
+  btn.onclick = () => { const open = txt.hidden; txt.hidden = !open; btn.setAttribute('aria-expanded', String(open)); btn.textContent = open ? ' 질문 의도 접기' : ' 질문 의도 보기'; };
   chatBody.appendChild(w);
 }
 
@@ -2992,14 +2992,14 @@ function exInnerHtml(st) {
     <div class="ex-progress ex-interactive"><div class="ex-bar"><i style="width:${pct}%"></i></div><span>내 경험으로 바꾼 곳 <b>${done} / ${n}</b> · 완성도 <b>${pct}%</b></span></div>` : ''}
     <p class="ex-text">${textHtml}</p>
     <div class="ex-actions ex-interactive">
-      ${n ? `<button type="button" class="ex-btn ex-finish" data-exkey="${st.key}" ${done && !st.busy ? '' : 'disabled'}>${st.busy ? '완성하는 중... (30초~1분)' : '✨ 내 답변으로 완성하기'}</button>` : ''}
-      <button type="button" class="ex-btn2 ex-copy" data-exkey="${st.key}">📋 복사하기</button>
+      ${n ? `<button type="button" class="ex-btn ex-finish" data-exkey="${st.key}" ${done && !st.busy ? '' : 'disabled'}>${st.busy ? '완성하는 중... (30초~1분)' : ' 내 답변으로 완성하기'}</button>` : ''}
+      <button type="button" class="ex-btn2 ex-copy" data-exkey="${st.key}"> 복사하기</button>
       <span class="ex-count">${plain.length}자${lim ? ` / ${lim}자` : ''}</span>
     </div>
     ${st.finalText ? `<div class="ex-final">
-      <h4>✅ 완성된 내 답변</h4>
+      <h4> 완성된 내 답변</h4>
       <p class="ex-text" style="padding:0">${exStaticHtml(st.finalText)}</p>
-      <div class="ex-actions ex-interactive"><button type="button" class="ex-btn ex-copy-final" data-exkey="${st.key}">📋 완성된 답변 복사</button><span class="ex-count">${exPlain(st.finalText).length}자${lim ? ` / ${lim}자` : ''}</span></div>
+      <div class="ex-actions ex-interactive"><button type="button" class="ex-btn ex-copy-final" data-exkey="${st.key}"> 완성된 답변 복사</button><span class="ex-count">${exPlain(st.finalText).length}자${lim ? ` / ${lim}자` : ''}</span></div>
     </div>` : ''}`;
 }
 function exampleBlockHtml(item) {
@@ -3022,8 +3022,8 @@ function exSheetHtml(st) {
   return `<div class="ex-sheet-bg ex-close" data-exkey="${st.key}"></div>
   <div class="ex-sheet ex-interactive" role="dialog" aria-label="예시를 내 경험으로 바꾸기">
     <div class="ex-grab"></div>
-    <div class="ex-sh-top"><b>형광펜 ${st.open + 1} / ${n}</b><button type="button" class="ex-sh-x ex-close" data-exkey="${st.key}" aria-label="닫기">✕</button></div>
-    <div class="ex-ed-head">💡 ${escapeHtml(sl.hint || '이 자리에 내 실제 경험을 넣어요')}</div>
+    <div class="ex-sh-top"><b>형광펜 ${st.open + 1} / ${n}</b><button type="button" class="ex-sh-x ex-close" data-exkey="${st.key}" aria-label="닫기"></button></div>
+    <div class="ex-ed-head"> ${escapeHtml(sl.hint || '이 자리에 내 실제 경험을 넣어요')}</div>
     <div class="ex-now">…${escapeHtml(b)}<mark>${escapeHtml(sl.value || sl.example)}</mark>${escapeHtml(a)}…</div>
     ${sl.options.length ? `<div class="ex-step">① 내 경험과 가장 가까운 보기를 누르세요</div>
     <div class="ex-opts">${sl.options.map((o, i) => `<button type="button" class="ex-opt${sl.value === o ? ' on' : ''}" data-exkey="${st.key}" data-opt="${i}">${escapeHtml(o)}</button>`).join('')}</div>
@@ -3160,7 +3160,7 @@ function buildFeedbackReq(question, text){
   const companyContext = STUDENT_COMPANY
     ? `\n\n[지원 기업] 이 수강생의 지원 기업은 '${STUDENT_COMPANY}'입니다. 입사 후 포부 관련 질문이면 이 기업명을 넣어 코멘트와 모범답안을 작성하되, 위 사실 확인 원칙대로 이 기업의 구체적인 제도명·특허·지사명·수치는 지어내지 말고 대괄호 빈칸으로 남기세요.`
     : '';
-  // 🔎 심화 분석 요약이 있으면 그 내용을 근거로 회사 맞춤 피드백 (2026-10-05) — 요약에 없는 사실은 여전히 지어내지 않음
+  //  심화 분석 요약이 있으면 그 내용을 근거로 회사 맞춤 피드백 (2026-10-05) — 요약에 없는 사실은 여전히 지어내지 않음
   const brief = STUDENT_COMPANY_BRIEF && companyDeepOn() ? STUDENT_COMPANY_BRIEF : null;
   const briefContext = brief
     ? `\n\n[지원 기업 조사 요약 — 웹 검색으로 확인, ${brief.searchedAt || ''} 기준]\n기업: ${brief.name}${brief.industry ? ' — ' + brief.industry : ''}`
@@ -3218,7 +3218,7 @@ async function submitAnswer(){
     answersByIdx[currentQuestionIdx] = { question, answer: text, feedback: fb };
     if(!ALL_ANSWERS[currentCategory.id]) ALL_ANSWERS[currentCategory.id] = { catTitle: currentCategory.title, items: {} };
     ALL_ANSWERS[currentCategory.id].items[currentQuestionIdx] = { question, answer: text, feedback: fb };
-    stuSaveAnswers(); // 💾 폰에 바로 저장
+    stuSaveAnswers(); //  폰에 바로 저장
     renderQuestionCard();
     makeLinkBtn.style.display = 'block';
     bundleAllBtn.style.display = Object.keys(ALL_ANSWERS).length > 1 ? 'block' : 'none';
@@ -3507,7 +3507,7 @@ document.getElementById('pk-gen-btn').onclick = async () => {
     if(!Array.isArray(data.questions) || data.questions.length === 0){
       throw new Error('AI가 올바른 형식의 질문을 만들지 못했어요. 다시 눌러주세요.');
     }
-    const cleanQs = data.questions.filter(q => !bannedReason(q)); // 🔒 금지 필터
+    const cleanQs = data.questions.filter(q => !bannedReason(q)); //  금지 필터
     qBox.value = cleanQs.join('\n');
     statusEl.className = 'st-ok';
     statusEl.textContent = `질문 ${cleanQs.length}개를 만들었어요.${cleanQs.length < data.questions.length ? ' (면접에서 묻지 않는 질문 ' + (data.questions.length - cleanQs.length) + '개는 뺐어요)' : ''} 확인하고 필요하면 고쳐주세요.`;
@@ -3593,14 +3593,14 @@ document.getElementById('pk-rf-gen-btn').onclick = async () => {
     if(!Array.isArray(data.items) || !data.items.length){
       throw new Error('질문을 받지 못했어요. 서버 파일(api/generate-questions.js)이 새 버전인지 확인해 주세요.');
     }
-    box.value = redflagToText(data.items.filter(x => x && !bannedReason(x.q))); // 🔒 금지 필터
+    box.value = redflagToText(data.items.filter(x => x && !bannedReason(x.q))); //  금지 필터
     statusEl.className = 'st-ok';
     statusEl.textContent = '결격 검증 질문을 만들었어요. "//" 뒤 설명은 학생에게 안 보여요. 확인 후 저장해 주세요.';
   }catch(err){
     statusEl.className = 'st-err';
     statusEl.textContent = err.message;
   }
-  btn.disabled = false; btn.textContent = '🔒 AI로 결격 검증 질문 만들기';
+  btn.disabled = false; btn.textContent = ' AI로 결격 검증 질문 만들기';
 };
 
 document.getElementById('pk-save-btn').onclick = async () => {
@@ -3639,7 +3639,7 @@ document.getElementById('pk-save-btn').onclick = async () => {
   if(!ok){ setStatus(statusEl, '저장하지 못했어요. 잠시 후 다시 눌러주세요.', true); return; }
   PK_EDIT_IDX = -1;
   renderPackageTab();
-  setStatus(document.getElementById('pk-save-status'), `"${name}" 패키지를 저장했어요 ✓ 학생 첫 화면에 바로 나와요.`);
+  setStatus(document.getElementById('pk-save-status'), `"${name}" 패키지를 저장했어요  학생 첫 화면에 바로 나와요.`);
 };
 
 function renderCommonQuestions(){
@@ -3669,7 +3669,7 @@ document.getElementById('common-q-save-btn').onclick = async () => {
   });
   setStatus(statusEl, '저장 중...');
   const ok = await saveConfig();
-  setStatus(statusEl, ok ? '공통 질문을 저장했어요 ✓' : '저장하지 못했어요. 다시 눌러주세요.', !ok);
+  setStatus(statusEl, ok ? '공통 질문을 저장했어요 ' : '저장하지 못했어요. 다시 눌러주세요.', !ok);
   if(ok) renderCategories();
 };
 
@@ -3680,7 +3680,7 @@ document.getElementById('common-prompt-save-btn').onclick = async () => {
   SYSTEM_PROMPT = v;
   setStatus(statusEl, '저장 중...');
   const ok = await saveConfig();
-  setStatus(statusEl, ok ? '공통 기준을 저장했어요 ✓' : '저장하지 못했어요. 다시 눌러주세요.', !ok);
+  setStatus(statusEl, ok ? '공통 기준을 저장했어요 ' : '저장하지 못했어요. 다시 눌러주세요.', !ok);
 };
 
 document.getElementById('common-prompt-reset-btn').onclick = () => {
@@ -3689,7 +3689,7 @@ document.getElementById('common-prompt-reset-btn').onclick = () => {
 };
 
 /* ---- ② 오늘 수업 탭 (바꾸면 자동 저장) ---- */
-// 🔒 면접관 셀프체크 5문항 (2026-10-05) — 모의면접(면접관 역할) 진행 전 강사가 스스로 확인. 이 기기에만 저장
+//  면접관 셀프체크 5문항 (2026-10-05) — 모의면접(면접관 역할) 진행 전 강사가 스스로 확인. 이 기기에만 저장
 const SELF_CHECK_ITEMS = [
   '지원자의 서류(자소서·이력서)를 미리 읽고 들어간다',
   '결혼·가족·외모·학벌 같은 사적 질문은 하지 않는다',
@@ -3705,12 +3705,12 @@ function renderSelfCheck(){
   try{ st = JSON.parse(localStorage.getItem(key) || '{}'); }catch(e){}
   const done = SELF_CHECK_ITEMS.filter((_, i) => st[i]).length;
   box.innerHTML = `
-    <h3>🔒 면접관 셀프체크 <span style="font-weight:400;font-size:13px;color:var(--muted)">${done} / ${SELF_CHECK_ITEMS.length}</span></h3>
+    <h3> 면접관 셀프체크 <span style="font-weight:400;font-size:13px;color:var(--muted)">${done} / ${SELF_CHECK_ITEMS.length}</span></h3>
     <p class="st-sub">학생 앞에서 면접관 역할을 하기 전에 확인해요. 지원자가 가장 싫어한 질문 1위는 '사적 질문'(33%)이에요.</p>
     <div class="sc-check">${SELF_CHECK_ITEMS.map((t, i) => `<label><input type="checkbox" data-i="${i}" ${st[i] ? 'checked' : ''}><span>${i + 1}. ${escapeHtml(t)}</span></label>`).join('')}</div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <button class="btn-small" type="button" id="sc-reset">새 수업 — 체크 비우기</button>
-      <span class="${done === SELF_CHECK_ITEMS.length ? 'st-ok' : 'st-sub'}">${done === SELF_CHECK_ITEMS.length ? '✓ 준비 완료! 좋은 면접관 시범이 될 거예요.' : '체크는 이 기기에만 저장돼요.'}</span>
+      <span class="${done === SELF_CHECK_ITEMS.length ? 'st-ok' : 'st-sub'}">${done === SELF_CHECK_ITEMS.length ? ' 준비 완료! 좋은 면접관 시범이 될 거예요.' : '체크는 이 기기에만 저장돼요.'}</span>
     </div>`;
   box.querySelectorAll('input[data-i]').forEach(cb => cb.onchange = () => { st[cb.dataset.i] = cb.checked; try{ localStorage.setItem(key, JSON.stringify(st)); }catch(e){} renderSelfCheck(); });
   box.querySelector('#sc-reset').onclick = () => { try{ localStorage.removeItem(key); }catch(e){} renderSelfCheck(); };
@@ -3748,7 +3748,7 @@ function renderTodayTab(){
   });
 }
 
-// ✏️ 전공·직무 선택 방식 설정 (2026-10-05)
+//  전공·직무 선택 방식 설정 (2026-10-05)
 function renderFreeInputSetting(){
   document.querySelectorAll('input[name="free-mode"]').forEach(r => { r.checked = r.value === FREE_INPUT_MODE; });
   document.querySelectorAll('.free-kind').forEach(c => { c.checked = FREE_INPUT_KINDS.includes(c.value); });
@@ -3760,7 +3760,7 @@ function renderFreeInputSetting(){
   const ck = document.querySelector('.free-kind[value="company"]');
   if(ck){ ck.disabled = COMPANY_DEPTH === 'off'; ck.closest('label').style.opacity = COMPANY_DEPTH === 'off' ? '.45' : ''; }
 }
-// 🔎 기업 분석 수준 (2026-10-05)
+//  기업 분석 수준 (2026-10-05)
 document.querySelectorAll('input[name="company-depth"]').forEach(r => r.addEventListener('change', () => {
   COMPANY_DEPTH = r.value; renderFreeInputSetting(); autoSaveToday();
 }));
@@ -3774,7 +3774,7 @@ document.querySelectorAll('.free-kind').forEach(c => c.addEventListener('change'
 }));
 document.getElementById('free-notice-chk').addEventListener('change', e => { FREE_INPUT_NOTICE = e.target.checked; autoSaveToday(); });
 
-// 📊 많이 입력된 키워드 TOP (2026-10-05)
+//  많이 입력된 키워드 TOP (2026-10-05)
 async function renderKeywordTop(){
   const box = document.getElementById('kw-top-list');
   if(!box) return;
@@ -3803,7 +3803,7 @@ async function renderKeywordTop(){
       <span class="kw-rank">${i + 1}</span>
       <span class="kw-main"><b>${escapeHtml(label)}</b><span class="kw-meta">${escapeHtml(it.kindName)} · ${it.count}회${label !== it.keyword ? ' · 입력: ' + escapeHtml(it.keyword) : ''}</span></span>
       <span class="kw-btns">
-        ${added ? '<span class="st-ok" style="font-size:13px">✓ 추가됨</span>'
+        ${added ? '<span class="st-ok" style="font-size:13px"> 추가됨</span>'
           : (it.pack ? '<button class="btn-small kw-add" type="button">＋ 전공 패키지로 추가</button>' : '<span class="st-sub" style="font-size:12px">질문 없음</span>')}
         <button class="btn-small kw-del" type="button" aria-label="목록에서 지우기">지우기</button>
       </span>`;
@@ -3841,7 +3841,7 @@ async function autoSaveToday(){
   setStatus(statusEl, '저장 중...');
   clearTimeout(todaySaveTimer);
   const ok = await saveConfig();
-  setStatus(statusEl, ok ? '저장됨 ✓' : '저장 실패 — 다시 바꿔주세요', !ok);
+  setStatus(statusEl, ok ? '저장됨 ' : '저장 실패 — 다시 바꿔주세요', !ok);
   if(ok) todaySaveTimer = setTimeout(() => { statusEl.textContent = ''; }, 2500);
 }
 
@@ -3925,7 +3925,7 @@ async function renderAdminList(){
       div.querySelector('.view-btn').onclick = () => window.open(link, '_blank');
       div.querySelector('.copy-btn2').onclick = (e) => {
         navigator.clipboard.writeText(link).then(() => {
-          e.target.textContent = '복사됨 ✓';
+          e.target.textContent = '복사됨 ';
           setTimeout(() => { e.target.textContent = '링크 복사'; }, 1500);
         });
       };
@@ -3960,7 +3960,7 @@ async function renderReviewList(){
       const dateStr = moaDate(d, 'time');
       div.innerHTML = `
         <div>
-          <div class="s-name">${item.clientCode ? '<span style="background:#FFF4DC;color:#9A6200;border-radius:999px;padding:1px 8px;font-size:12px;margin-right:4px">👤 개인 고객</span>' : ''}${escapeHtml(item.studentName)} · ${escapeHtml(item.category)}</div>
+          <div class="s-name">${item.clientCode ? '<span style="background:#FFF4DC;color:#9A6200;border-radius:999px;padding:1px 8px;font-size:12px;margin-right:4px"> 개인 고객</span>' : ''}${escapeHtml(item.studentName)} · ${escapeHtml(item.category)}</div>
           <div class="s-meta">${dateStr}${item.code ? ' · 확인코드 <b style="letter-spacing:1px">' + escapeHtml(item.code) + '</b>' : ''}</div>
         </div>
         <div class="s-arrow">›</div>
@@ -3996,26 +3996,26 @@ async function openReviewDetail(id){
       block.className = 'review-q-block';
       block.innerHTML = `
         <div class="rq-question">${item.categoryTitle ? `<span style="font-size:11px;color:var(--muted);font-weight:400">[${escapeHtml(item.categoryTitle)}]</span> ` : ''}Q${i+1}. ${escapeHtml(item.question)}</div>
-        ${findRedflagNote(item.question) ? `<div style="font-size:12.5px;color:#8A5A00;margin:4px 0 6px">🔒 검증 포인트: ${escapeHtml(findRedflagNote(item.question))}</div>` : ''}
+        ${findRedflagNote(item.question) ? `<div style="font-size:12.5px;color:#8A5A00;margin:4px 0 6px"> 검증 포인트: ${escapeHtml(findRedflagNote(item.question))}</div>` : ''}
         <div class="rq-answer">${escapeHtml(item.answer)}</div>
         ${reviewRedFlagsHtml(item.feedback.red_flags, i)}
         ${fbTrendHtml(item.feedback)}
-        <label>👍 좋았던 점</label>
+        <label> 좋았던 점</label>
         <textarea data-item-idx="${i}" data-field="good" rows="2">${escapeHtml(item.feedback.good || '')}</textarea>
-        <label>🔧 개선점</label>
+        <label> 개선점</label>
         <textarea data-item-idx="${i}" data-field="improve" rows="2">${escapeHtml(item.feedback.improve || '')}</textarea>
-        <label>💡 모범답안 방향</label>
+        <label> 모범답안 방향</label>
         <textarea data-item-idx="${i}" data-field="sample_direction" rows="2">${escapeHtml(item.feedback.sample_direction || '')}</textarea>
-        <label>✏️ 다듬은 완성 문장</label>
+        <label> 다듬은 완성 문장</label>
         ${exHasSlots(item.feedback) ? `<div style="font-size:12px;color:var(--muted);margin:-2px 0 4px">🟨 <b>{{ }}</b> 안은 학생 답변에 없어 AI가 넣은 예시예요(${(String(item.feedback.rewritten).match(/\{\{[^{}]+\}\}/g) || []).length}곳). 학생 화면에서 형광펜 + 보기로 표시돼요. 실제 내용으로 고치시면 괄호도 지워 주세요.</div>` : ''}
         <textarea data-item-idx="${i}" data-field="rewritten" rows="2">${escapeHtml(item.feedback.rewritten || '')}</textarea>
-        <label>🎯 면접관 시점 — 평소 모습 추론</label>
+        <label> 면접관 시점 — 평소 모습 추론</label>
         <textarea data-item-idx="${i}" data-field="interviewer_inference" rows="2">${escapeHtml(item.feedback.interviewer_inference || '')}</textarea>
-        <label>❓ 예상 꼬리질문 · 이유형</label>
+        <label> 예상 꼬리질문 · 이유형</label>
         <textarea data-item-idx="${i}" data-field="follow_up.reason" rows="1">${escapeHtml((item.feedback.follow_up || {}).reason || '')}</textarea>
-        <label>❓ 예상 꼬리질문 · 대안형</label>
+        <label> 예상 꼬리질문 · 대안형</label>
         <textarea data-item-idx="${i}" data-field="follow_up.alternative" rows="1">${escapeHtml((item.feedback.follow_up || {}).alternative || '')}</textarea>
-        <label>❓ 예상 꼬리질문 · 수치형</label>
+        <label> 예상 꼬리질문 · 수치형</label>
         <textarea data-item-idx="${i}" data-field="follow_up.quantify" rows="1">${escapeHtml((item.feedback.follow_up || {}).quantify || '')}</textarea>
       `;
       reviewDetailBody.appendChild(block);
@@ -4036,13 +4036,13 @@ reviewDetailBack.onclick = () => {
 // 강사 검토 화면용 결격 신호 — 체크를 풀면 학생에게 그 항목이 안 보임
 function reviewRedFlagsHtml(flags, itemIdx){
   if(!Array.isArray(flags)) return '';
-  if(!flags.length) return `<label>⚠️ 결격 신호</label><div style="font-size:13px;color:#1E6B41;margin-bottom:6px">✅ 없음</div>`;
-  return `<label>⚠️ 결격 신호 (체크를 풀면 학생에게 안 보여요)</label>
+  if(!flags.length) return `<label> 결격 신호</label><div style="font-size:13px;color:#1E6B41;margin-bottom:6px"> 없음</div>`;
+  return `<label> 결격 신호 (체크를 풀면 학생에게 안 보여요)</label>
     <div style="background:#FFF7E8;border:1px solid #F5C26B;border-radius:8px;padding:8px 10px;margin-bottom:6px">
       ${flags.map((f, k) => `
         <label style="display:flex;gap:8px;align-items:flex-start;font-weight:400;font-size:13px;line-height:1.5;margin:4px 0;cursor:pointer">
           <input type="checkbox" data-rf-item="${itemIdx}" data-rf-idx="${k}" checked style="margin-top:3px">
-          <span><b>[${escapeHtml(f.type || '')}]</b> "${escapeHtml(f.quote || '')}"<br>→ ${escapeHtml(f.why || '')}${f.fix ? `<br>✏️ ${escapeHtml(f.fix)}` : ''}</span>
+          <span><b>[${escapeHtml(f.type || '')}]</b> "${escapeHtml(f.quote || '')}"<br>→ ${escapeHtml(f.why || '')}${f.fix ? `<br> ${escapeHtml(f.fix)}` : ''}</span>
         </label>`).join('')}
     </div>`;
 }
@@ -4117,7 +4117,7 @@ reviewApproveBtn.onclick = async () => {
     console.error(err);
   }
   reviewApproveBtn.disabled = false;
-  reviewApproveBtn.textContent = '✅ 승인 및 학생 링크 생성';
+  reviewApproveBtn.textContent = ' 승인 및 학생 링크 생성';
 };
 
 /* ---- Student result link ---- */
@@ -4188,7 +4188,7 @@ copyLinkBtn.onclick = () => {
   linkOutput.select();
   try{
     document.execCommand('copy');
-    copyLinkBtn.textContent = '복사됨 ✓';
+    copyLinkBtn.textContent = '복사됨 ';
     setTimeout(() => { copyLinkBtn.textContent = '복사'; }, 1500);
   }catch(err){
     // fallback: user can manually select
@@ -4286,7 +4286,7 @@ async function renderResultView(id){
               <p>${f.quote ? `<b>“${escapeHtml(f.quote)}”</b> — ` : ''}${escapeHtml(f.why || '')}</p>
               ${f.fix ? `<p class="how">이렇게: ${escapeHtml(f.fix)}</p>` : ''}
             </div>`).join('')}
-          </div></div>` : (Array.isArray(fb.red_flags) ? `<div class="rr-ok">✓ 면접관이 멈칫할 표현은 없어요</div>` : '');
+          </div></div>` : (Array.isArray(fb.red_flags) ? `<div class="rr-ok"> 면접관이 멈칫할 표현은 없어요</div>` : '');
       const dirBody = steps.length
         ? `<ol class="rr-chips">${steps.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ol>`
         : (fb.sample_direction ? `<p class="desc">${escapeHtml(fb.sample_direction)}</p>` : '');
@@ -4488,7 +4488,7 @@ function renderTeacherSetupScreen(){
         const hubLink = 'https://moa-hub.vercel.app/?k=' + encodeURIComponent(data.hubKey);
         screenSelect.innerHTML = `
           <div class="setup-card">
-            <h3>✅ 등록 완료!</h3>
+            <h3> 등록 완료!</h3>
             <p style="font-size:14px;line-height:1.7">지금 보고 계신 카톡 링크는 <b>1회용 초대 링크</b>라 앞으로는 못 써요. 아래가 <b>${escapeHtml(name || code)}님만의 승인 링크</b>예요 — 꼭 복사해서 카톡 "나에게 보내기"로 저장해두세요.</p>
             <p style="font-size:13px;color:#666;line-height:1.7;margin-top:6px">이 링크를 누르면 <b>암호 없이</b> MOA FORMULA 허브가 열리고, 자소서 첨삭·모의면접 강사용 화면을 바로 쓸 수 있어요. 다른 사람에게는 공유하지 마세요.</p>
             <div style="display:flex;gap:8px;align-items:center;background:var(--cream,#EAF2AE);border-radius:8px;padding:10px 12px;margin-top:10px">
@@ -4508,7 +4508,7 @@ function renderTeacherSetupScreen(){
       const permanentLink = location.origin + location.pathname + '?' + p.toString();
       screenSelect.innerHTML = `
         <div class="setup-card">
-          <h3>✅ 등록 완료!</h3>
+          <h3> 등록 완료!</h3>
           <p style="font-size:14px;line-height:1.7">지금 보고 계신 카톡 링크는 <b>1회용 초대 링크</b>라 앞으로는 못 써요. 아래가 <b>${escapeHtml(name || code)}님만의 고정 주소</b>예요 — 꼭 복사해서 카톡 "나에게 보내기"로 저장해두시고, 다음부터는 이 주소로 들어와 주세요.</p>
           <div style="display:flex;gap:8px;align-items:center;background:var(--cream,#EAF2AE);border-radius:8px;padding:10px 12px;margin-top:10px">
             <span style="word-break:break-all;font-size:13px">${permanentLink}</span>
@@ -4714,7 +4714,7 @@ function renderBlockedScreen(forTeacher){
 }
 
 // =====================================================================
-// 🎯 면접관 체험 보드 (2026-09-26 추가)
+//  면접관 체험 보드 (2026-09-26 추가)
 // 한 학생이 시연하면 나머지 학생이 휴대폰으로 "10자 한 줄 인상"을 보내고, 강사 화면에 키워드 보드로 모임
 // 합격/보류/탈락 같은 평가는 받지 않음 (학생 자신감 보호) · 이름 등 개인정보 없음 · 하루 뒤 자동 삭제
 // =====================================================================
@@ -4739,7 +4739,7 @@ function openLiveBoard(){
   el.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid var(--line)">
       <div style="font-weight:800;font-size:13px;letter-spacing:1px;color:var(--navy)">MOA FORMULA</div>
-      <div style="font-weight:800;font-size:20px">🎯 면접관 체험 보드</div>
+      <div style="font-weight:800;font-size:20px"> 면접관 체험 보드</div>
       <button type="button" class="btn-outline" id="lv-close" style="min-height:36px">닫기</button>
     </div>
     <div id="lv-body" style="flex:1;display:flex;flex-direction:column;padding:16px 20px;gap:14px"></div>`;
@@ -4761,7 +4761,7 @@ function renderLiveStart(){
       <p style="font-size:17px;margin:0 0 6px">한 학생이 모의면접을 시연하면, 나머지 학생들이 <b>면접관이 되어</b> 휴대폰으로 한 줄 인상(10자)을 보내요.</p>
       <p style="font-size:14px;color:var(--muted);margin:0 0 18px">평가 점수(합격·탈락)는 받지 않아요. 학생 이름은 적지 말고 "시연 1"처럼 적어주세요.</p>
       <input class="st-inp" id="lv-title-in" type="text" maxlength="40" placeholder="시연 질문 (선택) 예) 지원동기를 말씀해 주세요" style="margin-bottom:12px">
-      <button type="button" class="btn-outline" id="lv-start" style="width:100%;min-height:50px;font-size:16px">🔒 보드 시작하기</button>
+      <button type="button" class="btn-outline" id="lv-start" style="width:100%;min-height:50px;font-size:16px"> 보드 시작하기</button>
       <p id="lv-start-msg" style="font-size:13px;color:#C0392B;margin-top:10px"></p>
     </div>`;
   body.querySelector('#lv-start').onclick = async () => {
@@ -4775,7 +4775,7 @@ function renderLiveStart(){
       renderLiveBoard(); startLivePolling();
     }catch(err){
       body.querySelector('#lv-start-msg').textContent = err.message + (String(err.message).includes('암호') ? ' (강사 화면에서 암호를 먼저 입력해 주세요)' : '');
-      btn.disabled = false; btn.textContent = '🔒 보드 시작하기';
+      btn.disabled = false; btn.textContent = ' 보드 시작하기';
     }
   };
 }
@@ -4794,15 +4794,15 @@ function renderLiveBoard(){
           <span style="font-size:15px;font-weight:700;background:#EEF3FF;color:var(--deep-green);border-radius:999px;padding:4px 12px">라운드 <span id="lv-round">${LIVE.round}</span></span>
           <span style="font-size:15px;color:var(--muted)">응답 <b id="lv-count" style="color:var(--ink);font-size:22px">0</b>명</span>
         </div>
-        <div id="lv-title-show" style="font-size:22px;font-weight:700;line-height:1.4">${LIVE.title ? '❓ ' + escapeHtml(LIVE.title) : '<span style="color:var(--muted);font-weight:400;font-size:16px">시연 질문을 적으면 학생 화면에도 보여요</span>'}</div>
+        <div id="lv-title-show" style="font-size:22px;font-weight:700;line-height:1.4">${LIVE.title ? ' ' + escapeHtml(LIVE.title) : '<span style="color:var(--muted);font-weight:400;font-size:16px">시연 질문을 적으면 학생 화면에도 보여요</span>'}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <input class="st-inp" id="lv-title-edit" type="text" maxlength="40" placeholder="시연 질문 바꾸기 (선택)" value="${escapeHtml(LIVE.title)}" style="flex:1;min-width:180px;padding:8px 10px">
           <button type="button" class="btn-outline" id="lv-title-save" style="min-height:38px">질문 저장</button>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button type="button" class="btn-outline" id="lv-sum" style="min-height:42px">🔒 🤖 AI로 키워드 묶기</button>
+          <button type="button" class="btn-outline" id="lv-sum" style="min-height:42px">  AI로 키워드 묶기</button>
           <button type="button" class="btn-outline" id="lv-view" style="min-height:42px">키워드로 보기</button>
-          <button type="button" class="btn-outline" id="lv-next" style="min-height:42px">🔒 다음 라운드 ▶</button>
+          <button type="button" class="btn-outline" id="lv-next" style="min-height:42px"> 다음 라운드 ▶</button>
         </div>
         <div id="lv-msg" style="font-size:13px;color:var(--muted)">같은 말이 많을수록 글자가 커져요. 부적절한 말은 눌러서 숨길 수 있어요.</div>
       </div>
@@ -4823,7 +4823,7 @@ function renderLiveBoard(){
   body.querySelector('#lv-title-save').onclick = async () => {
     const t = body.querySelector('#lv-title-edit').value.trim();
     try{ await post({ action: 'title', title: t }); LIVE.title = t;
-      body.querySelector('#lv-title-show').innerHTML = t ? '❓ ' + escapeHtml(t) : '<span style="color:var(--muted);font-weight:400;font-size:16px">시연 질문을 적으면 학생 화면에도 보여요</span>';
+      body.querySelector('#lv-title-show').innerHTML = t ? ' ' + escapeHtml(t) : '<span style="color:var(--muted);font-weight:400;font-size:16px">시연 질문을 적으면 학생 화면에도 보여요</span>';
     }catch(err){ msg.textContent = err.message; }
   };
   body.querySelector('#lv-next').onclick = async () => {
@@ -4846,7 +4846,7 @@ function renderLiveBoard(){
       drawLive();
       msg.textContent = '키워드로 묶었어요. 새 응답이 더 오면 다시 눌러주세요.';
     }catch(err){ msg.textContent = err.message; }
-    btn.disabled = false; btn.textContent = '🔒 🤖 AI로 키워드 묶기';
+    btn.disabled = false; btn.textContent = '  AI로 키워드 묶기';
   };
   body.querySelector('#lv-view').onclick = () => {
     if(LIVE.view === 'raw' && !(LIVE.data && LIVE.data.summary)){ msg.textContent = '먼저 "AI로 키워드 묶기"를 눌러주세요.'; return; }
@@ -4896,10 +4896,10 @@ function drawLive(){
       const st = sum.groups.filter(g => g.type === 'strength').map(g => escapeHtml(g.keyword)).join(' · ');
       const im = sum.groups.filter(g => g.type === 'improve').map(g => escapeHtml(g.keyword)).join(' · ');
       sumBox.innerHTML = `<div style="background:#EEF3FF;border-radius:12px;padding:14px 18px;line-height:1.7">
-        <div style="font-size:14px;color:var(--muted)">🤖 면접관 ${d.total}명의 한 줄 총평</div>
+        <div style="font-size:14px;color:var(--muted)"> 면접관 ${d.total}명의 한 줄 총평</div>
         <div style="font-size:22px;font-weight:700;margin:2px 0 6px">"${escapeHtml(sum.summary || '')}"</div>
-        ${st ? `<div style="font-size:16px"><b style="color:var(--navy)">👍 강점</b> ${st}</div>` : ''}
-        ${im ? `<div style="font-size:16px"><b style="color:#C2410C">🔧 다듬을 점</b> ${im}</div>` : ''}
+        ${st ? `<div style="font-size:16px"><b style="color:var(--navy)"> 강점</b> ${st}</div>` : ''}
+        ${im ? `<div style="font-size:16px"><b style="color:#C2410C"> 다듬을 점</b> ${im}</div>` : ''}
       </div>`;
     } else sumBox.innerHTML = '';
   }
@@ -5009,7 +5009,7 @@ async function renderLiveStudent(code){
     let sent = false; try{ sent = localStorage.getItem(sentKey(round)) === '1'; }catch(e){}
     if(sent || sentRound === round){
       box.innerHTML = `<div style="background:var(--white);border:1px solid var(--line);border-radius:12px;padding:28px 18px;text-align:center;line-height:1.7">
-        <div style="font-size:40px">✅</div>
+        <div style="font-size:40px"></div>
         <div style="font-size:18px;font-weight:700">보냈어요!</div>
         <div style="font-size:14px;color:var(--muted)">화면에 모이는 키워드를 함께 봐요.<br>다음 시연이 시작되면 자동으로 새 입력칸이 열려요.</div>
       </div>`;
@@ -5017,8 +5017,8 @@ async function renderLiveStudent(code){
     }
     box.innerHTML = `<div style="background:var(--white);border:1px solid var(--line);border-radius:12px;padding:20px 18px;line-height:1.6">
       <div style="font-size:13px;color:var(--muted)">라운드 ${round}</div>
-      <div style="font-size:19px;font-weight:800;margin:4px 0 6px">🎯 내가 면접관이라면?</div>
-      ${title ? `<div style="font-size:14px;background:#EEF3FF;border-radius:8px;padding:8px 10px;margin-bottom:10px">❓ ${escapeHtml(title)}</div>` : ''}
+      <div style="font-size:19px;font-weight:800;margin:4px 0 6px"> 내가 면접관이라면?</div>
+      ${title ? `<div style="font-size:14px;background:#EEF3FF;border-radius:8px;padding:8px 10px;margin-bottom:10px"> ${escapeHtml(title)}</div>` : ''}
       <div style="font-size:14px;color:var(--muted);margin-bottom:10px">방금 답변한 지원자는 어떤 사람으로 보였나요? <b>10자 이내</b>로 적어주세요.</div>
       <input class="st-inp" id="lv-in" type="text" maxlength="${LIVE_MAX}" placeholder="예) 준비된 느낌, 목소리 작음" autocomplete="off" style="font-size:17px">
       <div id="lv-cnt" style="text-align:right;font-size:12px;color:var(--muted);margin-top:4px">0 / ${LIVE_MAX}자</div>
@@ -5067,7 +5067,7 @@ document.getElementById('st-live-btn').onclick = openLiveBoard;
 window.addEventListener('resize', () => { const c = document.getElementById('lv-cloud'); if(c && document.getElementById('live-board') && document.getElementById('live-board').style.display !== 'none'){ c.dataset.key = ''; drawLive(); } });
 
 // ---------- 개인 고객(네이버 예약) 모의면접 (2026-10-01) ----------
-// 원장님이 자소서 앱 강사 명부 화면의 "👤 개인 고객"에서 만든 링크(?c=코드)로 들어옴
+// 원장님이 자소서 앱 강사 명부 화면의 " 개인 고객"에서 만든 링크(?c=코드)로 들어옴
 // - 답변은 저장만 하고 고칠 수 있음 → "최종 제출" 1번에 AI 피드백을 만들어 원장님 검토 대기함으로
 // - 세트 상품은 자소서를 먼저 제출해야 면접 제출 가능 (서버에서도 확인)
 // ---------- 취소·환불 규정 (2026-10-02 수익화 랩 확정 · 자소서·모의면접 앱 같은 문구) ----------
@@ -5121,7 +5121,7 @@ function clientBannerHtml(short){
       <b style="font-size:16px;color:#1B3FA8">${escapeHtml(CLIENT_PRODUCT_NAMES[CLIENT.product] || '')}</b>
       <span style="font-size:12.5px;background:#fff;border-radius:999px;padding:3px 10px;color:#1B3FA8">이용 기간 ${moaDate(CLIENT.expiresAt - 1, 'short')}까지 · D-${left}</span>
     </div>
-    ${short ? '' : `<p style="margin:8px 0 0;font-size:13px;color:var(--muted);line-height:1.6">${CLIENT.product === 'set' ? '지금은 <b>② 모의면접</b> 단계예요. ' : ''}원하는 유형을 골라 질문에 답해 주세요. 답변은 <b>자동 저장</b>되고 언제든 고칠 수 있어요. 이용 기간 안에는 <b>나갔다가 다시 들어와도 이어서</b> 할 수 있어요(다른 기기도 OK). 다 마치면 맨 아래 <b>📮 최종 제출하기</b>를 눌러 주세요 — 제출은 <b>한 번만</b> 가능해요.</p>`}
+    ${short ? '' : `<p style="margin:8px 0 0;font-size:13px;color:var(--muted);line-height:1.6">${CLIENT.product === 'set' ? '지금은 <b>② 모의면접</b> 단계예요. ' : ''}원하는 유형을 골라 질문에 답해 주세요. 답변은 <b>자동 저장</b>되고 언제든 고칠 수 있어요. 이용 기간 안에는 <b>나갔다가 다시 들어와도 이어서</b> 할 수 있어요(다른 기기도 OK). 다 마치면 맨 아래 <b> 최종 제출하기</b>를 눌러 주세요 — 제출은 <b>한 번만</b> 가능해요.</p>`}
     ${short ? '' : `<div style="margin-top:8px;font-size:12.5px;color:var(--muted)">최종 제출 전에는 전액 환불, 제출 후에는 환불이 불가해요.${refundDetailsHtml()}</div>`}
     ${CLIENT.hold ? `<div style="margin-top:10px;padding:10px 12px;background:#FFF4DC;color:#7A4D00;border-radius:6px;font-size:13px;line-height:1.7">⏳ <b>예약 확인 중이에요.</b> 지금 바로 답변을 시작하셔도 돼요. 확인이 끝나면 이메일로 알려드리고, 그때부터 <b>최종 제출</b>할 수 있어요.</div>` : ''}
   </div>`;
@@ -5210,7 +5210,7 @@ function clientUpdateButtons(){
   makeLinkBtn.style.display = 'none';
   const n = Object.keys(ALL_ANSWERS).reduce((sum, id) => sum + Object.keys(ALL_ANSWERS[id].items).length, 0);
   bundleAllBtn.style.display = n ? 'block' : 'none';
-  bundleAllBtn.textContent = `📮 최종 제출하기 (답변 ${n}개)`;
+  bundleAllBtn.textContent = ` 최종 제출하기 (답변 ${n}개)`;
 }
 function clientSaveAnswer(question, text, fbReq){
   const item = { question, answer: text, feedback: null };
@@ -5277,7 +5277,7 @@ async function initClientMode(rawCode){
       area.textContent = '결과 확인 중...';
       let d; try{ d = await lookupResultCode(rc); }catch(e){ d = { status: 'none' }; }
       if(d.status === 'done' && d.id){
-        area.innerHTML = `<button type="button" class="link-cta" style="border:0;cursor:pointer">📬 결과 보기 →</button>`;
+        area.innerHTML = `<button type="button" class="link-cta" style="border:0;cursor:pointer"> 결과 보기 →</button>`;
         area.querySelector('button').onclick = () => openResultById(d.id);
       } else if(d.status === 'expired'){
         area.textContent = '⏰ 결과 조회 기간이 지났어요. 진로모아로 문의해 주세요.';
@@ -5409,7 +5409,7 @@ async function clientFinalSubmit(){
   headerTitle.textContent = '모의면접 시뮬레이터';
   bundleAllBtn.style.display = 'none';
   CLIENT.used = Object.assign({}, CLIENT.used, { interview: { at: Date.now() } });
-  clientMessage('제출이 완료됐어요 ✅', '강사가 AI 피드백을 직접 검토하고 코멘트를 더한 뒤 결과를 보내드려요. 결과가 준비되면 이메일로 알려드릴게요.');
+  clientMessage('제출이 완료됐어요 ', '강사가 AI 피드백을 직접 검토하고 코멘트를 더한 뒤 결과를 보내드려요. 결과가 준비되면 이메일로 알려드릴게요.');
 }
 
 (async function init(){
@@ -5455,8 +5455,8 @@ async function clientFinalSubmit(){
 
   history.replaceState({ screen: 'select' }, '');
   await loadConfig();
-  if(!isAdmin) applyResumeHandoff(); // 📝 자소서 앱에서 넘어온 꼬리질문 (2026-10-05)
-  if(!isAdmin) STU_RESTORED_N = stuLoadAnswers(); // 💾 지난번 답변 불러오기
+  if(!isAdmin) applyResumeHandoff(); //  자소서 앱에서 넘어온 꼬리질문 (2026-10-05)
+  if(!isAdmin) STU_RESTORED_N = stuLoadAnswers(); //  지난번 답변 불러오기
   if(!isAdmin) moaUse('start'); // 학생 시작 화면
   if(!isAdmin && jobScreenNeeded()){
     renderJobSelectScreen();
