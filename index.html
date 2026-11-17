@@ -2311,9 +2311,9 @@ function renderCategories(){
   const companyBox = document.createElement('div');
   companyBox.style.cssText = 'background:var(--white);border:1px solid var(--line);border-radius:6px;padding:14px 16px;margin-bottom:6px;';
   companyBox.innerHTML = `
-    <label class="st-lbl" for="student-company"> 지원 기업명 <span style="font-weight:400;color:var(--muted);font-size:13px">(선택)</span></label>
+    <label class="st-lbl" for="student-company"> 지원 기업명 <span style="font-weight:400;color:#5A635A;font-size:13px">(선택)</span></label>
     <input class="st-inp" id="student-company" type="text" maxlength="40" placeholder="예: ○○병원, ○○항공" style="margin-top:8px">
-    <p style="margin:8px 0 0;font-size:12.5px;color:var(--muted);line-height:1.5">적어주면 '입사 후 포부' 피드백을 이 회사에 맞춰 드려요.</p>
+    <p style="margin:8px 0 0;font-size:13px;color:#5A635A;line-height:1.5">적어주면 '입사 후 포부' 피드백을 이 회사에 맞춰 드려요.</p>
   `;
   const companyInput = companyBox.querySelector('#student-company');
   companyInput.value = STUDENT_COMPANY;
@@ -2330,7 +2330,7 @@ function renderCategories(){
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="hiring-type" value="general" ${HIRING_TYPE === 'general' ? 'checked' : ''}> 일반 면접</label>
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="hiring-type" value="blind" ${HIRING_TYPE === 'blind' ? 'checked' : ''}> 블라인드 면접</label>
     </div>
-    <p style="margin:8px 0 0;font-size:12.5px;color:var(--muted);line-height:1.5">일반 면접은 과목명·기관명 같은 이름을 넣으면 믿음이 가고, 블라인드 면접은 학교·지역·가족이 드러나는 말을 빼야 해요.</p>
+    <p style="margin:8px 0 0;font-size:13px;color:#5A635A;line-height:1.5">일반 면접은 과목명·기관명 같은 이름을 넣으면 믿음이 가고, 블라인드 면접은 학교·지역·가족이 드러나는 말을 빼야 해요.</p>
   `;
   hiringBox.querySelectorAll('input[name="hiring-type"]').forEach(r => r.addEventListener('change', e => { HIRING_TYPE = e.target.value; if(CLIENT) clientSaveDraft(); }));
   catList.appendChild(hiringBox);
